@@ -51,8 +51,8 @@ const props = defineProps<{
   multiLine?: boolean;
 }>();
 
-const value = defineModel<string | undefined>();
-const valueNumber = defineModel<number | undefined>('number');
+const value = defineModel<string | null>();
+const valueNumber = defineModel<number | null>('number');
 
 const textAreaRef = templateRef('textAreaRef');
 
@@ -87,10 +87,21 @@ useTextareaAutosize({
   />
   <input
     v-else
-    v-model.number="valueNumber"
+    :value="valueNumber"
+    type="number"
     v-bind="$attrs"
     :placeholder="props.placeholder"
     :class="cn(inputVariants({ theme, size, font, weight }), $attrs.class as string)"
+    @input="
+      (e) => {
+        const target = e.target as HTMLInputElement;
+        if (Number.isNaN(target.valueAsNumber)) {
+          valueNumber = null;
+        } else {
+          valueNumber = target.valueAsNumber;
+        }
+      }
+    "
   />
 </template>
 

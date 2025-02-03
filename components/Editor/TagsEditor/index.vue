@@ -34,7 +34,7 @@ const classes = [
   'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 dark:focus-visible:ring-neutral-300',
 ];
 
-const tags = defineModel<string[]>();
+const tags = defineModel<string[] | null>();
 
 const saveTag = (index: number, tag: string) => {
   if (!tags.value) {

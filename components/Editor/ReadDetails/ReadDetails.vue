@@ -27,7 +27,7 @@ import { MoveRightIcon, XIcon } from 'lucide-vue-next';
 
 import type { DateRead } from '~/types';
 
-const datePairs = defineModel<DateRead[]>();
+const datePairs = defineModel<DateRead[] | null>();
 
 const addNewDate = () => {
   if (!datePairs.value) {

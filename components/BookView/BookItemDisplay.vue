@@ -21,17 +21,17 @@ const displayValue = computed(() => {
   const i = props.book.attrs[props.schemaItem.name];
   if (!i) return '';
 
-  switch (props.schemaItem.value.type) {
-    case 'Date':
-      if (typeof i === 'string') return i;
-    case 'Text':
-      if (typeof i === 'string') return i;
-    case 'TextCollection':
-      if (typeof i === 'string') return i;
-    case 'Number':
-      if (typeof i === 'number') return i;
+  switch (i.type) {
+    case 'DateReadVec':
+      return i.value?.map((v) => v.started).join(', ') ?? '';
+    case 'StringVec':
+      return i.value?.join(', ') ?? '';
+    case 'String':
+      return i.value;
+    case 'Integer':
+      return i.value ? i.value.toString() : '';
+    case 'Float':
+      return i.value ? i.value.toString() : '';
   }
-
-  return i;
 });
 </script>

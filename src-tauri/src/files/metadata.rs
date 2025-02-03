@@ -38,7 +38,8 @@ pub fn parse_metadata(
                         {
                             file_meta.insert(name, AttrValue::Float(n.as_f64()));
                         } else {
-                            file_meta.insert(name, AttrValue::Integer(n.as_i64().map(|n| n as i32)));
+                            file_meta
+                                .insert(name, AttrValue::Integer(n.as_i64().map(|n| n as i32)));
                         }
                     }
 
