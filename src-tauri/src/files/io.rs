@@ -1,10 +1,11 @@
+use std::collections::HashMap;
 use std::fs;
 
 use ts_rs::TS;
 
 use crate::cache::query::BookFromDb;
 use crate::schema::operations::get_schema_cached_safe;
-use crate::schema::types::Schema;
+use crate::schema::types::{AttrValue, AttrValueOnDisk, Schema};
 use crate::utils::errorhandling::{ErrorActionCode, ErrorFromRust};
 
 use super::metadata::parse_metadata;
@@ -110,11 +111,12 @@ pub fn save_file(book: BookFromDb, forced: bool) -> Result<BookSaveResult, Error
 
     let markdown = book.markdown.unwrap_or("".to_string());
 
-    let yaml = serde_yml::to_string(&book.attrs).map_err(|e| {
-        ErrorFromRust::new("Error serializing book metadata")
-            .info("File was not saved")
-            .raw(e)
-    })?;
+    let yaml =
+        serde_yml::to_string(&transform_attr_values_to_on_disk(book.attrs)).map_err(|e| {
+            ErrorFromRust::new("Error serializing book metadata")
+                .info("File was not saved")
+                .raw(e)
+        })?;
 
     let file = format!("---\n{yaml}---\n{markdown}");
 
@@ -136,4 +138,10 @@ pub fn save_file(book: BookFromDb, forced: bool) -> Result<BookSaveResult, Error
                 .raw(e),
         ),
     }
+}
+
+pub fn transform_attr_values_to_on_disk(
+    attrs: HashMap<String, AttrValue>,
+) -> HashMap<String, AttrValueOnDisk> {
+    attrs.into_iter().map(|(k, v)| (k, v.into())).collect()
 }

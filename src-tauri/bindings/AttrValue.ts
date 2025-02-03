@@ -2,13 +2,8 @@
 import type { DateRead } from './DateRead';
 
 export type AttrValue =
-  | string
-  | null
-  | Array<string>
-  | null
-  | Array<DateRead>
-  | null
-  | bigint
-  | null
-  | number
-  | null;
+  | { type: 'String'; value: string | null }
+  | { type: 'StringVec'; value: Array<string> | null }
+  | { type: 'DateReadVec'; value: Array<DateRead> | null }
+  | { type: 'Integer'; value: number | null }
+  | { type: 'Float'; value: number | null };

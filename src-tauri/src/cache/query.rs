@@ -127,7 +127,7 @@ pub async fn get_files_abstact(
                         {
                             hm.insert(name, AttrValue::Float(Some(v)));
                         } else {
-                            hm.insert(name, AttrValue::Integer(Some(v as i64)));
+                            hm.insert(name, AttrValue::Integer(Some(v as i32)));
                         }
                     }
 

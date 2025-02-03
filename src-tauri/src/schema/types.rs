@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use ts_rs::TS;
 
+/*
+   #[ts(optional)] means use val?: String instean of val: String | null
+   It's mandatory everywhere, because you can't v-model String | null in radix-vue.
+   Hopefully this gets merged soon and it can be set on struct level
+   https://github.com/Aleph-Alpha/ts-rs/pull/366
+
+   (the same thing for serde is  #[serde_with::skip_serializing_none] btw)
+*/
+
 #[derive(Serialize, Deserialize, Clone, Hash, Debug, PartialEq, TS)]
 #[ts(export)]
 pub struct DateRead {
@@ -19,13 +28,38 @@ pub struct DateRead {
 */
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, TS)]
 #[ts(export)]
-#[serde(untagged)]
+#[serde(tag = "type", content = "value")]
 pub enum AttrValue {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
     DateReadVec(Option<Vec<DateRead>>),
-    Integer(Option<i64>),
+    Integer(Option<i32>),
     Float(Option<f64>),
+}
+
+/*
+  Helper type just for saving to disk. For readability of fronmatter it should be unttaged, while in TS we need tagged values.
+*/
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum AttrValueOnDisk {
+    String(Option<String>),
+    StringVec(Option<Vec<String>>),
+    DateReadVec(Option<Vec<DateRead>>),
+    Integer(Option<i32>),
+    Float(Option<f64>),
+}
+
+impl From<AttrValue> for AttrValueOnDisk {
+    fn from(attr: AttrValue) -> Self {
+        match attr {
+            AttrValue::String(v) => AttrValueOnDisk::String(v),
+            AttrValue::StringVec(v) => AttrValueOnDisk::StringVec(v),
+            AttrValue::DateReadVec(v) => AttrValueOnDisk::DateReadVec(v),
+            AttrValue::Integer(v) => AttrValueOnDisk::Integer(v),
+            AttrValue::Float(v) => AttrValueOnDisk::Float(v),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
@@ -80,15 +114,6 @@ impl Default for SettingsTypeTextCollection {
         SettingsTypeTextCollection::TextCollection
     }
 }
-
-/*
-   #[ts(optional)] means use val?: String instean of val: String | null
-   It's mandatory everywhere, because you can't v-model String | null in radix-vue.
-   Hopefully this gets merged soon and it can be set on struct level
-   https://github.com/Aleph-Alpha/ts-rs/pull/366
-
-   (the same thing for serde is  #[serde_with::skip_serializing_none] btw)
-*/
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
