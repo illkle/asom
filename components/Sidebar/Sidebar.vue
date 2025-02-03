@@ -1,5 +1,5 @@
 <template>
-  <ShSidebar class="pt-10">
+  <ShSidebar :class="$props.class" variant="floating" collapsible="icon">
     <ShSidebarContent>
       <SidebarGroup v-for="schema in schemas" :key="schema.internal_name" class="py-0">
         <ShSidebarGroupLabel>

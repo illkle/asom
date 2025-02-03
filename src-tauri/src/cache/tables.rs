@@ -17,6 +17,11 @@ pub async fn create_db_tables_for_all_schemas() -> Result<(), sqlx::Error> {
     Ok(())
 }
 
+/*
+ I wanted to flex and make tables dynamically, but don't feel so good about that implementation now. 
+ I'll keep it for for now, but should probably be refactored to attributes table with key value pairs.
+*/
+
 pub async fn create_db_tables_for_schema(schema: Schema) -> Result<(), sqlx::Error> {
     if schema.items.is_empty() {
         return Ok(());

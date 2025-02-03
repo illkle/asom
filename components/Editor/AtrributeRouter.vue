@@ -1,7 +1,7 @@
 <template>
   <UIBasicInput
     v-if="schemaItem.value.type === 'Text'"
-    v-model:model-value="attr as string"
+    :model-value="(attr as string)"
     :placeholder="schemaItem.value.settings.displayName || schemaItem.name"
     :theme="schemaItem.value.settings.theme"
     :multi-line="schemaItem.value.settings.isMultiline"
@@ -14,7 +14,7 @@
     v-else-if="schemaItem.value.type === 'Number'"
     :placeholder="schemaItem.value.settings.displayName || schemaItem.name"
     is-number
-    v-model:value-number="attr as number"
+    v-model:number="attr as number"
   />
 
   <EditorTagsEditor

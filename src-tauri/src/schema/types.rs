@@ -14,6 +14,8 @@ pub struct DateRead {
 /*
     AttrValue represents types that can be found in frontmatter.
     They MUST be uniquely identifiable by type inside.
+
+    It would be better to have them tagged in typerscript. However not saving them as tagged to frontmatter is a must.
 */
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, TS)]
 #[ts(export)]

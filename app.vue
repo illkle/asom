@@ -84,6 +84,22 @@ input {
   outline: none;
 }
 
+::-webkit-scrollbar {
+  -webkit-appearance: none;
+  @apply w-2;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-md bg-neutral-400 dark:bg-neutral-800;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-500 dark:bg-neutral-600;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-50 dark:bg-neutral-950;
+}
+
 .dragApp {
   user-select: none;
   -webkit-app-region: drag;
