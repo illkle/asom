@@ -60,6 +60,8 @@ useHead({
 </script>
 
 <style>
+@reference '~/assets/css/main.css';
+
 #app {
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter',
     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Microsoft YaHei Light', sans-serif;
