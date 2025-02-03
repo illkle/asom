@@ -2,13 +2,13 @@ import { open } from '@tauri-apps/plugin-dialog';
 
 const KEY = 'ROOT_PATH';
 
-import { createStore, Store } from '@tauri-apps/plugin-store';
+import { load, Store } from '@tauri-apps/plugin-store';
 
 let tauriStore: Store | null = null;
 
 const getStore = async () => {
   if (!tauriStore) {
-    tauriStore = await createStore('appData.bin');
+    tauriStore = await load('appData.bin');
   }
   return tauriStore;
 };

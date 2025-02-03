@@ -25,16 +25,12 @@ pub fn init_global_app(app: AppHandle) {
         .expect("Global app already initialized");
 }
 
-#[allow(dead_code)]
-pub fn get_store() -> Store<Wry> {
-    return get_global_app().lock().unwrap().store("appData.bin");
-}
-
 pub fn get_root_path() -> Result<String, ErrorFromRust> {
     let val = get_global_app()
         .lock()
         .unwrap()
         .store("appData.bin")
+        .unwrap()
         .get(ROOT_PATH_KEY);
 
     return match val {

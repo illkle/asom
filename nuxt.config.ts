@@ -5,14 +5,9 @@ export default defineNuxtConfig({
     components: './components',
     '@types': './types',
   },
-  modules: ['@pinia/nuxt', 'shadcn-nuxt', '@nuxtjs/color-mode', '@pinia/colada-nuxt'],
+  modules: ['@pinia/nuxt', '@nuxtjs/color-mode', '@pinia/colada-nuxt'],
 
   compatibilityDate: '2024-09-29',
-
-  experimental: {
-    // to use plugins/node.client.ts
-    clientNodeCompat: true,
-  },
 
   shadcn: {
     prefix: 'Sh',
