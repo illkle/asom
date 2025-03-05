@@ -27,6 +27,7 @@ import Sidebar from '~/components/Sidebar/Sidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 
 const store = useStore();
+const { loadSettings } = useSettings();
 
 // Root Path loading Logic
 watch(
@@ -36,8 +37,8 @@ watch(
       await navigateTo('/welcome');
       return;
     }
-    await store.fetchSetting();
-    await store.fetchOpened();
+    await loadSettings();
+    await await store.fetchOpened();
   },
   { immediate: true },
 );

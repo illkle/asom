@@ -12,7 +12,6 @@ import {
   getOpenedTabs,
 } from '~/api/openedTabs';
 import { getRootPath } from '~/api/rootPath';
-import { getSettings, type ISettings } from '~/api/settings';
 import type { ErrorFromRust, Schema } from '~/types';
 
 const uid = new ShortUniqueId({ length: 10 });
@@ -21,7 +20,6 @@ export type StateType = {
   rootPath: string | null;
   openedTabs: IOpenedTabs['tabs'];
   openedTabsActiveId: IOpenedTabs['activeId'];
-  settings: ISettings | null;
   errorModal: ErrorFromRust | null;
   schemas: Schema[];
 };
@@ -41,7 +39,6 @@ export const useStore = defineStore('main', {
   state: (): StateType => {
     return {
       rootPath: null,
-      settings: null,
       schemas: [],
       openedTabs: [],
       openedTabsActiveId: '',
@@ -110,9 +107,6 @@ export const useStore = defineStore('main', {
       this.openedTabs = res.tabs;
       this.openedTabsActiveId = res.activeId;
     },
-    async fetchSetting() {
-      this.settings = await getSettings();
-    },
     async fetchRootPath() {
       this.rootPath = await getRootPath();
     },
@@ -143,9 +137,6 @@ export const useStore = defineStore('main', {
     //
     // Updates
     //
-    updateSettings(data: ISettings) {
-      this.settings = data;
-    },
     updateOpened(data: IOpenedTabs['tabs']) {
       this.openedTabs = data;
     },

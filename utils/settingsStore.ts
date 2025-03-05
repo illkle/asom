@@ -58,3 +58,26 @@ export const saveSettings = async (settings: ISettings) => {
   fs.writeTextFile(targetFile, JSON.stringify(settings));
   return;
 };
+
+const useSettingsStore = defineStore('userSettings', {
+  state: (): { settings: ISettings } => {
+    return { settings: zSettings.parse({}) };
+  },
+
+  actions: {
+    async loadSettings() {
+      this.settings = await getSettings();
+    },
+
+    async updateSettings(settings: Partial<ISettings>) {
+      this.settings = { ...this.settings, ...settings };
+      await saveSettings(this.settings);
+    },
+  },
+});
+
+export const useSettings = () => {
+  const { settings, updateSettings, loadSettings } = useSettingsStore();
+
+  return { settings, updateSettings, loadSettings };
+};

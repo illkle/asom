@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useStore } from '~~/utils/store';
 import { format, parse } from 'date-fns';
 import { ChevronDown, CalendarDays } from 'lucide-vue-next';
 import BasicCalendar from './BasicCalendar.vue';
 
-const store = useStore();
+import { useSettings } from '~/utils/settingsStore';
+
+const { settings } = useSettings();
 
 const props = defineProps<{
   limits?: {
@@ -20,12 +21,12 @@ const modelValue = defineModel<string>({
 });
 
 const formattedDate = computed(() => {
-  if (!store.settings) {
+  if (!settings) {
     throw new Error('No settings loaded');
   }
   if (!modelValue.value) return 'Select Date';
 
-  const parsed = parse(modelValue.value, store.settings.dateFormat, new Date());
+  const parsed = parse(modelValue.value, settings.dateFormat, new Date());
   return format(parsed, 'dd MMMM yyyy');
 });
 

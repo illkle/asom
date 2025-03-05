@@ -1,6 +1,6 @@
 <template>
   <ShDialogTitle>Settings</ShDialogTitle>
-  <div v-if="store.settings" class="w-full max-w-[500px]">
+  <div v-if="settings" class="w-full max-w-[500px]">
     <PathControllerVue
       v-if="store.rootPath"
       title="Working Directory"
@@ -36,29 +36,25 @@
 import { computed, ref } from 'vue';
 import PathControllerVue from './PathController.vue';
 
-import { useStore } from '~~/utils/store';
-
-import { saveSettings } from '~/api/settings';
 import { selectAndSetRootPath } from '~/api/rootPath';
+import { useSettings } from '~/utils/settingsStore';
 
 const colorMode = useColorMode();
 
 const store = useStore();
 
+const { settings, updateSettings } = useSettings();
+
 const { data: schemas, error } = useUsableSchemas();
 
 const darkMode = computed({
   get: () => {
-    return store.settings?.darkMode || 'System';
+    return settings?.darkMode || 'System';
   },
   set: async (val) => {
-    if (!store.settings) return;
+    if (!settings) return;
 
-    const s = { ...store.settings, darkMode: val };
-
-    await saveSettings(s);
-
-    store.updateSettings(s);
+    await updateSettings({ darkMode: val });
   },
 });
 

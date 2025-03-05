@@ -3,8 +3,8 @@ use std::sync::Mutex;
 use once_cell::sync::OnceCell;
 
 use serde_json::Value;
-use tauri::{AppHandle, Wry};
-use tauri_plugin_store::{Store, StoreExt};
+use tauri::AppHandle;
+use tauri_plugin_store::StoreExt;
 
 use super::errorhandling::{ErrorActionCode, ErrorFromRust};
 

@@ -2,8 +2,14 @@
   <ShSidebar :class="$props.class" variant="floating" collapsible="icon">
     <ShSidebarContent>
       <SidebarGroup v-for="schema in schemas" :key="schema.internal_name" class="py-0">
-        <ShSidebarGroupLabel>
+        <ShSidebarGroupLabel class="flex items-center justify-between">
           {{ schema.name }}
+          <IconsMenuBookAdder :path-to-save="schema.internal_path"
+            ><ShButton variant="outline" class="h-6 px-2">
+              Add
+              <PlusIcon :size="12" />
+            </ShButton>
+          </IconsMenuBookAdder>
         </ShSidebarGroupLabel>
         <ShSidebarGroupContent>
           <FileTree :schema-path="schema.internal_path" :schema-name="schema.name" />
@@ -28,7 +34,8 @@
 <script setup lang="ts">
 import type { Schema } from '~/types';
 import SidebarGroup from '../_shadcn/sidebar/SidebarGroup.vue';
-import { CogIcon } from 'lucide-vue-next';
+import { CogIcon, PlusIcon } from 'lucide-vue-next';
+import { IconsMenuBookAdder } from '#components';
 
 const { data: schemas, error } = useUsableSchemas();
 

@@ -2,6 +2,7 @@ import { format, parse, isValid } from 'date-fns';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import type { DateRead } from '~/types';
 import { useStore } from '~~/utils/store';
+import { useSettings } from '~/utils/settingsStore';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
   const value = rootElement
@@ -111,6 +112,7 @@ export const importGoodReadsHTML = (event: Event) => {
     return;
   }
 
+  const { settings } = useSettings();
   const store = useStore();
 
   const fr = new FileReader();
@@ -124,10 +126,10 @@ export const importGoodReadsHTML = (event: Event) => {
 
       const result: GoodreadsParsedBook[] = [];
 
-      if (!store.settings || !store.rootPath) return;
+      if (!settings || !store.rootPath) return;
 
       for (const book of books) {
-        result.push(parseBook(book, store.settings?.dateFormat));
+        result.push(parseBook(book, settings?.dateFormat));
       }
 
       // write result somewhere

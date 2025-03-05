@@ -24,6 +24,13 @@ import path from 'path-browserify';
 import { toast } from 'vue-sonner';
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
 
+const props = defineProps({
+  pathToSave: {
+    type: String,
+    required: true,
+  },
+});
+
 const store = useStore();
 
 const newFileOpened = ref(false);
@@ -33,16 +40,8 @@ const actualFilename = computed(() => {
   return newFileName.value.endsWith('.md') ? newFileName.value : newFileName.value + '.md';
 });
 
-const folderToSave = computed(() => {
-  if (!store.openedItem || store.openedItem.thing !== 'folder') {
-    if (!store.rootPath) throw new Error('No root path');
-    return store.rootPath;
-  }
-  return store.openedItem.thing;
-});
-
 const folderToSaveDisplay = computed(() => {
-  return path.join(folderToSave.value, actualFilename.value);
+  return path.join(props.pathToSave, actualFilename.value);
 });
 
 const addBook = async () => {
@@ -51,7 +50,7 @@ const addBook = async () => {
     return;
   }
 
-  const finalPath = await path.join(folderToSave.value, actualFilename.value);
+  const finalPath = await path.join(props.pathToSave, actualFilename.value);
 
   const ex = await exists(finalPath);
   if (ex) {

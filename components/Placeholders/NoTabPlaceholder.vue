@@ -17,6 +17,8 @@ import { rustErrorNotification } from '~/api/tauriEvents';
 
 const store = useStore();
 
+const r = useRouter();
+
 const openAllBooks = () => {
   if (!store.rootPath) {
     throw new Error('NoTabPlaceholder handler: no root path');

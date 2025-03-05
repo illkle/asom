@@ -1,39 +1,28 @@
 <script setup lang="ts">
-import {
-  addMonths,
-  format,
-  getDaysInMonth,
-  getISODay,
-  isSameMonth,
-  startOfMonth,
-  clamp,
-  isBefore,
-  isAfter,
-  parse,
-} from 'date-fns';
+import { addMonths, format, startOfMonth, clamp, parse } from 'date-fns';
 import type { Interval } from 'date-fns';
 import { computed, onMounted, ref, watch, nextTick } from 'vue';
-import { useStore } from '~~/utils/store';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next';
 import DaysRenderer from './DaysRenderer.vue';
 
 import BasicInput from '~/components/_UI/BasicInput.vue';
+import { useSettings } from '~/utils/settingsStore';
 
-const store = useStore();
+const { settings } = useSettings();
 
 // Input is a date string in a format that you can change in settings
 // This function converts it do js Date
 const stringToDate = (dateString: string) => {
-  if (!store.settings) {
+  if (!settings) {
     throw new Error('No settings loaded');
   }
-  return parse(dateString, store.settings.dateFormat, new Date());
+  return parse(dateString, settings.dateFormat, new Date());
 };
 const dateToString = (date: Date) => {
-  if (!store.settings) {
+  if (!settings) {
     throw new Error('No settings loaded');
   }
-  return format(date, store.settings.dateFormat);
+  return format(date, settings.dateFormat);
 };
 
 const props = defineProps<{
@@ -236,7 +225,7 @@ watch(cursor, () => {
       <div
         v-if="isAnimating"
         :key="previousCursor.toDateString()"
-        class="absolute left-0 top-0 grid w-fit grid-cols-7 gap-1"
+        class="absolute top-0 left-0 grid w-fit grid-cols-7 gap-1"
         :class="previousMonth"
       >
         <DaysRenderer
