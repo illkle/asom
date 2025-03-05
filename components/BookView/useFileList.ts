@@ -9,7 +9,15 @@ import path from 'path-browserify';
 import { c_get_files_path, returnErrorHandler } from '~/api/tauriActions';
 import type { BookFromDb } from '~/types';
 
-export const useFilesList = (opened: IOpenedPath, onLoaded?: () => void | Promise<void>) => {
+export const useFilesList = ({
+  opened,
+  onLoaded,
+  searchQuery,
+}: {
+  opened: IOpenedPath;
+  onLoaded?: () => void | Promise<void>;
+  searchQuery: Ref<string>;
+}) => {
   const data = ref<Awaited<ReturnType<typeof c_get_files_path>> | null>(null);
 
   const loading = ref(true);
@@ -17,7 +25,7 @@ export const useFilesList = (opened: IOpenedPath, onLoaded?: () => void | Promis
   const loadContent = async () => {
     loading.value = true;
     if (opened.type === 'folder') {
-      const res = await c_get_files_path(opened.thing).catch(returnErrorHandler);
+      const res = await c_get_files_path(opened.thing, searchQuery.value).catch(returnErrorHandler);
       if ('isError' in res) {
         rustErrorNotification(res, {});
         return;
@@ -34,6 +42,10 @@ export const useFilesList = (opened: IOpenedPath, onLoaded?: () => void | Promis
   };
 
   onMounted(() => {
+    loadContent();
+  });
+
+  watch(searchQuery, () => {
     loadContent();
   });
 

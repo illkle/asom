@@ -1,5 +1,5 @@
 <template>
-  <FileTreeInner v-for="folder in transformed" :content="folder" :root-name="props.schemaName" />
+  <FileTreeInner v-for="folder in transformed" :content="folder" />
 </template>
 
 <script lang="ts" setup>
@@ -9,18 +9,25 @@ import { useListenToEvent } from '~/api/tauriEvents';
 import { throttle } from 'lodash';
 import { c_get_all_folders } from '~/api/tauriActions';
 
-const props = defineProps<{
-  schemaPath: string;
-  schemaName: string;
-}>();
-
 const { data, refetch, status } = useQuery({
-  key: () => ['folders', props.schemaPath],
-  query: async () => await c_get_all_folders(props.schemaPath),
+  key: () => ['folders'],
+  query: async () => await c_get_all_folders(),
 });
 
+watch(
+  data,
+  () => {
+    console.log('data', data.value);
+  },
+  {
+    deep: true,
+  },
+);
+
+const store = useStore();
+
 const transformed = computed(() =>
-  !data.value || 'isError' in data.value ? [] : filePathsToTree(data.value, props.schemaPath || ''),
+  !data.value || 'isError' in data.value ? [] : filePathsToTree(data.value, store.rootPath || ''),
 );
 
 const throttledRefresh = throttle(refetch, 1000, {
@@ -28,14 +35,9 @@ const throttledRefresh = throttle(refetch, 1000, {
 });
 
 useListenToEvent('FolderAdd', (v) => {
-  console.log('FolderAdd', v);
-  if (v.schemaPath === props.schemaPath) {
-    throttledRefresh();
-  }
+  throttledRefresh();
 });
 useListenToEvent('FolderRemove', (v) => {
-  if (v.schemaPath === props.schemaPath) {
-    throttledRefresh();
-  }
+  throttledRefresh();
 });
 </script>

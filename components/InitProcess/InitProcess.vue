@@ -8,7 +8,7 @@
       <div v-for="(step, i) in steps" class="">
         <div
           class="flex justify-between border border-neutral-200 p-2 px-4 dark:border-neutral-800"
-          :class="typeof step === 'object' && 'rounded-b-none border-b-0'"
+          :class="step.mutation.error.value && 'border-b-0'"
         >
           {{ step.name }}
           <div>
@@ -85,22 +85,6 @@ const initMutation = useMutation({
       return;
     }
 
-    schemasMutation.mutate();
-  },
-});
-
-const schemasMutation = useMutation({
-  mutation: async () => {
-    await c_load_schemas();
-    return await c_get_schemas();
-  },
-  onError: stopRunning,
-  onSuccess: async (schemas) => {
-    if (Object.keys(schemas).length < 1) {
-      await navigateTo('/schemas', { replace: true });
-      running.value = false;
-      return;
-    }
     cacheMutation.mutate();
   },
 });
@@ -125,10 +109,6 @@ const steps = [
   {
     name: 'Initialize',
     mutation: initMutation,
-  },
-  {
-    name: 'Load schemas',
-    mutation: schemasMutation,
   },
   {
     name: 'Setup cache',

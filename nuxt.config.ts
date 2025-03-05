@@ -9,6 +9,8 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-09-29',
 
+  experimental: { watcher: 'parcel' },
+
   shadcn: {
     prefix: 'Sh',
     componentDir: './components/_shadcn',

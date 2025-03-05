@@ -1,6 +1,8 @@
 <template>
   <ShSidebar :class="$props.class" variant="floating" collapsible="icon">
     <ShSidebarContent>
+      <ShSidebarSeparator />
+
       <SidebarGroup v-for="schema in schemas" :key="schema.internal_name" class="py-0">
         <ShSidebarGroupLabel class="flex items-center justify-between">
           {{ schema.name }}
@@ -11,11 +13,12 @@
             </ShButton>
           </IconsMenuBookAdder>
         </ShSidebarGroupLabel>
-        <ShSidebarGroupContent>
+        <ShSidebarGroupContent v-if="false">
           <FileTree :schema-path="schema.internal_path" :schema-name="schema.name" />
         </ShSidebarGroupContent>
       </SidebarGroup>
-      <ShSidebarSeparator />
+
+      <FileTree />
     </ShSidebarContent>
 
     <ShSidebarFooter>

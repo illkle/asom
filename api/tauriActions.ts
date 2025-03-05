@@ -1,4 +1,4 @@
-import { isOurError } from '~/api/tauriEvents';
+import { isOurError, rustErrorNotification } from '~/api/tauriEvents';
 import { invoke } from '@tauri-apps/api/core';
 import type { ErrorFromRust, Schema, BookFromDb, ExtractIpcResponcesType } from '~/types';
 
@@ -42,8 +42,8 @@ export const c_save_file = async (book: BookFromDb, forced = false) => {
   );
 };
 
-export const c_get_files_path = async (path: string) => {
-  return invoke('c_get_files_path', { path }).then(
+export const c_get_files_path = async (path: string, searchQuery: string) => {
+  return invoke('c_get_files_path', { path, searchQuery }).then(
     (v) => v as ExtractIpcResponcesType<'c_get_files_path'>,
   );
 };
@@ -52,10 +52,11 @@ export const c_get_all_tags = async () => {
   return invoke('c_get_all_tags', {}).then((v) => v as ExtractIpcResponcesType<'c_get_all_tags'>);
 };
 
-export const c_get_all_folders = async (schemaPath: string) => {
-  return invoke('c_get_all_folders', { schemaPath }).then(
-    (v) => v as ExtractIpcResponcesType<'c_get_all_folders'>,
-  );
+export const c_get_all_folders = async () => {
+  console.log('c_get_all_folders');
+  return invoke('c_get_all_folders').then((v) => {
+    return v as ExtractIpcResponcesType<'c_get_all_folders'>;
+  });
 };
 
 export type BookReadResult = {

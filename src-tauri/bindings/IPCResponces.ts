@@ -4,6 +4,7 @@ import type { BookReadResult } from './BookReadResult';
 import type { BookSaveResult } from './BookSaveResult';
 import type { DefaultSchema } from './DefaultSchema';
 import type { ErrorFromRust } from './ErrorFromRust';
+import type { FolderListGetResult } from './FolderListGetResult';
 import type { Schema } from './Schema';
 import type { SchemaLoadList } from './SchemaLoadList';
 
@@ -13,7 +14,7 @@ export type IPCResponces = {
   c_watch_path: { Ok: boolean } | { Err: ErrorFromRust };
   c_get_files_path: { Ok: BookListGetResult } | { Err: ErrorFromRust };
   c_get_all_tags: { Ok: Array<string> } | { Err: ErrorFromRust };
-  c_get_all_folders: { Ok: Array<string> } | { Err: ErrorFromRust };
+  c_get_all_folders: { Ok: FolderListGetResult } | { Err: ErrorFromRust };
   c_read_file_by_path: { Ok: BookReadResult } | { Err: ErrorFromRust };
   c_load_schemas: { Ok: SchemaLoadList } | { Err: ErrorFromRust };
   c_get_schemas: { Ok: Array<Schema> } | { Err: ErrorFromRust };

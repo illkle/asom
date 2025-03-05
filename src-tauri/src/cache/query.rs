@@ -1,15 +1,13 @@
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
 use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::schema::operations::get_schema_cached_safe;
-use crate::schema::types::{AttrValue, DateRead, Schema, SchemaAttrType};
+use crate::schema::types::{AttrValue, Schema};
 use crate::utils::errorhandling::ErrorFromRust;
 
 use super::dbconn::get_db_conn;
-use super::tables::get_table_names;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
@@ -33,71 +31,11 @@ impl Default for BookFromDb {
     }
 }
 
-pub async fn get_files_abstact(
-    where_clause: String,
-    schema: Schema,
-) -> Result<Vec<BookFromDb>, ErrorFromRust> {
+pub async fn get_files_abstact(where_clause: String) -> Result<Vec<BookFromDb>, ErrorFromRust> {
     let mut db = get_db_conn().lock().await;
 
-    let t_info = get_table_names(schema.internal_name.clone());
-    let files_table = t_info.files_table;
-    let table_prefix = t_info.table_prefix;
-
-    let mut joins: Vec<String> = Vec::new();
-    let mut selects: Vec<String> = Vec::new();
-
-    for schema_i in schema.items.clone() {
-        let columm_name = schema_i.name.to_owned();
-        let table_name = format!("{}{}", table_prefix, columm_name);
-        match schema_i.value {
-            SchemaAttrType::TextCollection(_) | SchemaAttrType::DateCollection(_) => {
-                selects.push(columm_name.clone());
-                joins.push(format!(
-                    "LEFT JOIN
-                    (SELECT {}.path as {}_path, GROUP_CONCAT({}.value, ',') 
-                    AS {} FROM {} GROUP BY {}.path) 
-                    ON {}.path = {}_path",
-                    table_name,
-                    columm_name,
-                    table_name,
-                    columm_name,
-                    table_name,
-                    table_name,
-                    files_table,
-                    columm_name
-                ));
-            }
-            SchemaAttrType::DatesPairCollection(_) => {
-                selects.push(columm_name.clone());
-                joins.push(format!(
-                    "LEFT JOIN 
-                    (SELECT {}.path as {}_path, 
-                    GROUP_CONCAT(IFNULL({}.started,'') || '|' || IFNULL({}.finished,''), ',') 
-                    AS {} FROM {} GROUP BY {}.path)
-                    ON {}.path = {}_path",
-                    table_name,
-                    columm_name,
-                    table_name,
-                    table_name,
-                    columm_name,
-                    table_name,
-                    table_name,
-                    files_table,
-                    columm_name,
-                ));
-            }
-            SchemaAttrType::Text(_)
-            | SchemaAttrType::Number(_)
-            | SchemaAttrType::Image(_)
-            | SchemaAttrType::Date(_) => selects.push(columm_name),
-        }
-    }
-
     let q = format!(
-        "SELECT path, modified, {} FROM {} {} {}",
-        selects.join(", "),
-        files_table,
-        joins.join(" "),
+        "SELECT path, modified, attributes FROM files {}",
         where_clause
     );
 
@@ -105,77 +43,21 @@ pub async fn get_files_abstact(
         ErrorFromRust::new("Error when getting files").raw(format!("{}\n\n{}", e.to_string(), q))
     })?;
 
-    let result_iter: Vec<BookFromDb> = res
-        .iter()
-        .map(|row: &SqliteRow| {
-            let mut hm: HashMap<String, AttrValue> = HashMap::new();
+    let result_iter = res.iter().map(|r| {
+        let attrs_raw = r.get("attributes");
 
-            for schema_i in schema.items.clone().iter() {
-                let name = schema_i.name.to_owned();
-                match &schema_i.value {
-                    SchemaAttrType::Text(_)
-                    | SchemaAttrType::Date(_)
-                    | SchemaAttrType::Image(_) => {
-                        let v = row.get(&*name);
-                        hm.insert(name, AttrValue::String(v));
-                    }
+        let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
+            .map_err(|e| ErrorFromRust::new("Error when parsing attributes").raw(e));
 
-                    SchemaAttrType::Number(number_settings) => {
-                        let v: f64 = row.get(&*name);
-                        if number_settings.decimal_places.is_some()
-                            && number_settings.decimal_places.unwrap() > 0
-                        {
-                            hm.insert(name, AttrValue::Float(Some(v)));
-                        } else {
-                            hm.insert(name, AttrValue::Integer(Some(v as i32)));
-                        }
-                    }
+        return BookFromDb {
+            path: r.get("path"),
+            modified: r.get("modified"),
+            attrs: attrs.unwrap(),
+            markdown: None,
+        };
+    });
 
-                    SchemaAttrType::DateCollection(_) | SchemaAttrType::TextCollection(_) => {
-                        let v: String = row.get(&*name);
-                        hm.insert(
-                            name,
-                            AttrValue::StringVec(Some(
-                                v.split(",").map(|s| s.to_string()).collect(),
-                            )),
-                        );
-                    }
-                    SchemaAttrType::DatesPairCollection(_) => {
-                        let v: String = row.get(&*name);
-                        hm.insert(
-                            name,
-                            AttrValue::DateReadVec(Some(
-                                v.split(',')
-                                    .map(|dd| {
-                                        let mut parts = dd.split('|');
-                                        DateRead {
-                                            started: parts
-                                                .next()
-                                                .filter(|s| !s.is_empty())
-                                                .map(String::from),
-                                            finished: parts
-                                                .next()
-                                                .filter(|f| !f.is_empty())
-                                                .map(String::from),
-                                        }
-                                    })
-                                    .collect(),
-                            )),
-                        );
-                    }
-                }
-            }
-
-            BookFromDb {
-                attrs: hm,
-                path: Some(row.get("path")),
-                modified: Some(row.get("modified")),
-                ..Default::default()
-            }
-        })
-        .collect();
-
-    Ok(result_iter)
+    Ok(result_iter.collect())
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
@@ -185,18 +67,17 @@ pub struct BookListGetResult {
     pub books: Vec<BookFromDb>,
 }
 
-pub async fn get_files_by_path(path: String) -> Result<BookListGetResult, ErrorFromRust> {
+pub async fn get_files_by_path(
+    path: String,
+    search_query: String,
+) -> Result<BookListGetResult, ErrorFromRust> {
+    println!("get_files_by_path: {}", path);
     let schema = get_schema_cached_safe(&path).await?;
 
-    let t_info = get_table_names(schema.internal_name.clone());
-
-    let files = get_files_abstact(
-        format!(
-            "WHERE {}.path LIKE concat('%', '{}', '%') GROUP BY {}.path",
-            t_info.files_table, path, t_info.files_table
-        ),
-        schema.clone(),
-    )
+    let files = get_files_abstact(format!(
+        "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') GROUP BY files.path",
+        path, search_query,
+    ))
     .await?;
 
     return Ok(BookListGetResult {
@@ -217,22 +98,40 @@ pub async fn get_all_tags() -> Result<Vec<String>, sqlx::Error> {
     Ok(result)
 }
 
-pub async fn get_all_folders(schema_path: &str) -> Result<Vec<String>, ErrorFromRust> {
+#[derive(Serialize, Deserialize, Clone, Debug, TS)]
+#[ts(export)]
+pub struct FolderListGetResult {
+    pub folders: Vec<FolderOnDisk>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, TS)]
+#[ts(export)]
+pub struct FolderOnDisk {
+    pub path: String,
+    pub name: String,
+    pub has_schema: bool,
+    pub own_schema: bool,
+    pub schema_file_path: String,
+}
+
+pub async fn get_all_folders() -> Result<FolderListGetResult, ErrorFromRust> {
     let mut db = get_db_conn().lock().await;
 
-    let schema = get_schema_cached_safe(&schema_path).await?;
+    let res = sqlx::query(&format!("SELECT * FROM folders",))
+        .fetch_all(&mut *db)
+        .await
+        .map_err(|e| ErrorFromRust::new("Error getting folder list").raw(e))?;
 
-    let t_info = get_table_names(schema.internal_name.clone());
+    let result: Vec<FolderOnDisk> = res
+        .iter()
+        .map(|r| FolderOnDisk {
+            path: r.get("path"),
+            name: r.get("name"),
+            has_schema: r.get("has_schema"),
+            own_schema: r.get("own_schema"),
+            schema_file_path: r.get("schema_file_path"),
+        })
+        .collect();
 
-    let res = sqlx::query(&format!(
-        "SELECT DISTINCT path FROM {}",
-        t_info.folders_table
-    ))
-    .fetch_all(&mut *db)
-    .await
-    .map_err(|e| ErrorFromRust::new("Error getting folder list").raw(e))?;
-
-    let result: Vec<String> = res.iter().map(|r| r.get("path")).collect();
-
-    Ok(result)
+    Ok(FolderListGetResult { folders: result })
 }

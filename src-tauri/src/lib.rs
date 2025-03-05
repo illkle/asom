@@ -9,16 +9,17 @@ use std::{path::PathBuf, time::Duration};
 
 use cache::{
     dbconn::db_setup,
-    query::{get_all_folders, get_all_tags, get_files_by_path, BookFromDb, BookListGetResult},
-    tables::create_db_tables_for_all_schemas,
-    write::cache_files_and_folders,
+    query::{
+        get_all_folders, get_all_tags, get_files_by_path, BookFromDb, BookListGetResult,
+        FolderListGetResult,
+    },
+    tables::create_db_tables,
+    write::cache_files_folders_schemas,
 };
 use files::io::{read_file_by_path, save_file, BookReadResult, BookSaveResult, FileReadMode};
 use schema::{
     defaults::get_default_schemas,
-    operations::{
-        get_all_schemas_cached, load_schema, load_schemas_from_disk, save_schema, SchemaLoadList,
-    },
+    operations::{cache_schema, get_all_schemas_cached, save_schema, SchemaLoadList},
 };
 use schema::{defaults::DefaultSchema, types::Schema};
 use tauri::AppHandle;
@@ -41,7 +42,7 @@ type IPCPrepareCache = Result<bool, ErrorFromRust>;
 type IPCWatchPath = Result<bool, ErrorFromRust>;
 type IPCGetFilesPath = Result<BookListGetResult, ErrorFromRust>;
 type IPCGetAllTags = Result<Vec<String>, ErrorFromRust>;
-type IPCGetAllFolders = Result<Vec<String>, ErrorFromRust>;
+type IPCGetAllFolders = Result<FolderListGetResult, ErrorFromRust>;
 type IPCReadFileByPath = Result<BookReadResult, ErrorFromRust>;
 type IPCLoadSchemas = Result<SchemaLoadList, ErrorFromRust>;
 type IPCGetSchemas = Result<Vec<Schema>, ErrorFromRust>;
@@ -108,13 +109,13 @@ async fn c_init_once(app: AppHandle) -> IPCInitOnce {
 async fn c_prepare_cache(app: AppHandle) -> IPCPrepareCache {
     let rp = get_root_path()?;
 
-    create_db_tables_for_all_schemas().await.map_err(|e| {
+    create_db_tables().await.map_err(|e| {
         ErrorFromRust::new("Error when creating tables in cache db")
             .info("This should not happen. Try restarting the app, else report as bug.")
             .raw(e)
     })?;
 
-    match cache_files_and_folders(&rp).await {
+    match cache_files_folders_schemas(&rp).await {
         Err(e) => {
             // We don't return error here because user can have a few problematic files, which is ok
             send_err_to_frontend(&app, &e);
@@ -139,8 +140,9 @@ async fn c_watch_path(_: AppHandle) -> IPCWatchPath {
 }
 
 #[tauri::command]
-async fn c_get_files_path(_: AppHandle, path: String) -> IPCGetFilesPath {
-    get_files_by_path(path).await
+async fn c_get_files_path(_: AppHandle, path: String, search_query: String) -> IPCGetFilesPath {
+    println!("c_get_files_path: q {}", search_query);
+    get_files_by_path(path, search_query).await
 }
 
 #[tauri::command]
@@ -151,18 +153,13 @@ async fn c_get_all_tags(_: AppHandle) -> IPCGetAllTags {
 }
 
 #[tauri::command]
-async fn c_get_all_folders(_: AppHandle, schema_path: String) -> IPCGetAllFolders {
-    get_all_folders(&schema_path).await
+async fn c_get_all_folders(_: AppHandle) -> IPCGetAllFolders {
+    get_all_folders().await
 }
 
 #[tauri::command]
 async fn c_read_file_by_path(_: AppHandle, path: String) -> IPCReadFileByPath {
     read_file_by_path(&path, FileReadMode::FullFile).await
-}
-
-#[tauri::command]
-async fn c_load_schemas(_: AppHandle) -> IPCLoadSchemas {
-    load_schemas_from_disk().await
 }
 
 // This one returns only schemas with items
@@ -173,7 +170,7 @@ async fn c_get_schemas(_: AppHandle) -> IPCGetSchemas {
 
 #[tauri::command]
 async fn c_load_schema(_: AppHandle, path: String) -> IPCLoadSchema {
-    load_schema(PathBuf::from(path)).await
+    cache_schema(PathBuf::from(path)).await
 }
 
 #[tauri::command]
@@ -200,7 +197,6 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             c_init_once,
-            c_load_schemas,
             c_load_schema,
             c_save_schema,
             c_get_default_schemas,

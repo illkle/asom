@@ -7,7 +7,7 @@ use std::path::Path;
 use tauri::AppHandle;
 
 use crate::cache::write::{
-    cache_file, cache_files_and_folders, cache_folder, remove_file_from_cache,
+    cache_file, cache_files_folders_schemas, cache_folder, remove_file_from_cache,
     remove_files_in_folder_rom_cache, remove_folder_from_cache,
 };
 use crate::emitter::{emit_event, IPCEmitEvent};
@@ -69,7 +69,7 @@ async fn handle_folder_remove(app: &AppHandle, path: &Path) {
 async fn handle_folder_add(app: &AppHandle, path: &Path) {
     match cache_folder(path).await {
         Err(e) => send_err_to_frontend(app, &e),
-        Ok(_) => match cache_files_and_folders(path).await {
+        Ok(_) => match cache_files_folders_schemas(path).await {
             Err(e) => send_err_to_frontend(app, &e),
             Ok(_) => emit_event(IPCEmitEvent::FolderAdd(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),

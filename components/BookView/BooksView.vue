@@ -1,13 +1,10 @@
 <template>
   <div class="relative px-2 pr-4">
-    <div v-if="books.length === 0 && !loading">
-      <EmptyBooksPlaceholder />
-    </div>
-
-    <div v-else>
+    <div>
       <div class="sticky top-0 bg-neutral-50 dark:bg-neutral-950">
         <div class="flex gap-4 py-2">
-          <UIBasicInput />
+          <UIBasicInput v-model="props.opened.settings.searchQuery" />
+
           <DropdownMenu>
             <DropdownMenuTrigger>
               <ShButton variant="outline"><EllipsisVertical :size="16" /></ShButton>
@@ -38,6 +35,10 @@
             </template>
           </ResizablePanelGroup>
         </div>
+      </div>
+
+      <div v-if="books.length === 0 && !loading">
+        <EmptyBooksPlaceholder />
       </div>
 
       <div
@@ -106,7 +107,26 @@ const props = defineProps({
   },
 });
 
-const { data, loading } = useFilesList(props.opened, () => setScrollPositionFromSaved());
+//
+// Search
+//
+
+const searchQuery = ref('');
+watch(
+  () => props.opened.settings.searchQuery,
+  _debounce(() => {
+    searchQuery.value = props.opened.settings.searchQuery;
+  }, 200),
+);
+
+//
+//
+//
+const { data, loading } = useFilesList({
+  opened: props.opened,
+  onLoaded: () => setScrollPositionFromSaved(),
+  searchQuery: searchQuery,
+});
 
 const books = computed(() => data.value?.books || []);
 
@@ -125,18 +145,6 @@ watch(data, (v) => {
 
 const visibleSchemaItems = computed(() =>
   data.value?.schema.items.filter((v) => visibleNames.value[v.name]),
-);
-
-//
-// Search
-//
-
-const searchQuery = ref('');
-watch(
-  () => props.opened.settings.searchQuery,
-  _debounce(() => {
-    searchQuery.value = props.opened.settings.searchQuery;
-  }, 250),
 );
 
 //
