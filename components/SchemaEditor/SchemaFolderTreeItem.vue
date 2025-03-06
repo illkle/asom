@@ -56,7 +56,7 @@ import type { PropType } from 'vue';
 import { useStore } from '~~/utils/store';
 
 import TreeCell from './TreeCell.vue';
-import type { FolderNode } from './filePathsToTree';
+import type { FolderNode } from '../FileTree/filePathsToTree';
 import { once } from '@tauri-apps/api/event';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';

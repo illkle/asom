@@ -47,3 +47,10 @@ export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
     return currentResults;
   }, results);
 }
+
+export const dropIfSingleFolder = (tree: FolderNode[]) => {
+  if (tree.length === 1) {
+    return tree[0].children;
+  }
+  return tree;
+};

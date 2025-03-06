@@ -109,25 +109,31 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
 
     let files_schema = get_schema_cached(&path.to_string_lossy().to_string()).await;
 
-    let has_schema = match files_schema {
+    let has_schema = match files_schema.as_ref() {
         Some(_) => true,
         None => false,
     };
 
-    let own_schema = match files_schema {
+    let own_schema = match files_schema.as_ref() {
         Some(schema) => schema.internal_path == path.to_string_lossy().to_string(),
         None => false,
     };
 
+    let schema_file_path = match files_schema.as_ref() {
+        Some(schema) => schema.internal_path.clone(),
+        None => "".to_string(),
+    };
+
     sqlx::query(
        &format!(
-            "INSERT INTO folders (path, name, has_schema, own_schema) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(path) DO UPDATE SET name=excluded.name, has_schema=excluded.has_schema, own_schema=excluded.own_schema"
+            "INSERT INTO folders (path, name, has_schema, own_schema, schema_file_path) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(path) DO UPDATE SET name=excluded.name, has_schema=excluded.has_schema, own_schema=excluded.own_schema, schema_file_path=excluded.schema_file_path"
         )
     )
     .bind(path.to_string_lossy().to_string())
     .bind(folder_name)
     .bind(has_schema)
     .bind(own_schema)
+    .bind(schema_file_path)
     .execute(&mut *db)
     .await
     .map_err(|e| {

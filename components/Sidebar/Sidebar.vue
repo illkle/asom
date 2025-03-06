@@ -6,19 +6,17 @@
       <SidebarGroup v-for="schema in schemas" :key="schema.internal_name" class="py-0">
         <ShSidebarGroupLabel class="flex items-center justify-between">
           {{ schema.name }}
-          <IconsMenuBookAdder :path-to-save="schema.internal_path"
-            ><ShButton variant="outline" class="h-6 px-2">
+          <IconsMenuBookAdder :path-to-save="schema.internal_path">
+            <ShButton variant="outline" class="h-6 px-2">
               Add
               <PlusIcon :size="12" />
             </ShButton>
           </IconsMenuBookAdder>
         </ShSidebarGroupLabel>
-        <ShSidebarGroupContent v-if="false">
+        <ShSidebarGroupContent>
           <FileTree :schema-path="schema.internal_path" :schema-name="schema.name" />
         </ShSidebarGroupContent>
       </SidebarGroup>
-
-      <FileTree />
     </ShSidebarContent>
 
     <ShSidebarFooter>

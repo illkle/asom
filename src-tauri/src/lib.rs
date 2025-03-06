@@ -10,8 +10,8 @@ use std::{path::PathBuf, time::Duration};
 use cache::{
     dbconn::db_setup,
     query::{
-        get_all_folders, get_all_tags, get_files_by_path, BookFromDb, BookListGetResult,
-        FolderListGetResult,
+        get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path, BookFromDb,
+        BookListGetResult, FolderListGetResult,
     },
     tables::create_db_tables,
     write::cache_files_folders_schemas,
@@ -43,6 +43,7 @@ type IPCWatchPath = Result<bool, ErrorFromRust>;
 type IPCGetFilesPath = Result<BookListGetResult, ErrorFromRust>;
 type IPCGetAllTags = Result<Vec<String>, ErrorFromRust>;
 type IPCGetAllFolders = Result<FolderListGetResult, ErrorFromRust>;
+type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrorFromRust>;
 type IPCReadFileByPath = Result<BookReadResult, ErrorFromRust>;
 type IPCLoadSchemas = Result<SchemaLoadList, ErrorFromRust>;
 type IPCGetSchemas = Result<Vec<Schema>, ErrorFromRust>;
@@ -61,6 +62,7 @@ struct IPCResponces {
     c_get_files_path: IPCGetFilesPath,
     c_get_all_tags: IPCGetAllTags,
     c_get_all_folders: IPCGetAllFolders,
+    c_get_all_folders_by_schema: IPCGetAllFoldersBySchema,
     c_read_file_by_path: IPCReadFileByPath,
     c_load_schemas: IPCLoadSchemas,
     c_get_schemas: IPCGetSchemas,
@@ -158,6 +160,11 @@ async fn c_get_all_folders(_: AppHandle) -> IPCGetAllFolders {
 }
 
 #[tauri::command]
+async fn c_get_all_folders_by_schema(_: AppHandle, schema_path: String) -> IPCGetAllFolders {
+    get_all_folders_by_schema(schema_path).await
+}
+
+#[tauri::command]
 async fn c_read_file_by_path(_: AppHandle, path: String) -> IPCReadFileByPath {
     read_file_by_path(&path, FileReadMode::FullFile).await
 }
@@ -205,6 +212,7 @@ pub fn run() {
             c_get_files_path,
             c_get_all_tags,
             c_get_all_folders,
+            c_get_all_folders_by_schema,
             c_read_file_by_path,
             c_save_file,
             c_get_schemas

@@ -53,9 +53,14 @@ export const c_get_all_tags = async () => {
 };
 
 export const c_get_all_folders = async () => {
-  console.log('c_get_all_folders');
   return invoke('c_get_all_folders').then((v) => {
     return v as ExtractIpcResponcesType<'c_get_all_folders'>;
+  });
+};
+
+export const c_get_all_folders_by_schema = async (schemaPath: string) => {
+  return invoke('c_get_all_folders_by_schema', { schemaPath }).then((v) => {
+    return v as ExtractIpcResponcesType<'c_get_all_folders_by_schema'>;
   });
 };
 

@@ -135,3 +135,30 @@ pub async fn get_all_folders() -> Result<FolderListGetResult, ErrorFromRust> {
 
     Ok(FolderListGetResult { folders: result })
 }
+
+pub async fn get_all_folders_by_schema(
+    schema_path: String,
+) -> Result<FolderListGetResult, ErrorFromRust> {
+    let mut db = get_db_conn().lock().await;
+
+    let res = sqlx::query(&format!(
+        "SELECT * FROM folders WHERE schema_file_path = '{}'",
+        schema_path
+    ))
+    .fetch_all(&mut *db)
+    .await
+    .map_err(|e| ErrorFromRust::new("Error getting folder list").raw(e))?;
+
+    let result: Vec<FolderOnDisk> = res
+        .iter()
+        .map(|r| FolderOnDisk {
+            path: r.get("path"),
+            name: r.get("name"),
+            has_schema: r.get("has_schema"),
+            own_schema: r.get("own_schema"),
+            schema_file_path: r.get("schema_file_path"),
+        })
+        .collect();
+
+    Ok(FolderListGetResult { folders: result })
+}

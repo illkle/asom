@@ -4,25 +4,20 @@
 
 <script lang="ts" setup>
 import FileTreeInner from './FileTreeInner.vue';
-import { filePathsToTree } from './filePathsToTree';
+import { filePathsToTree, dropIfSingleFolder } from './filePathsToTree';
 import { useListenToEvent } from '~/api/tauriEvents';
 import { throttle } from 'lodash';
-import { c_get_all_folders } from '~/api/tauriActions';
+import { c_get_all_folders_by_schema } from '~/api/tauriActions';
+
+const props = defineProps<{
+  schemaPath: string;
+  schemaName: string;
+}>();
 
 const { data, refetch, status } = useQuery({
-  key: () => ['folders'],
-  query: async () => await c_get_all_folders(),
+  key: () => ['folders', props.schemaPath],
+  query: async () => await c_get_all_folders_by_schema(props.schemaPath),
 });
-
-watch(
-  data,
-  () => {
-    console.log('data', data.value);
-  },
-  {
-    deep: true,
-  },
-);
 
 const store = useStore();
 

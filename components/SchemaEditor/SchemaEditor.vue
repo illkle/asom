@@ -46,6 +46,8 @@
       </ShDialog>
     </div>
 
+    {{ rootPath }}
+
     <template v-if="typeof schemas === 'object' && !schemasPending">
       <template v-if="Object.keys(schemas.schemas).length > 0">
         <div
@@ -104,13 +106,21 @@
         >
       </ShCollapsible>
     </template>
+
+    <FileTreeInner v-for="folder in transformedFolders" :content="folder" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { c_get_default_schemas, c_load_schemas, c_save_schema } from '~/api/tauriActions';
+import {
+  c_get_all_folders,
+  c_get_default_schemas,
+  c_load_schemas,
+  c_save_schema,
+} from '~/api/tauriActions';
 import { useQuery, useQueryCache } from '@pinia/colada';
 import BasicInput from '../_UI/BasicInput.vue';
+import { filePathsToTree } from '../FileTree/filePathsToTree';
 
 const editingSchemaPath = ref<string | null>(null);
 
@@ -125,6 +135,19 @@ const { data: schemas, isPending: schemasPending } = useQuery({
   key: ['schemas', 'load'],
   query: c_load_schemas,
 });
+
+const { data: folders, isPending: foldersPending } = useQuery({
+  key: ['folders', 'all'],
+  query: c_get_all_folders,
+});
+
+const { rootPath } = useStore();
+
+const transformedFolders = computed(() =>
+  !folders.value || 'isError' in folders.value
+    ? []
+    : filePathsToTree(folders.value, rootPath || ''),
+);
 
 const addNewSchema = async () => {
   if (!newSchemaName.value || !selectedDefaultSchema.value) return;
