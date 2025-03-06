@@ -1,6 +1,5 @@
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { toast } from 'vue-sonner';
-import { markRaw } from 'vue';
+import { toast } from 'solid-sonner';
 
 import ErrorToast from '~/components/Error/ErrorToast.vue';
 import type {
@@ -11,13 +10,23 @@ import type {
 } from '~/types';
 
 export function isOurError(v: unknown): v is ErrorFromRust {
-  return Boolean(v && typeof v === 'object' && 'isError' in v && v.isError === true);
+  return Boolean(
+    v && typeof v === 'object' && 'isError' in v && v.isError === true
+  );
+}
+
+export function isOurErrorReturning(v: unknown) {
+  if (isOurError(v)) {
+    return v;
+  }
+  return null;
 }
 
 export const rustErrorNotification = (
   e: ErrorFromRust,
-  codeBinds?: Partial<Record<ErrorActionCode, () => void>>,
+  codeBinds?: Partial<Record<ErrorActionCode, () => void>>
 ) => {
+  /*
   toast.error(e.title, {
     description: markRaw(ErrorToast),
     componentProps: {
@@ -34,7 +43,10 @@ export const rustErrorNotification = (
           }
         : undefined,
   });
+  */
 };
+
+/*
 
 export const handleErrorsFromRust = () => {
   useListenToEvent('ErrorHappened', rustErrorNotification);
@@ -42,7 +54,7 @@ export const handleErrorsFromRust = () => {
 
 export const useListenToEvent = <E extends IPCEmitEvent['type']>(
   name: E,
-  callback: (v: ExtractIPCEmitEventData<E>) => void | Promise<void>,
+  callback: (v: ExtractIPCEmitEventData<E>) => void | Promise<void>
 ) => {
   const u = ref<UnlistenFn>();
 
@@ -58,3 +70,4 @@ export const useListenToEvent = <E extends IPCEmitEvent['type']>(
     }
   });
 };
+*/

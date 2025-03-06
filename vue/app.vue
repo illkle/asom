@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { debounce as _debounce } from 'lodash';
-import { handleErrorsFromRust, useListenToEvent } from './api/tauriEvents';
+import { handleErrorsFromRust, useListenToEvent } from '../api/tauriEvents';
 
 const store = useStore();
 
@@ -46,15 +46,12 @@ useHead({
   htmlAttrs: {
     class: computed(() => {
       return [
-        'overscroll-none overflow-hidden select-none',
-        colorMode.value === 'dark'
-          ? 'dark bg-gradient-to-t from-neutral-900 from-20% to-neutral-950 to-80%'
-          : 'bg-gradient-to-t from-neutral-200 from-20% to-neutral-50 to-80%',
+        'overscroll-none overflow-hidden select-none dark:bg-gradient-to-t dark:from-neutral-900 to-neutral-950 from-20% to-80% bg-gradient-to-t from-neutral-200 to-neutral-50',
       ];
     }),
   },
   bodyAttrs: {
-    class: 'min-h-screen text-neutral-950  dark:text-neutral-50',
+    class: 'min-h-screen text-neutral-950 dark:text-neutral-50',
   },
 });
 </script>

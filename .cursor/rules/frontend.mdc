@@ -1,0 +1,6 @@
+---
+description: fronetend tsks guidelines
+globs: 
+alwaysApply: true
+---
+Always use Solid.js

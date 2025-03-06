@@ -1,13 +1,17 @@
 import { isOurError, rustErrorNotification } from '~/api/tauriEvents';
 import { invoke } from '@tauri-apps/api/core';
-import type { ErrorFromRust, Schema, BookFromDb, ExtractIpcResponcesType } from '~/types';
+import type {
+  ErrorFromRust,
+  Schema,
+  BookFromDb,
+  ExtractIpcResponcesType,
+} from '~/types';
 
 export const returnErrorHandler = (e: unknown): ErrorFromRust => {
   if (isOurError(e)) {
     console.error('Error from rust', e);
 
     if (e.actionCode === 'NoRootPath') {
-      navigateTo('/');
     }
 
     return e;
@@ -20,15 +24,21 @@ export const returnErrorHandler = (e: unknown): ErrorFromRust => {
 };
 
 export const c_init_once = async () => {
-  return invoke('c_init_once').then((v) => v as ExtractIpcResponcesType<'c_init_once'>);
+  return invoke('c_init_once').then(
+    (v) => v as ExtractIpcResponcesType<'c_init_once'>
+  );
 };
 
 export const c_prepare_cache = async () => {
-  return invoke('c_prepare_cache').then((v) => v as ExtractIpcResponcesType<'c_prepare_cache'>);
+  return invoke('c_prepare_cache').then(
+    (v) => v as ExtractIpcResponcesType<'c_prepare_cache'>
+  );
 };
 
 export const c_watch_path = async () => {
-  return invoke('c_watch_path').then((v) => v as ExtractIpcResponcesType<'c_watch_path'>);
+  return invoke('c_watch_path').then(
+    (v) => v as ExtractIpcResponcesType<'c_watch_path'>
+  );
 };
 
 /**
@@ -38,18 +48,20 @@ export const c_watch_path = async () => {
  */
 export const c_save_file = async (book: BookFromDb, forced = false) => {
   return invoke('c_save_file', { book, forced }).then(
-    (v) => v as ExtractIpcResponcesType<'c_save_file'>,
+    (v) => v as ExtractIpcResponcesType<'c_save_file'>
   );
 };
 
 export const c_get_files_path = async (path: string, searchQuery: string) => {
   return invoke('c_get_files_path', { path, searchQuery }).then(
-    (v) => v as ExtractIpcResponcesType<'c_get_files_path'>,
+    (v) => v as ExtractIpcResponcesType<'c_get_files_path'>
   );
 };
 
 export const c_get_all_tags = async () => {
-  return invoke('c_get_all_tags', {}).then((v) => v as ExtractIpcResponcesType<'c_get_all_tags'>);
+  return invoke('c_get_all_tags', {}).then(
+    (v) => v as ExtractIpcResponcesType<'c_get_all_tags'>
+  );
 };
 
 export const c_get_all_folders = async () => {
@@ -74,35 +86,39 @@ export type BookReadResult = {
 
 export const c_read_file_by_path = async (path: string) => {
   return invoke('c_read_file_by_path', { path }).then(
-    (v) => v as ExtractIpcResponcesType<'c_read_file_by_path'>,
+    (v) => v as ExtractIpcResponcesType<'c_read_file_by_path'>
   );
 };
 
 // Find all schema.yaml files we can find, cache non empty ones in memory and return all found
 export const c_load_schemas = async () => {
-  return invoke('c_load_schemas').then((v) => v as ExtractIpcResponcesType<'c_load_schemas'>);
+  return invoke('c_load_schemas').then(
+    (v) => v as ExtractIpcResponcesType<'c_load_schemas'>
+  );
 };
 
 // Retrieve all cached schemas from memory
 export const c_get_schemas = async () => {
-  return invoke('c_get_schemas').then((v) => v as ExtractIpcResponcesType<'c_get_schemas'>);
+  return invoke('c_get_schemas').then(
+    (v) => v as ExtractIpcResponcesType<'c_get_schemas'>
+  );
 };
 
 export const c_save_schema = async (folderName: string, schema: Schema) => {
   return invoke('c_save_schema', { folderName, schema }).then(
-    (v) => v as ExtractIpcResponcesType<'c_save_schema'>,
+    (v) => v as ExtractIpcResponcesType<'c_save_schema'>
   );
 };
 
 // All schema.yaml files we can find
 export const c_load_schema = async (path: string) => {
   return invoke('c_load_schema', { path }).then(
-    (v) => v as ExtractIpcResponcesType<'c_load_schema'>,
+    (v) => v as ExtractIpcResponcesType<'c_load_schema'>
   );
 };
 
 export const c_get_default_schemas = () => {
   return invoke('c_get_default_schemas').then(
-    (v) => v as ExtractIpcResponcesType<'c_get_default_schemas'>,
+    (v) => v as ExtractIpcResponcesType<'c_get_default_schemas'>
   );
 };
