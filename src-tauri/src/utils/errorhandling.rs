@@ -76,6 +76,6 @@ impl ErrorFromRust {
 }
 
 // This will show a notification on frontend, regardless of what is opened. Prefer returning error from invoke if possible.
-pub fn send_err_to_frontend(_: &AppHandle, e: &ErrorFromRust) {
-    emit_event(IPCEmitEvent::ErrorHappened(e.clone()));
+pub fn send_err_to_frontend(app: &AppHandle, e: &ErrorFromRust) {
+    emit_event(app, IPCEmitEvent::ErrorHappened(e.clone()));
 }

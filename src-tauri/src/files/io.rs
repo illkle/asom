@@ -4,7 +4,7 @@ use std::fs;
 use ts_rs::TS;
 
 use crate::cache::query::BookFromDb;
-use crate::schema::operations::get_schema_cached_safe;
+use crate::core::core::CoreStateManager;
 use crate::schema::types::{AttrValue, AttrValueOnDisk, Schema};
 use crate::utils::errorhandling::{ErrorActionCode, ErrorFromRust};
 
@@ -25,6 +25,7 @@ pub struct BookReadResult {
 }
 
 pub async fn read_file_by_path(
+    core: &CoreStateManager,
     path_str: &str,
     read_mode: FileReadMode,
 ) -> Result<BookReadResult, ErrorFromRust> {
@@ -37,7 +38,9 @@ pub async fn read_file_by_path(
         }
     };
 
-    let files_schema = get_schema_cached_safe(path_str).await?;
+    let schemas_cache = core.schemas_cache.lock().await;
+
+    let files_schema = schemas_cache.get_schema_cached_safe(path_str).await?;
     let p = path_str.to_string();
     let content = get_file_content(&path_str, &read_mode);
 

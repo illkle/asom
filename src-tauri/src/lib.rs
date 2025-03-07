@@ -5,34 +5,22 @@ mod schema;
 mod utils;
 mod watcher;
 
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+mod core;
 
-use cache::{
-    dbconn::db_setup,
-    query::{
-        get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path, BookFromDb,
-        BookListGetResult, FolderListGetResult,
-    },
-    tables::create_db_tables,
-    write::cache_files_folders_schemas,
+use core::core::CoreStateManager;
+use std::{collections::HashMap, path::PathBuf};
+use tokio::sync::Mutex;
+
+use cache::query::{
+    get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path, BookFromDb,
+    BookListGetResult, FolderListGetResult,
 };
 use files::io::{read_file_by_path, save_file, BookReadResult, BookSaveResult, FileReadMode};
-use schema::{
-    defaults::get_default_schemas,
-    operations::{cache_schema, get_all_schemas_cached, save_schema},
-};
+use schema::defaults::get_default_schemas;
 use schema::{defaults::DefaultSchema, types::Schema};
-use tauri::AppHandle;
-use tokio::task;
+use tauri::{AppHandle, Manager};
 use ts_rs::TS;
-use utils::{
-    errorhandling::{send_err_to_frontend, ErrorFromRust},
-    global_app::{get_root_path, init_global_app},
-};
-use watcher::{
-    events_process::{run_monitor, MonitorConfig},
-    watcher_process::{init_watcher, subscribe_to_events, watch_path},
-};
+use utils::errorhandling::ErrorFromRust;
 
 /*
   Define types and pack them into IPCResponces, which gets exported to TS types
@@ -72,116 +60,99 @@ struct IPCResponces {
 
 #[tauri::command]
 async fn c_init_once(app: AppHandle) -> IPCInitOnce {
-    db_setup().await.map_err(|e| {
-        ErrorFromRust::new("Error on db setup")
-            .info("This is a critical error. Report bug")
-            .raw(e)
-    })?;
+    let state = app.state::<Mutex<CoreStateManager>>(); // state() called before manage() for given type
+    let mut core = state.lock().await;
 
-    init_watcher().await.map_err(|e| {
-        ErrorFromRust::new("Error on watcher init.")
-            .info("This is a critical error. Report bug")
-            .raw(e)
-    })?;
-
-    task::spawn(async move {
-        let event_rx = subscribe_to_events().await;
-
-        run_monitor(
-            event_rx,
-            MonitorConfig {
-                app: app.clone(),
-                command_buffer_size: 32,
-                log_to_stdout: true,
-            },
-        )
-        .await;
-
-        loop {
-            tokio::time::sleep(Duration::from_secs(60 * 60)).await;
-        }
-    });
-
-    Ok(true)
+    core.init(&app).await
 }
 
 #[tauri::command]
 async fn c_prepare_cache(app: AppHandle) -> IPCPrepareCache {
-    let rp = get_root_path()?;
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let mut core = state.lock().await;
 
-    create_db_tables().await.map_err(|e| {
-        ErrorFromRust::new("Error when creating tables in cache db")
-            .info("This should not happen. Try restarting the app, else report as bug.")
-            .raw(e)
-    })?;
-
-    match cache_files_folders_schemas(&rp).await {
-        Err(e) => {
-            // We don't return error here because user can have a few problematic files, which is ok
-            send_err_to_frontend(&app, &e);
-        }
-        Ok(_) => (),
-    }
-
-    return Ok(true);
+    core.prepare_cache(&app).await
 }
 
 #[tauri::command]
-async fn c_watch_path(_: AppHandle) -> IPCWatchPath {
-    let rp = get_root_path()?;
-    watch_path(&rp)
-        .await
-        .map_err(|e| {
-            ErrorFromRust::new("Error starting watcher")
-                .info("Try restarting app")
-                .raw(e)
-        })
-        .map(|_| true)
+async fn c_watch_path(app: AppHandle) -> IPCWatchPath {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    core.watch_path().await
 }
 
 #[tauri::command]
-async fn c_get_files_path(_: AppHandle, path: String, search_query: String) -> IPCGetFilesPath {
-    println!("c_get_files_path: q {}", search_query);
-    get_files_by_path(path, search_query).await
+async fn c_get_files_path(app: AppHandle, path: String, search_query: String) -> IPCGetFilesPath {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    get_files_by_path(&core, path, search_query).await
 }
 
 #[tauri::command]
-async fn c_get_all_tags(_: AppHandle) -> IPCGetAllTags {
-    get_all_tags()
+async fn c_get_all_tags(app: AppHandle) -> IPCGetAllTags {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+    get_all_tags(&core)
         .await
         .map_err(|e| ErrorFromRust::new("Error when getting all tags").raw(e))
 }
 
 #[tauri::command]
-async fn c_get_all_folders(_: AppHandle) -> IPCGetAllFolders {
-    get_all_folders().await
+async fn c_get_all_folders(app: AppHandle) -> IPCGetAllFolders {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+    get_all_folders(&core).await
 }
 
 #[tauri::command]
-async fn c_get_all_folders_by_schema(_: AppHandle, schema_path: String) -> IPCGetAllFolders {
-    get_all_folders_by_schema(schema_path).await
+async fn c_get_all_folders_by_schema(
+    app: AppHandle,
+    schema_path: String,
+) -> IPCGetAllFoldersBySchema {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    get_all_folders_by_schema(&core, schema_path).await
 }
 
 #[tauri::command]
-async fn c_read_file_by_path(_: AppHandle, path: String) -> IPCReadFileByPath {
-    read_file_by_path(&path, FileReadMode::FullFile).await
+async fn c_read_file_by_path(app: AppHandle, path: String) -> IPCReadFileByPath {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    read_file_by_path(&core, &path, FileReadMode::FullFile).await
 }
 
 // This one returns only schemas with items
 #[tauri::command]
-async fn c_get_schemas(_: AppHandle) -> IPCGetSchemas {
-    Ok(get_all_schemas_cached().await)
+async fn c_get_schemas(app: AppHandle) -> IPCGetSchemas {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    let cache = core.schemas_cache.lock().await;
+    let schemas = cache.get_all_schemas_cached().await;
+
+    Ok(schemas)
 }
 
 #[tauri::command]
-async fn c_load_schema(_: AppHandle, path: String) -> IPCLoadSchema {
-    cache_schema(PathBuf::from(path)).await
+async fn c_load_schema(app: AppHandle, path: String) -> IPCLoadSchema {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    let mut cache = core.schemas_cache.lock().await;
+    cache.cache_schema(PathBuf::from(path)).await
 }
 
 #[tauri::command]
-async fn c_save_schema(_: AppHandle, folder_name: String, schema: Schema) -> IPCSaveSchema {
-    let path = PathBuf::from(get_root_path()?).join(folder_name);
-    save_schema(&path, schema).await
+async fn c_save_schema(app: AppHandle, path: String, schema: Schema) -> IPCSaveSchema {
+    let state = app.state::<Mutex<CoreStateManager>>();
+    let core = state.lock().await;
+
+    let mut cache = core.schemas_cache.lock().await;
+    cache.save_schema(&PathBuf::from(path), schema).await
 }
 
 #[tauri::command]
@@ -222,8 +193,13 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
-                init_global_app(app.handle().clone());
             }
+            println!("manage");
+
+            let core_state: Mutex<CoreStateManager> = Mutex::new(CoreStateManager::new());
+
+            app.manage(core_state);
+            println!("manage 2");
             Ok(())
         })
         .run(tauri::generate_context!())

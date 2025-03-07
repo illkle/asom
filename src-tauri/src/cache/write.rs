@@ -1,16 +1,19 @@
 use std::path::Path;
 use walkdir::WalkDir;
 
+use crate::core::core::CoreStateManager;
 use crate::files::io::{read_file_by_path, FileReadMode};
-use crate::schema::operations::{cache_schema, get_schema_owner_folder};
 use crate::utils::errorhandling::ErrorFromRust;
 
-use super::dbconn::get_db_conn;
 use super::query::BookFromDb;
 
 // Function to insert a file record into the database
-pub async fn insert_file(file: &BookFromDb) -> Result<(), ErrorFromRust> {
-    let mut db = get_db_conn().lock().await;
+pub async fn insert_file_into_cache_db(
+    core: &CoreStateManager,
+    file: &BookFromDb,
+) -> Result<(), ErrorFromRust> {
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
     let path = match file.path.as_ref() {
         Some(p) => p,
@@ -28,43 +31,62 @@ pub async fn insert_file(file: &BookFromDb) -> Result<(), ErrorFromRust> {
     .bind(path.to_string())
     .bind(file.modified.clone())
     .bind(attrs)
-    .execute(&mut *db)
+    .execute(conn)
     .await
     .map_err(|e| ErrorFromRust::new("Error when inserting file").raw(e))?;
 
     Ok(())
 }
 
-pub async fn cache_file(path: &Path) -> Result<BookFromDb, ErrorFromRust> {
-    match read_file_by_path(&path.to_string_lossy(), FileReadMode::OnlyMeta).await {
-        Ok(file) => insert_file(&file.book).await.map(|_| file.book),
+pub async fn cache_file(core: &CoreStateManager, path: &Path) -> Result<BookFromDb, ErrorFromRust> {
+    match read_file_by_path(core, &path.to_string_lossy(), FileReadMode::OnlyMeta).await {
+        Ok(file) => insert_file_into_cache_db(core, &file.book)
+            .await
+            .map(|_| file.book),
         Err(e) => Err(e),
     }
 }
 
-pub async fn remove_file_from_cache(path: &Path) -> Result<(), ErrorFromRust> {
-    let mut db = get_db_conn().lock().await;
+pub async fn remove_file_from_cache(
+    core: &CoreStateManager,
+    path: &Path,
+) -> Result<(), ErrorFromRust> {
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
     sqlx::query(&format!("DELETE FROM files WHERE path=?1",))
         .bind(path.to_string_lossy().to_string())
-        .execute(&mut *db)
+        .execute(conn)
         .await
         .map_err(|e| ErrorFromRust::new("Error when removing file from cache").raw(e))?;
 
     Ok(())
 }
 
-pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), ErrorFromRust> {
+pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
+    core: &CoreStateManager,
+    dir: P,
+) -> Result<(), ErrorFromRust> {
     let mut err = ErrorFromRust::new("Error when caching files and folders");
+
+    println!("cache_files_folders_schemas ");
+
+    println!("cache_files_folders_schemas schemas_cache");
 
     for entry in WalkDir::new(dir.as_ref())
         .into_iter()
         .filter_map(Result::ok)
     {
+        // log enty path
+        println!(
+            "cache_files_folders_schemas entry path: {}",
+            entry.path().to_string_lossy()
+        );
+
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
-                    match cache_file(&entry.path()).await {
+                    match cache_file(core, &entry.path()).await {
                         Ok(_) => (),
                         Err(e) => {
                             println!("Error caching file: {}", e.title);
@@ -79,10 +101,17 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), E
             let path = entry.path();
 
             // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
-            let _ = cache_schema(path.into()).await;
+
+            println!("cache_files_folders_schemas cache_schema");
+            {
+                let mut schemas_cache = core.schemas_cache.lock().await;
+                let _ = schemas_cache.cache_schema(path.into()).await;
+            }
+
+            println!("cache_files_folders_schemas cache_folder");
 
             // This will use schema cache, so it must be after caching_schema
-            match cache_folder(&entry.path()).await {
+            match cache_folder(core, &entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
                     err = err.sub(e);
@@ -91,10 +120,15 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), E
         }
     }
 
+    println!("cache_files_folders_schemas DONE");
+
     Ok(())
 }
 
-pub async fn cache_folder_deep(input_path: &Path) -> Result<(), ErrorFromRust> {
+pub async fn cache_folder_deep(
+    core: &CoreStateManager,
+    input_path: &Path,
+) -> Result<(), ErrorFromRust> {
     let dir = match input_path.is_file() {
         true => match input_path.parent() {
             Some(p) => p,
@@ -112,11 +146,13 @@ pub async fn cache_folder_deep(input_path: &Path) -> Result<(), ErrorFromRust> {
         if entry.file_type().is_dir() {
             let path = entry.path();
 
+            let mut schemas_cache = core.schemas_cache.lock().await;
+
             // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
-            let _ = cache_schema(path.into()).await;
+            let _ = schemas_cache.cache_schema(path.into()).await;
 
             // This will use schema cache, so it must be after caching_schema
-            match cache_folder(&entry.path()).await {
+            match cache_folder(core, &entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
                     err = err.sub(e);
@@ -128,8 +164,13 @@ pub async fn cache_folder_deep(input_path: &Path) -> Result<(), ErrorFromRust> {
     Ok(())
 }
 
-pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
-    let mut db = get_db_conn().lock().await;
+pub async fn cache_folder(core: &CoreStateManager, path: &Path) -> Result<(), ErrorFromRust> {
+    println!("cache_folder");
+
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+
+    println!("cache_folder 2");
 
     let folder_name = match path.file_name() {
         Some(s) => s.to_string_lossy().to_string(),
@@ -137,7 +178,17 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
         None => "/".to_string(),
     };
 
-    let files_schema = get_schema_owner_folder(&path.to_string_lossy().to_string()).await;
+    println!("cache_folder 3");
+
+    let schemas_cache = core.schemas_cache.lock().await;
+
+    println!("cache_folder 4");
+
+    let files_schema = schemas_cache
+        .get_schema_owner_folder(&path.to_string_lossy().to_string())
+        .await;
+
+    println!("cache_folder 5");
 
     let has_schema = match files_schema.as_ref() {
         Some(_) => true,
@@ -164,7 +215,7 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
     .bind(has_schema)
     .bind(own_schema)
     .bind(schema_file_path)
-    .execute(&mut *db)
+    .execute(conn)
     .await
     .map_err(|e| {
         ErrorFromRust::new("Error when caching folder").raw(e)
@@ -175,28 +226,36 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
     Ok(())
 }
 
-pub async fn remove_folder_from_cache(path: &Path) -> Result<(), ErrorFromRust> {
-    let mut db = get_db_conn().lock().await;
+pub async fn remove_folder_from_cache(
+    core: &CoreStateManager,
+    path: &Path,
+) -> Result<(), ErrorFromRust> {
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
     sqlx::query(&format!(
         "DELETE FROM folders WHERE path LIKE concat(?1, '%')",
     ))
     .bind(path.to_string_lossy().to_string())
-    .execute(&mut *db)
+    .execute(conn)
     .await
     .map_err(|e| ErrorFromRust::new("Error when removing folder from cache").raw(e))?;
 
     Ok(())
 }
 
-pub async fn remove_files_in_folder_rom_cache(path: &Path) -> Result<(), ErrorFromRust> {
-    let mut db = get_db_conn().lock().await;
+pub async fn remove_files_in_folder_rom_cache(
+    core: &CoreStateManager,
+    path: &Path,
+) -> Result<(), ErrorFromRust> {
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
     sqlx::query(&format!(
         "DELETE FROM files WHERE path LIKE concat(?1, '%')",
     ))
     .bind(path.to_string_lossy().to_string())
-    .execute(&mut *db)
+    .execute(conn)
     .await
     .map_err(|e| ErrorFromRust::new("Error when removing folder from cache").raw(e))?;
 
