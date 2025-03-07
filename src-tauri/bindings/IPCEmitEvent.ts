@@ -2,6 +2,7 @@
 import type { BookFromDb } from './BookFromDb';
 import type { ErrorFromRust } from './ErrorFromRust';
 import type { FolderEventEmit } from './FolderEventEmit';
+import type { Schema } from './Schema';
 
 export type IPCEmitEvent =
   | { type: 'FileRemove'; data: string }
@@ -9,4 +10,5 @@ export type IPCEmitEvent =
   | { type: 'FileUpdate'; data: BookFromDb }
   | { type: 'FolderRemove'; data: FolderEventEmit }
   | { type: 'FolderAdd'; data: FolderEventEmit }
-  | { type: 'ErrorHappened'; data: ErrorFromRust };
+  | { type: 'ErrorHappened'; data: ErrorFromRust }
+  | { type: 'SchemasUpdated'; data: { [key in string]?: Schema } };

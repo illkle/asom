@@ -180,8 +180,6 @@ tags: 555
             name: "test".to_owned(),
             version: "1".to_owned(),
             icon: None,
-            internal_name: "aa".to_owned(),
-            internal_path: "user".to_owned(),
             items: vec![
                 SchemaItem {
                     name: "title".to_owned(),

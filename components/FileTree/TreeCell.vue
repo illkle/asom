@@ -11,16 +11,9 @@
       )
     "
   >
-    <div class="mr-1 flex w-3 cursor-pointer items-center justify-center opacity-50">
-      <HashIcon v-if="isTag" />
-      <ChevronDown
-        v-else-if="canBeFolded"
-        :class="[isFolded && '-rotate-90']"
-        @click.stop="emit('foldClick')"
-      />
-      <FolderIcon v-else-if="!isRoot" class="" />
-
-      <LibraryIcon v-else />
+    <div class="mr-1 flex h-3 w-3 cursor-pointer items-center justify-center opacity-50">
+      <slot name="leftIcon"></slot>
+      <slot></slot>
     </div>
     <div
       v-if="!isRenaming"
@@ -86,10 +79,6 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  isTag: {
-    type: Boolean,
-    default: false,
-  },
 });
 
 const emit = defineEmits<{
@@ -135,5 +124,3 @@ const saveName = () => {
   emit('saveName', innerName.value);
 };
 </script>
-
-<style lang="postcss"></style>

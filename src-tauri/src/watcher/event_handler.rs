@@ -7,11 +7,13 @@ use std::path::Path;
 use tauri::AppHandle;
 
 use crate::cache::write::{
-    cache_file, cache_files_folders_schemas, cache_folder, remove_file_from_cache,
-    remove_files_in_folder_rom_cache, remove_folder_from_cache,
+    cache_file, cache_files_folders_schemas, cache_folder, cache_folder_deep,
+    remove_file_from_cache, remove_files_in_folder_rom_cache, remove_folder_from_cache,
 };
 use crate::emitter::{emit_event, IPCEmitEvent};
-use crate::schema::operations::get_schema_path;
+use crate::schema::operations::{
+    cache_schema, get_all_schemas_cached, get_schema_owner_folder, remove_schema,
+};
 use crate::utils::errorhandling::send_err_to_frontend;
 use ts_rs::TS;
 async fn handle_file_remove(app: &AppHandle, path: &Path, ext: &OsStr) {
@@ -20,6 +22,18 @@ async fn handle_file_remove(app: &AppHandle, path: &Path, ext: &OsStr) {
             Ok(_) => emit_event(IPCEmitEvent::FileRemove(path.to_string_lossy().to_string())),
             Err(e) => send_err_to_frontend(app, &e),
         };
+    }
+
+    if ext == "yaml" {
+        match remove_schema(path.to_path_buf()).await {
+            Ok(_) => emit_event(IPCEmitEvent::SchemasUpdated(get_all_schemas_cached().await)),
+            Err(e) => send_err_to_frontend(app, &e),
+        }
+
+        match cache_folder_deep(path).await {
+            Ok(_) => return,
+            Err(e) => send_err_to_frontend(app, &e),
+        }
     }
 }
 
@@ -30,6 +44,13 @@ async fn handle_file_add(app: &AppHandle, path: &Path, ext: &OsStr) {
             Err(e) => send_err_to_frontend(app, &e),
         }
     }
+
+    if ext == "yaml" {
+        match cache_folder_deep(path).await {
+            Ok(_) => emit_event(IPCEmitEvent::SchemasUpdated(get_all_schemas_cached().await)),
+            Err(e) => send_err_to_frontend(app, &e),
+        }
+    }
 }
 
 async fn handle_file_update(app: &AppHandle, path: &Path, ext: &OsStr) {
@@ -37,6 +58,18 @@ async fn handle_file_update(app: &AppHandle, path: &Path, ext: &OsStr) {
     if ext == "md" {
         match cache_file(path).await {
             Ok(v) => emit_event(IPCEmitEvent::FileUpdate(v)),
+            Err(e) => send_err_to_frontend(app, &e),
+        }
+    }
+
+    if ext == "yaml" {
+        match cache_schema(path.to_path_buf()).await {
+            Ok(_) => emit_event(IPCEmitEvent::SchemasUpdated(get_all_schemas_cached().await)),
+            Err(e) => send_err_to_frontend(app, &e),
+        }
+
+        match cache_folder_deep(path).await {
+            Ok(_) => emit_event(IPCEmitEvent::SchemasUpdated(get_all_schemas_cached().await)),
             Err(e) => send_err_to_frontend(app, &e),
         }
     }
@@ -60,7 +93,7 @@ async fn handle_folder_remove(app: &AppHandle, path: &Path) {
             Err(e) => send_err_to_frontend(app, &e),
             Ok(_) => emit_event(IPCEmitEvent::FolderRemove(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),
-                schema_path: get_schema_path(&path.to_string_lossy()).await,
+                schema_path: get_schema_owner_folder(&path.to_string_lossy()).await,
             })),
         },
     };
@@ -73,7 +106,7 @@ async fn handle_folder_add(app: &AppHandle, path: &Path) {
             Err(e) => send_err_to_frontend(app, &e),
             Ok(_) => emit_event(IPCEmitEvent::FolderAdd(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),
-                schema_path: get_schema_path(&path.to_string_lossy()).await,
+                schema_path: get_schema_owner_folder(&path.to_string_lossy()).await,
             })),
         },
     };

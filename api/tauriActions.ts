@@ -78,11 +78,6 @@ export const c_read_file_by_path = async (path: string) => {
   );
 };
 
-// Find all schema.yaml files we can find, cache non empty ones in memory and return all found
-export const c_load_schemas = async () => {
-  return invoke('c_load_schemas').then((v) => v as ExtractIpcResponcesType<'c_load_schemas'>);
-};
-
 // Retrieve all cached schemas from memory
 export const c_get_schemas = async () => {
   return invoke('c_get_schemas').then((v) => v as ExtractIpcResponcesType<'c_get_schemas'>);

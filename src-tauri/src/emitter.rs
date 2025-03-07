@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 use ts_rs::TS;
 
 use crate::{
     cache::query::BookFromDb,
+    schema::types::Schema,
     utils::{errorhandling::ErrorFromRust, global_app::get_global_app},
     watcher::event_handler::FolderEventEmit,
 };
@@ -19,6 +22,7 @@ pub enum IPCEmitEvent {
     FolderRemove(FolderEventEmit),
     FolderAdd(FolderEventEmit),
     ErrorHappened(ErrorFromRust),
+    SchemasUpdated(HashMap<String, Schema>),
 }
 
 pub fn emit_event(data: IPCEmitEvent) {
@@ -32,5 +36,6 @@ pub fn emit_event(data: IPCEmitEvent) {
         IPCEmitEvent::FolderRemove(v) => handle.emit("FolderRemove", v).unwrap(),
         IPCEmitEvent::FolderAdd(v) => handle.emit("FolderAdd", v).unwrap(),
         IPCEmitEvent::ErrorHappened(v) => handle.emit("ErrorHappened", v).unwrap(),
+        IPCEmitEvent::SchemasUpdated(v) => handle.emit("SchemasUpdated", v).unwrap(),
     };
 }

@@ -6,7 +6,6 @@ import type { DefaultSchema } from './DefaultSchema';
 import type { ErrorFromRust } from './ErrorFromRust';
 import type { FolderListGetResult } from './FolderListGetResult';
 import type { Schema } from './Schema';
-import type { SchemaLoadList } from './SchemaLoadList';
 
 export type IPCResponces = {
   c_init_once: { Ok: boolean } | { Err: ErrorFromRust };
@@ -17,8 +16,7 @@ export type IPCResponces = {
   c_get_all_folders: { Ok: FolderListGetResult } | { Err: ErrorFromRust };
   c_get_all_folders_by_schema: { Ok: FolderListGetResult } | { Err: ErrorFromRust };
   c_read_file_by_path: { Ok: BookReadResult } | { Err: ErrorFromRust };
-  c_load_schemas: { Ok: SchemaLoadList } | { Err: ErrorFromRust };
-  c_get_schemas: { Ok: Array<Schema> } | { Err: ErrorFromRust };
+  c_get_schemas: { Ok: { [key in string]?: Schema } } | { Err: ErrorFromRust };
   c_load_schema: { Ok: Schema } | { Err: ErrorFromRust };
   c_save_schema: { Ok: Schema } | { Err: ErrorFromRust };
   c_save_file: { Ok: BookSaveResult } | { Err: ErrorFromRust };

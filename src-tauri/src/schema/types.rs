@@ -281,12 +281,6 @@ pub struct Schema {
     pub icon: Option<String>,
 
     pub items: SchemaItems,
-
-    pub internal_path: String,
-    // This is used to prefix table names in cache db
-    // Currently is equal to folder name, will need to be random when\if we support multiple folders
-    // Can possibly be used for schema cache invalidation
-    pub internal_name: String,
 }
 
 pub const SCHEMA_VERSION: &str = "1.0";

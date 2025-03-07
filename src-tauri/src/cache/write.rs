@@ -2,7 +2,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 use crate::files::io::{read_file_by_path, FileReadMode};
-use crate::schema::operations::{cache_schema, get_schema_cached};
+use crate::schema::operations::{cache_schema, get_schema_owner_folder};
 use crate::utils::errorhandling::ErrorFromRust;
 
 use super::dbconn::get_db_conn;
@@ -61,8 +61,6 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), E
         .into_iter()
         .filter_map(Result::ok)
     {
-        // log path
-        println!("Caching: {}", entry.path().to_string_lossy());
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
@@ -87,7 +85,40 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), E
             match cache_folder(&entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
-                    println!("Error caching folder: {}", e.title);
+                    err = err.sub(e);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn cache_folder_deep(input_path: &Path) -> Result<(), ErrorFromRust> {
+    let dir = match input_path.is_file() {
+        true => match input_path.parent() {
+            Some(p) => p,
+            None => {
+                return Err(ErrorFromRust::new("Error when caching folder")
+                    .info("Path is file but has no parent"));
+            }
+        },
+        false => input_path,
+    };
+
+    let mut err = ErrorFromRust::new("Error when caching files and folders");
+
+    for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
+        if entry.file_type().is_dir() {
+            let path = entry.path();
+
+            // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
+            let _ = cache_schema(path.into()).await;
+
+            // This will use schema cache, so it must be after caching_schema
+            match cache_folder(&entry.path()).await {
+                Ok(_) => (),
+                Err(e) => {
                     err = err.sub(e);
                 }
             }
@@ -98,7 +129,6 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(dir: P) -> Result<(), E
 }
 
 pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
-    println!("Caching folder: {}", path.to_string_lossy());
     let mut db = get_db_conn().lock().await;
 
     let folder_name = match path.file_name() {
@@ -107,7 +137,7 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
         None => "/".to_string(),
     };
 
-    let files_schema = get_schema_cached(&path.to_string_lossy().to_string()).await;
+    let files_schema = get_schema_owner_folder(&path.to_string_lossy().to_string()).await;
 
     let has_schema = match files_schema.as_ref() {
         Some(_) => true,
@@ -115,12 +145,12 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
     };
 
     let own_schema = match files_schema.as_ref() {
-        Some(schema) => schema.internal_path == path.to_string_lossy().to_string(),
+        Some(schema) => *schema == path.to_string_lossy().to_string(),
         None => false,
     };
 
     let schema_file_path = match files_schema.as_ref() {
-        Some(schema) => schema.internal_path.clone(),
+        Some(schema) => schema.clone(),
         None => "".to_string(),
     };
 
@@ -137,7 +167,6 @@ pub async fn cache_folder(path: &Path) -> Result<(), ErrorFromRust> {
     .execute(&mut *db)
     .await
     .map_err(|e| {
-        println!("Error caching folder: {}", e);
         ErrorFromRust::new("Error when caching folder").raw(e)
     })?;
 

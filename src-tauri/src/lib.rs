@@ -5,7 +5,7 @@ mod schema;
 mod utils;
 mod watcher;
 
-use std::{path::PathBuf, time::Duration};
+use std::{collections::HashMap, path::PathBuf, time::Duration};
 
 use cache::{
     dbconn::db_setup,
@@ -19,7 +19,7 @@ use cache::{
 use files::io::{read_file_by_path, save_file, BookReadResult, BookSaveResult, FileReadMode};
 use schema::{
     defaults::get_default_schemas,
-    operations::{cache_schema, get_all_schemas_cached, save_schema, SchemaLoadList},
+    operations::{cache_schema, get_all_schemas_cached, save_schema},
 };
 use schema::{defaults::DefaultSchema, types::Schema};
 use tauri::AppHandle;
@@ -45,8 +45,7 @@ type IPCGetAllTags = Result<Vec<String>, ErrorFromRust>;
 type IPCGetAllFolders = Result<FolderListGetResult, ErrorFromRust>;
 type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrorFromRust>;
 type IPCReadFileByPath = Result<BookReadResult, ErrorFromRust>;
-type IPCLoadSchemas = Result<SchemaLoadList, ErrorFromRust>;
-type IPCGetSchemas = Result<Vec<Schema>, ErrorFromRust>;
+type IPCGetSchemas = Result<HashMap<String, Schema>, ErrorFromRust>;
 type IPCLoadSchema = Result<Schema, ErrorFromRust>;
 type IPCSaveSchema = Result<Schema, ErrorFromRust>;
 type IPCSaveFile = Result<BookSaveResult, ErrorFromRust>;
@@ -64,7 +63,6 @@ struct IPCResponces {
     c_get_all_folders: IPCGetAllFolders,
     c_get_all_folders_by_schema: IPCGetAllFoldersBySchema,
     c_read_file_by_path: IPCReadFileByPath,
-    c_load_schemas: IPCLoadSchemas,
     c_get_schemas: IPCGetSchemas,
     c_load_schema: IPCLoadSchema,
     c_save_schema: IPCSaveSchema,

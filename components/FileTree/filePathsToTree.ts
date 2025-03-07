@@ -8,17 +8,18 @@ export type FolderNode = {
   rawPath: string;
   children: FolderNode[];
   parent: FolderNode | null;
+  hasSchema: boolean;
+  ownSchema: boolean;
+  schemaFilePath?: string;
 };
 
 /**
  * Takes a list of file path strings and turns it into a `Node[]`.
  */
 export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
-  const results: FolderNode[] = [];
-
   const separator = path.sep;
 
-  return paths.folders.reduce((currentResults, currentFolder) => {
+  const folders = paths.folders.reduce((currentResults, currentFolder) => {
     const pathParts = currentFolder.path.replace(rootPath, '').split(separator);
     const byPath: Record<string, FolderNode> = {};
 
@@ -34,6 +35,9 @@ export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
           rawPath: currentFolder.path,
           parent: byPath[parentPath],
           children: [],
+          hasSchema: currentFolder.has_schema,
+          ownSchema: currentFolder.own_schema,
+          schemaFilePath: currentFolder.schema_file_path,
         };
 
         nodes.push(node);
@@ -45,7 +49,19 @@ export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
     }, currentResults);
 
     return currentResults;
-  }, results);
+  }, [] as FolderNode[]);
+
+  return folders;
+
+  return [
+    {
+      name: 'root',
+      children: folders,
+      path: '',
+      rawPath: '',
+      parent: null,
+    } as FolderNode,
+  ];
 }
 
 export const dropIfSingleFolder = (tree: FolderNode[]) => {

@@ -28,17 +28,35 @@ impl<T: Clone> PathHierarchy<T> {
         self.map.insert(path, value);
     }
 
+    fn remove(&mut self, path: PathBuf) {
+        self.map.remove(&path);
+    }
+
     fn get(&self, path: &Path) -> Option<T> {
-        // Check exact match first
         if let Some(value) = self.map.get(path) {
             return Some(value.clone());
         }
 
-        // Walk up the directory hierarchy
         let mut current = path;
         while let Some(parent) = current.parent() {
             if let Some(value) = self.map.get(parent) {
                 return Some(value.clone());
+            }
+            current = parent;
+        }
+
+        None
+    }
+
+    fn get_path(&self, path: &Path) -> Option<PathBuf> {
+        if let Some(_) = self.map.get(path) {
+            return Some(path.to_path_buf());
+        }
+
+        let mut current = path;
+        while let Some(parent) = current.parent() {
+            if let Some(_) = self.map.get(parent) {
+                return Some(parent.to_path_buf());
             }
             current = parent;
         }
@@ -76,8 +94,15 @@ pub async fn get_schema_cached_safe(path: &str) -> Result<Schema, ErrorFromRust>
     }
 }
 
-pub async fn get_schema_path(path: &str) -> Option<String> {
-    get_schema_cached(path).await.map(|v| v.internal_path)
+pub async fn get_schema_owner_folder(path: &str) -> Option<String> {
+    let gs = get_gs().lock().await;
+
+    let res = gs.get_path(Path::new(path));
+
+    return match res {
+        Some(v) => Some(v.to_string_lossy().to_string()),
+        None => None,
+    };
 }
 
 pub async fn get_schema_cached(path: &str) -> Option<Schema> {
@@ -85,22 +110,19 @@ pub async fn get_schema_cached(path: &str) -> Option<Schema> {
 
     let res = gs.get(Path::new(path));
 
-    println!("Getting schema for: {}", path);
-    println!("Schema found: {:?}", res);
-
     return match res {
         Some(v) => Some(v.clone()),
         None => None,
     };
 }
 
-pub async fn get_all_schemas_cached() -> Vec<Schema> {
+pub async fn get_all_schemas_cached() -> HashMap<String, Schema> {
     let gs = get_gs().lock().await;
 
     gs.iter()
-        .filter_map(|(_, v)| match v.items.is_empty() {
+        .filter_map(|(path, v)| match v.items.is_empty() {
             true => None,
-            false => Some(v.clone()),
+            false => Some((path.to_string_lossy().to_string(), v.clone())),
         })
         .collect()
 }
@@ -108,7 +130,26 @@ pub async fn get_all_schemas_cached() -> Vec<Schema> {
 pub async fn cache_schema(path: PathBuf) -> Result<Schema, ErrorFromRust> {
     let mut schemas = get_gs().lock().await;
 
-    let schema_path = path.join("schema.yaml");
+    let schema_path = match path.is_dir() {
+        true => path.join("schema.yaml"),
+        false => match path.file_name() {
+            Some(v) => {
+                if v == "schema.yaml" {
+                    path
+                } else {
+                    return Err(ErrorFromRust::new("Schema file must be named schema.yaml"));
+                }
+            }
+            None => {
+                return Err(  ErrorFromRust::new("Unable to get basename from schema path")
+                .info(&format!(
+                    "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
+                        &path.clone().to_string_lossy()
+                    )),
+                );
+            }
+        },
+    };
 
     if !schema_path.exists() {
         return Err(ErrorFromRust::new("Schema file does not exist")
@@ -121,30 +162,33 @@ pub async fn cache_schema(path: PathBuf) -> Result<Schema, ErrorFromRust> {
             .raw(e)
     })?;
 
-    let mut sch: Schema = serde_yml::from_str(&file_content).map_err(|e| {
+    let sch: Schema = serde_yml::from_str(&file_content).map_err(|e| {
         ErrorFromRust::new("Error parsing schema")
             .info(&schema_path.clone().to_string_lossy())
             .raw(e)
     })?;
 
-    let folder_name = match path.file_name() {
+    let folder_path = match schema_path.parent() {
         Some(v) => v,
         None => {
-            return Err(
-                ErrorFromRust::new("Unable to get basename from schema path")
-                    .info(&format!(
-                        "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
-                        &schema_path.clone().to_string_lossy()
-                    )),
-            );
+            return Err(ErrorFromRust::new(
+                "Unable to get parent from schema path. This is unexpected, please report bug.",
+            )
+            .info(&schema_path.clone().to_string_lossy()));
         }
     };
-    sch.internal_name = folder_name.to_string_lossy().to_string();
-    sch.internal_path = path.to_string_lossy().to_string();
 
-    schemas.insert(path, sch.clone());
+    schemas.insert(folder_path.into(), sch.clone());
 
     Ok(sch)
+}
+
+pub async fn remove_schema(path: PathBuf) -> Result<(), ErrorFromRust> {
+    let mut schemas = get_gs().lock().await;
+
+    schemas.remove(path);
+
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]

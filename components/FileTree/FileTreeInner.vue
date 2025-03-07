@@ -24,7 +24,21 @@
           }
         "
         @save-name="saveName"
-      />
+      >
+        <template #leftIcon>
+          <ChevronDown
+            v-if="foldable"
+            :class="[isFolded && '-rotate-90']"
+            @click.stop="
+              () => {
+                isFolded = !isFolded;
+              }
+            "
+          />
+          <FolderIcon v-else-if="!isRoot" class="" />
+          <LibraryIcon v-else />
+        </template>
+      </TreeCell>
     </ShContextMenuTrigger>
     <ShContextMenuContent>
       <ShContextMenuItem @click="startCreating"> Create folder </ShContextMenuItem>
@@ -60,6 +74,7 @@ import type { FolderNode } from './filePathsToTree';
 import { once } from '@tauri-apps/api/event';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
+import { FolderIcon, LibraryIcon, ChevronDown } from 'lucide-vue-next';
 
 const store = useStore();
 
