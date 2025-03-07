@@ -69,27 +69,16 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
 ) -> Result<(), ErrorFromRust> {
     let mut err = ErrorFromRust::new("Error when caching files and folders");
 
-    println!("cache_files_folders_schemas ");
-
-    println!("cache_files_folders_schemas schemas_cache");
-
     for entry in WalkDir::new(dir.as_ref())
         .into_iter()
         .filter_map(Result::ok)
     {
-        // log enty path
-        println!(
-            "cache_files_folders_schemas entry path: {}",
-            entry.path().to_string_lossy()
-        );
-
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
                     match cache_file(core, &entry.path()).await {
                         Ok(_) => (),
                         Err(e) => {
-                            println!("Error caching file: {}", e.title);
                             err = err.sub(e.info(&entry.file_name().to_string_lossy()));
                         }
                     }
@@ -102,13 +91,10 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
 
             // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
 
-            println!("cache_files_folders_schemas cache_schema");
             {
                 let mut schemas_cache = core.schemas_cache.lock().await;
                 let _ = schemas_cache.cache_schema(path.into()).await;
             }
-
-            println!("cache_files_folders_schemas cache_folder");
 
             // This will use schema cache, so it must be after caching_schema
             match cache_folder(core, &entry.path()).await {
@@ -119,8 +105,6 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
             }
         }
     }
-
-    println!("cache_files_folders_schemas DONE");
 
     Ok(())
 }
@@ -165,12 +149,8 @@ pub async fn cache_folder_deep(
 }
 
 pub async fn cache_folder(core: &CoreStateManager, path: &Path) -> Result<(), ErrorFromRust> {
-    println!("cache_folder");
-
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
-
-    println!("cache_folder 2");
 
     let folder_name = match path.file_name() {
         Some(s) => s.to_string_lossy().to_string(),
@@ -178,17 +158,11 @@ pub async fn cache_folder(core: &CoreStateManager, path: &Path) -> Result<(), Er
         None => "/".to_string(),
     };
 
-    println!("cache_folder 3");
-
     let schemas_cache = core.schemas_cache.lock().await;
-
-    println!("cache_folder 4");
 
     let files_schema = schemas_cache
         .get_schema_owner_folder(&path.to_string_lossy().to_string())
         .await;
-
-    println!("cache_folder 5");
 
     let has_schema = match files_schema.as_ref() {
         Some(_) => true,
@@ -220,8 +194,6 @@ pub async fn cache_folder(core: &CoreStateManager, path: &Path) -> Result<(), Er
     .map_err(|e| {
         ErrorFromRust::new("Error when caching folder").raw(e)
     })?;
-
-    println!("Cached folder: {}", path.to_string_lossy());
 
     Ok(())
 }

@@ -71,8 +71,6 @@ pub async fn get_files_by_path(
     path: String,
     search_query: String,
 ) -> Result<BookListGetResult, ErrorFromRust> {
-    println!("get_files_by_path: {}", path);
-
     let schemas_cache = core.schemas_cache.lock().await;
 
     let schema = schemas_cache.get_schema_cached_safe(&path).await?;
