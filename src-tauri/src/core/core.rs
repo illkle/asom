@@ -42,7 +42,8 @@ impl CoreStateManager {
         }
     }
 
-    pub async fn set_root_path(&self, path: String) {
+    #[cfg(test)]
+    pub async fn test_only_set_root_path(&self, path: String) {
         let mut root_path = self.root_path.lock().await;
         *root_path = Some(path);
     }

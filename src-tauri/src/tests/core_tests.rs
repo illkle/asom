@@ -1,63 +1,16 @@
-use std::{env::current_dir, path::Path};
+use tauri::Manager;
 
-use tauri::{test::MockRuntime, AppHandle, Manager};
-use uuid::Uuid;
+use crate::{
+    cache::query::get_files_abstact,
+    core::core::CoreStateManager,
+    schema::types::AttrValue,
+    tests::test_utils::{
+        app_creator, cleanup_test_case, prepare_test_case, wait_for_condition_async,
+        DEFAULT_RETRY_COUNT, DEFAULT_RETRY_INTERVAL, DEFAULT_RETRY_TIMEOUT,
+    },
+};
 
-use fs_extra::dir::{self, CopyOptions};
-
-use crate::{cache::query::get_files_abstact, core::core::CoreStateManager, create_mock_app};
-
-pub async fn app_creator() -> AppHandle<MockRuntime> {
-    let app = create_mock_app();
-    app.manage(CoreStateManager::new());
-    app.handle().to_owned()
-}
-
-pub enum TestCaseName {
-    Basic,
-}
-
-impl TestCaseName {
-    pub fn get_path(&self) -> &str {
-        match self {
-            TestCaseName::Basic => "basic",
-        }
-    }
-}
-
-const BASIC_CASE_PATH: &str = "src/tests/cases/";
-const WORKING_PATH: &str = "src/tests/tests_working_dir/";
-
-pub async fn prepare_test_case(app: &AppHandle<MockRuntime>, test_case_name: TestCaseName) {
-    let core = app.state::<CoreStateManager>();
-
-    let current_dir = current_dir().unwrap();
-
-    let test_case_source = Path::new(&current_dir)
-        .join(BASIC_CASE_PATH)
-        .join(test_case_name.get_path());
-
-    let test_case_uuid = Uuid::new_v4();
-
-    let test_dir = Path::new(&current_dir)
-        .join(WORKING_PATH)
-        .join(test_case_uuid.to_string());
-
-    println!("Test case source: {}", test_case_source.display());
-    println!("Test case dir: {}", test_dir.display());
-
-    std::fs::create_dir_all(&test_dir).unwrap();
-
-    dir::copy(
-        &test_case_source,
-        &test_dir,
-        &CopyOptions::new().content_only(true),
-    )
-    .unwrap();
-
-    core.set_root_path(test_dir.to_string_lossy().to_string())
-        .await;
-}
+use super::test_utils::TestCaseName;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn test_init_basic() {
@@ -73,10 +26,33 @@ async fn test_init_with_folder() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
 
+    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
+
+    {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+        assert!(files.is_ok());
+
+        assert!(
+            files.unwrap().len() == 2,
+            "Initial files count is not correct"
+        );
+    }
+
+    cleanup_test_case(test_dir).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_file_ops() {
+    let app = app_creator().await;
+    let core = app.state::<CoreStateManager>();
+
     let init_result = core.init(&app).await;
     assert!(init_result.is_ok());
 
-    prepare_test_case(&app, TestCaseName::Basic).await;
+    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
 
     let prepare_cache_result = core.prepare_cache(&app).await;
     assert!(prepare_cache_result.is_ok());
@@ -91,9 +67,223 @@ async fn test_init_with_folder() {
         let files = get_files_abstact(conn, "".to_string()).await;
         assert!(files.is_ok());
 
+        let res = files.unwrap();
+
+        assert!(res.len() == 2, "Initial files count is not correct");
+
         assert!(
-            files.unwrap().len() == 2,
-            "Initial files count is not correct"
+            res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("Adler, Mortimer J.".to_string()))
+            }),
+            "Book 1 is not found"
+        );
+
+        assert!(
+            res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("Ahrens, Sönke".to_string()))
+            }),
+            "Book 2 is not found"
         );
     }
+
+    /*
+     * Moving file to other dir outside
+     */
+    std::fs::rename(
+        test_dir.clone().join("books").join("How to Read a Book.md"),
+        test_dir.clone().join("How to Read a Book.md"),
+    )
+    .unwrap();
+
+    let after_delete_check = || async {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        if !files.is_ok() {
+            return false;
+        }
+
+        let res = files.unwrap();
+
+        return res.len() == 1
+            && !res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("Adler, Mortimer J.".to_string()))
+            });
+    };
+
+    let result = wait_for_condition_async(
+        after_delete_check,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "Deleted file was not removed from cache db");
+
+    /*
+     * Moving file back from dir outside
+     */
+    std::fs::rename(
+        test_dir.clone().join("How to Read a Book.md"),
+        test_dir.clone().join("books").join("How to Read a Book.md"),
+    )
+    .unwrap();
+
+    let after_move_back = || async {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        if !files.is_ok() {
+            return false;
+        }
+
+        let res = files.unwrap();
+
+        return res.len() == 2
+            && res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("Adler, Mortimer J.".to_string()))
+            });
+    };
+
+    let result = wait_for_condition_async(
+        after_move_back,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "File moved back did not appear in cache db");
+
+    /*
+     * Renaming file
+     */
+    std::fs::rename(
+        test_dir.clone().join("books").join("How to Read a Book.md"),
+        test_dir
+            .clone()
+            .join("books")
+            .join("How to Read a Book (renamed).md"),
+    )
+    .unwrap();
+
+    let sp = test_dir
+        .clone()
+        .join("books")
+        .join("How to Read a Book (renamed).md")
+        .to_string_lossy()
+        .to_string();
+
+    let after_rename = || async {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        if !files.is_ok() {
+            return false;
+        }
+
+        let res = files.unwrap();
+
+        return res.len() == 2 && res.iter().any(|f| f.path == Some(sp.clone()));
+    };
+
+    let result = wait_for_condition_async(
+        after_rename,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(
+        result,
+        "File renamed either was not removed or did not change path in cache db"
+    );
+
+    /*
+     * Updating file content
+     */
+    std::fs::write(
+        test_dir
+            .clone()
+            .join("books")
+            .join("How to Take Smart Notes.md"),
+        "---\nauthor: 'Tester Tester'\n---\n\nLOL",
+    )
+    .unwrap();
+
+    let after_update = || async {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        if !files.is_ok() {
+            return false;
+        }
+
+        let res = files.unwrap();
+
+        return res.len() == 2
+            && res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("Tester Tester".to_string()))
+            });
+    };
+
+    let result = wait_for_condition_async(
+        after_update,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "File content was not updated in cache db");
+
+    /*
+     * Creating new file
+     */
+    std::fs::write(
+        test_dir.clone().join("books").join("new_file.md"),
+        "---\nauthor: 'KKKKKKKKK'\nyear: 2025\n---\n\nTest pass",
+    )
+    .unwrap();
+
+    let after_create = || async {
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        if !files.is_ok() {
+            return false;
+        }
+
+        let res = files.unwrap();
+
+        return res.len() == 3
+            && res.iter().any(|f| {
+                f.attrs["author"] == AttrValue::String(Some("KKKKKKKKK".to_string()))
+                    && f.attrs["year"] == AttrValue::Integer(Some(2025))
+            });
+    };
+
+    let result = wait_for_condition_async(
+        after_create,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "Created file was not added to cache db");
+
+    cleanup_test_case(test_dir).await;
 }
