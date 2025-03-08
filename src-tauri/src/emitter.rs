@@ -23,14 +23,20 @@ pub enum IPCEmitEvent {
     SchemasUpdated(HashMap<String, Schema>),
 }
 
-pub fn emit_event(app: &AppHandle, data: IPCEmitEvent) {
-    match data {
-        IPCEmitEvent::FileRemove(v) => app.emit("FileRemove", v).unwrap(),
-        IPCEmitEvent::FileAdd(v) => app.emit("FileAdd", v).unwrap(),
-        IPCEmitEvent::FileUpdate(v) => app.emit("FileUpdate", v).unwrap(),
-        IPCEmitEvent::FolderRemove(v) => app.emit("FolderRemove", v).unwrap(),
-        IPCEmitEvent::FolderAdd(v) => app.emit("FolderAdd", v).unwrap(),
-        IPCEmitEvent::ErrorHappened(v) => app.emit("ErrorHappened", v).unwrap(),
-        IPCEmitEvent::SchemasUpdated(v) => app.emit("SchemasUpdated", v).unwrap(),
-    };
+pub fn get_event_name(event: &IPCEmitEvent) -> String {
+    match event {
+        IPCEmitEvent::FileRemove(_) => "FileRemove".to_string(),
+        IPCEmitEvent::FileAdd(_) => "FileAdd".to_string(),
+        IPCEmitEvent::FileUpdate(_) => "FileUpdate".to_string(),
+        IPCEmitEvent::FolderRemove(_) => "FolderRemove".to_string(),
+        IPCEmitEvent::FolderAdd(_) => "FolderAdd".to_string(),
+        IPCEmitEvent::ErrorHappened(_) => "ErrorHappened".to_string(),
+        IPCEmitEvent::SchemasUpdated(_) => "SchemasUpdated".to_string(),
+    }
+}
+
+pub fn emit_event<T: tauri::Runtime>(app: &AppHandle<T>, data: IPCEmitEvent) {
+    let event_name = get_event_name(&data);
+
+    app.emit(&event_name, data).unwrap();
 }

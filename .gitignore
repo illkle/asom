@@ -68,3 +68,5 @@ thumbs.db
 # working directory for tests
 tools/tests/working
 test-results
+
+tests_working_dir

@@ -69,6 +69,7 @@ impl ErrorFromRust {
         self.sub_errors.push(thing);
         self
     }
+    #[allow(dead_code)]
     pub fn subs(mut self, full_array_to_set: Vec<ErrorFromRust>) -> Self {
         self.sub_errors = full_array_to_set;
         self
@@ -76,6 +77,6 @@ impl ErrorFromRust {
 }
 
 // This will show a notification on frontend, regardless of what is opened. Prefer returning error from invoke if possible.
-pub fn send_err_to_frontend(app: &AppHandle, e: &ErrorFromRust) {
+pub fn send_err_to_frontend<T: tauri::Runtime>(app: &AppHandle<T>, e: &ErrorFromRust) {
     emit_event(app, IPCEmitEvent::ErrorHappened(e.clone()));
 }

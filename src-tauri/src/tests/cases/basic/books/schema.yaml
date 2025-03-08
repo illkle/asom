@@ -1,0 +1,58 @@
+name: books
+version: '1.0'
+icon: Book
+items:
+  - name: title
+    value:
+      type: Text
+      settings:
+        settingsType: Text
+        size: L
+        font: Serif
+        theme: Hidden
+        isMultiline: true
+  - name: author
+    value:
+      type: Text
+      settings:
+        settingsType: Text
+        size: M
+        weight: Bold
+        theme: Hidden
+  - name: year
+    value:
+      type: Number
+      settings:
+        settingsType: Num
+        size: S
+        min: 0.0
+  - name: myRating
+    value:
+      type: Number
+      settings:
+        settingsType: Num
+        min: 0.0
+        max: 5.0
+        style: Stars
+        decimalPlaces: 1
+  - name: read
+    value:
+      type: DatesPairCollection
+      settings: {}
+  - name: tags
+    value:
+      type: TextCollection
+      settings:
+        settingsType: TextCollection
+        prefix: '#'
+  - name: cover
+    value:
+      type: Image
+      settings: {}
+  - name: ISBN13
+    value:
+      type: Number
+      settings:
+        settingsType: Num
+        size: S
+        min: 0.0

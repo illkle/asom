@@ -13,16 +13,16 @@ pub enum MonitorCommand {
 }
 
 /// Configuration for the monitor
-pub struct MonitorConfig {
+pub struct MonitorConfig<T: tauri::Runtime> {
     pub command_buffer_size: usize,
     pub log_to_stdout: bool,
-    pub app: AppHandle,
+    pub app: AppHandle<T>,
 }
 
 /// Runs a monitor that processes file events indefinitely
-pub async fn run_monitor(
+pub async fn run_monitor<T: tauri::Runtime>(
     event_rx: broadcast::Receiver<Event>,
-    config: MonitorConfig,
+    config: MonitorConfig<T>,
 ) -> mpsc::Sender<MonitorCommand> {
     let (cmd_tx, mut cmd_rx) = mpsc::channel::<MonitorCommand>(config.command_buffer_size);
     let cmd_tx_clone = cmd_tx.clone();
@@ -37,7 +37,7 @@ pub async fn run_monitor(
                              println!("Received event: {:?}", event);
                     }
 
-                         handle_event(event, &config.app).await
+                    handle_event(event, &config.app).await
                 }
                 Some(MonitorCommand::Shutdown) = cmd_rx.recv() => {
                     println!("Shutting down monitor...");

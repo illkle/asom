@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::path::Path;
 use tauri::{AppHandle, Manager};
-use tokio::sync::Mutex;
 
 use crate::cache::write::{
     cache_file, cache_files_folders_schemas, cache_folder, cache_folder_deep,
@@ -14,87 +13,91 @@ use crate::cache::write::{
 use crate::core::core::CoreStateManager;
 use crate::emitter::{emit_event, IPCEmitEvent};
 
-use crate::utils::errorhandling::send_err_to_frontend;
+use crate::utils::errorhandling::{send_err_to_frontend, ErrorFromRust};
 use ts_rs::TS;
-async fn handle_file_remove(app: &AppHandle, path: &Path, ext: &OsStr) {
-    let state = app.state::<Mutex<CoreStateManager>>();
-    let core = state.lock().await;
-    let mut schemas_cache = core.schemas_cache.lock().await;
 
-    if ext == "md" {
-        match remove_file_from_cache(&core, path).await {
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::FileRemove(path.to_string_lossy().to_string()),
-            ),
-            Err(e) => send_err_to_frontend(app, &e),
-        };
-    }
+async fn handle_file_remove(
+    core: &CoreStateManager,
+    path: &Path,
+    ext: &OsStr,
+) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    match ext.to_str() {
+        Some("md") => match remove_file_from_cache(&core, path).await {
+            Ok(_) => Ok(Some(IPCEmitEvent::FileRemove(
+                path.to_string_lossy().to_string(),
+            ))),
+            Err(e) => Err(e),
+        },
+        Some("yaml") => {
+            let mut schemas_cache = core.schemas_cache.lock().await;
 
-    if ext == "yaml" {
-        match schemas_cache.remove_schema(path.to_path_buf()).await {
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::SchemasUpdated(schemas_cache.get_all_schemas_cached().await),
-            ),
-            Err(e) => send_err_to_frontend(app, &e),
+            match schemas_cache.remove_schema(path.to_path_buf()).await {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+
+            return match cache_folder_deep(&core, path).await {
+                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
+                    schemas_cache.get_all_schemas_cached().await,
+                ))),
+                Err(e) => Err(e),
+            };
         }
-
-        match cache_folder_deep(&core, path).await {
-            Ok(_) => return,
-            Err(e) => send_err_to_frontend(app, &e),
-        }
-    }
-}
-
-async fn handle_file_add(app: &AppHandle, path: &Path, ext: &OsStr) {
-    let state = app.state::<Mutex<CoreStateManager>>();
-    let core = state.lock().await;
-    let schemas_cache = core.schemas_cache.lock().await;
-
-    if ext == "md" {
-        match cache_file(&core, path).await {
-            Ok(v) => emit_event(app, IPCEmitEvent::FileAdd(v)),
-            Err(e) => send_err_to_frontend(app, &e),
-        }
-    }
-
-    if ext == "yaml" {
-        match cache_folder_deep(&core, path).await {
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::SchemasUpdated(schemas_cache.get_all_schemas_cached().await),
-            ),
-            Err(e) => send_err_to_frontend(app, &e),
-        }
+        _ => Ok(None),
     }
 }
 
-async fn handle_file_update(app: &AppHandle, path: &Path, ext: &OsStr) {
-    let state = app.state::<Mutex<CoreStateManager>>();
-    let core = state.lock().await;
-    let mut schemas_cache = core.schemas_cache.lock().await;
+async fn handle_file_add(
+    core: &CoreStateManager,
+    path: &Path,
+    ext: &OsStr,
+) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    match ext.to_str() {
+        Some("md") => match cache_file(&core, path).await {
+            Ok(v) => Ok(Some(IPCEmitEvent::FileAdd(v))),
+            Err(e) => Err(e),
+        },
+        Some("yaml") => {
+            let schemas_cache = core.schemas_cache.lock().await;
 
-    if ext == "md" {
-        match cache_file(&core, path).await {
-            Ok(v) => emit_event(app, IPCEmitEvent::FileUpdate(v)),
-            Err(e) => send_err_to_frontend(app, &e),
+            match cache_folder_deep(&core, path).await {
+                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
+                    schemas_cache.get_all_schemas_cached().await,
+                ))),
+                Err(e) => Err(e),
+            }
         }
+        _ => Ok(None),
     }
+}
 
-    if ext == "yaml" {
-        match schemas_cache.cache_schema(path.to_path_buf()).await {
-            Ok(_) => (),
-            Err(e) => send_err_to_frontend(app, &e),
-        }
+async fn handle_file_update(
+    core: &CoreStateManager,
+    path: &Path,
+    ext: &OsStr,
+) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    match ext.to_str() {
+        Some("md") => match cache_file(&core, path).await {
+            Ok(v) => Ok(Some(IPCEmitEvent::FileUpdate(v))),
+            Err(e) => Err(e),
+        },
 
-        match cache_folder_deep(&core, path).await {
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::SchemasUpdated(schemas_cache.get_all_schemas_cached().await),
-            ),
-            Err(e) => send_err_to_frontend(app, &e),
+        Some("yaml") => {
+            let mut schemas_cache = core.schemas_cache.lock().await;
+
+            match schemas_cache.cache_schema(path.to_path_buf()).await {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+
+            match cache_folder_deep(&core, path).await {
+                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
+                    schemas_cache.get_all_schemas_cached().await,
+                ))),
+                Err(e) => Err(e),
+            }
         }
+        _ => Ok(None),
     }
 }
 
@@ -109,59 +112,58 @@ pub struct FolderEventEmit {
 // Folder remove and folder add are called only for exact folder that was modified.
 // This means that renaming folder -> folder_renamed will cause events for sub folders and sub files
 // Therefore we need to remove\add all files in that directory
-async fn handle_folder_remove(app: &AppHandle, path: &Path) {
-    let state = app.state::<Mutex<CoreStateManager>>();
-    let core = state.lock().await;
+async fn handle_folder_remove(
+    core: &CoreStateManager,
+    path: &Path,
+) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
     let schemas_cache = core.schemas_cache.lock().await;
 
     match remove_folder_from_cache(&core, path).await {
-        Err(e) => send_err_to_frontend(app, &e),
+        Err(e) => Err(e),
         Ok(_) => match remove_files_in_folder_rom_cache(&core, path).await {
-            Err(e) => send_err_to_frontend(app, &e),
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::FolderRemove(FolderEventEmit {
-                    path: path.to_string_lossy().to_string(),
-                    schema_path: schemas_cache
-                        .get_schema_owner_folder(&path.to_string_lossy())
-                        .await,
-                }),
-            ),
+            Err(e) => Err(e.clone()),
+            Ok(_) => Ok(Some(IPCEmitEvent::FolderRemove(FolderEventEmit {
+                path: path.to_string_lossy().to_string(),
+                schema_path: schemas_cache
+                    .get_schema_owner_folder(&path.to_string_lossy())
+                    .await,
+            }))),
         },
-    };
+    }
 }
 
-async fn handle_folder_add(app: &AppHandle, path: &Path) {
-    let state = app.state::<Mutex<CoreStateManager>>();
-    let core = state.lock().await;
+async fn handle_folder_add(
+    core: &CoreStateManager,
+    path: &Path,
+) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
     let schemas_cache = core.schemas_cache.lock().await;
 
     match cache_folder(&core, path).await {
-        Err(e) => send_err_to_frontend(app, &e),
+        Err(e) => Err(e),
         Ok(_) => match cache_files_folders_schemas(&core, path).await {
-            Err(e) => send_err_to_frontend(app, &e),
-            Ok(_) => emit_event(
-                app,
-                IPCEmitEvent::FolderAdd(FolderEventEmit {
-                    path: path.to_string_lossy().to_string(),
-                    schema_path: schemas_cache
-                        .get_schema_owner_folder(&path.to_string_lossy())
-                        .await,
-                }),
-            ),
+            Err(e) => Err(e),
+            Ok(_) => Ok(Some(IPCEmitEvent::FolderAdd(FolderEventEmit {
+                path: path.to_string_lossy().to_string(),
+                schema_path: schemas_cache
+                    .get_schema_owner_folder(&path.to_string_lossy())
+                    .await,
+            }))),
         },
-    };
+    }
 }
 
-pub async fn handle_event(event: Event, app: &AppHandle) {
+pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
+    let core = app.state::<CoreStateManager>();
+
     for (index, path) in event.paths.iter().enumerate() {
         println!("{:?}", event);
-        match event.kind {
+        let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {
-                (CreateKind::File, Some(ext)) => handle_file_add(app, &path, ext).await,
-                (CreateKind::Folder, _) => handle_folder_add(app, &path).await,
+                (CreateKind::File, Some(ext)) => handle_file_add(&core, &path, ext).await,
+                (CreateKind::Folder, _) => handle_folder_add(&core, &path).await,
                 k => {
-                    println!("unknown create event {:?}", k)
+                    println!("unknown create event {:?}", k);
+                    Ok(None)
                 }
             },
             EventKind::Modify(kind) => match kind {
@@ -174,46 +176,61 @@ pub async fn handle_event(event: Event, app: &AppHandle) {
                     index,
                 ) {
                     (RenameMode::From, _, Some(ext), _, _, _) => {
-                        handle_file_remove(app, path, ext).await
+                        handle_file_remove(&core, path, ext).await
                     }
-                    (RenameMode::From, _, _, _, _, _) => handle_folder_remove(app, path).await,
+                    (RenameMode::From, _, _, _, _, _) => handle_folder_remove(&core, path).await,
                     (RenameMode::To, _, Some(ext), true, _, _) => {
-                        handle_file_add(app, &path, ext).await
+                        handle_file_add(&core, &path, ext).await
                     }
-                    (RenameMode::To, _, _, _, true, _) => handle_folder_add(app, &path).await,
+                    (RenameMode::To, _, _, _, true, _) => handle_folder_add(&core, &path).await,
                     (RenameMode::Both, _, Some(ext), _, _, 0) => {
-                        handle_file_remove(app, &path, ext).await
+                        handle_file_remove(&core, &path, ext).await
                     }
-                    (RenameMode::Both, _, _, _, _, 0) => handle_folder_remove(app, &path).await,
+                    (RenameMode::Both, _, _, _, _, 0) => handle_folder_remove(&core, &path).await,
                     (RenameMode::Both, _, Some(ext), true, _, 1) => {
-                        handle_file_add(app, &path, ext).await
+                        handle_file_add(&core, &path, ext).await
                     }
-                    (RenameMode::Both, _, _, _, true, 1) => handle_folder_add(app, &path).await,
+                    (RenameMode::Both, _, _, _, true, 1) => handle_folder_add(&core, &path).await,
                     // finder on mac calls with RenameMode::Any
-                    (_, Ok(false), None, _, _, _) => handle_folder_remove(app, &path).await,
-                    (_, Ok(false), Some(ext), _, _, _) => handle_file_remove(app, &path, ext).await,
-                    (_, Ok(true), None, _, true, _) => handle_folder_add(app, &path).await,
-                    (_, Ok(true), Some(ext), true, _, _) => handle_file_add(app, &path, ext).await,
+                    (_, Ok(false), None, _, _, _) => handle_folder_remove(&core, &path).await,
+                    (_, Ok(false), Some(ext), _, _, _) => {
+                        handle_file_remove(&core, &path, ext).await
+                    }
+                    (_, Ok(true), None, _, true, _) => handle_folder_add(&core, &path).await,
+                    (_, Ok(true), Some(ext), true, _, _) => {
+                        handle_file_add(&core, &path, ext).await
+                    }
                     (a, b, c, d, e, f) => {
                         println!(
                             "unknown rename event {:?} {:?} {:?} {} {} {}",
                             a, b, c, d, e, f
-                        )
+                        );
+                        Ok(None)
                     }
                 },
                 // Data is always file
                 ModifyKind::Data(_) => match path.extension() {
-                    Some(ext) => handle_file_update(app, &path, ext).await,
-                    _ => (),
+                    Some(ext) => handle_file_update(&core, &path, ext).await,
+                    _ => Ok(None),
                 },
-                _ => (),
+                _ => Ok(None),
             },
             EventKind::Remove(kind) => match (kind, path.extension()) {
-                (RemoveKind::File, Some(ext)) => handle_file_remove(app, &path, ext).await,
-                (RemoveKind::Folder, _) => handle_folder_remove(app, &path).await,
-                _ => (),
+                (RemoveKind::File, Some(ext)) => handle_file_remove(&core, &path, ext).await,
+                (RemoveKind::Folder, _) => handle_folder_remove(&core, &path).await,
+                _ => Ok(None),
             },
-            _ => (),
+            _ => Ok(None),
         };
+
+        match res {
+            Ok(Some(event)) => {
+                emit_event(app, event);
+            }
+            Err(e) => {
+                send_err_to_frontend(app, &e);
+            }
+            Ok(None) => (),
+        }
     }
 }

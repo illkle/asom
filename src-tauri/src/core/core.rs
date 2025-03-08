@@ -42,7 +42,12 @@ impl CoreStateManager {
         }
     }
 
-    pub async fn load_root_path_from_store(&self, app: &AppHandle) {
+    pub async fn set_root_path(&self, path: String) {
+        let mut root_path = self.root_path.lock().await;
+        *root_path = Some(path);
+    }
+
+    pub async fn load_root_path_from_store<T: tauri::Runtime>(&self, app: &AppHandle<T>) {
         let root_path = app.get_store("appData.bin").unwrap().get(ROOT_PATH_KEY);
 
         match root_path {
@@ -61,9 +66,7 @@ impl CoreStateManager {
             .ok_or(ErrorFromRust::new("Root path is not set"))
     }
 
-    pub async fn init(&self, app: &AppHandle) -> IPCInitOnce {
-        self.load_root_path_from_store(app).await;
-
+    pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCInitOnce {
         let app_handle = app.clone();
 
         let watcher = self.watcher.lock().await;
@@ -88,7 +91,7 @@ impl CoreStateManager {
         Ok(true)
     }
 
-    pub async fn prepare_cache(&self, app: &AppHandle) -> IPCPrepareCache {
+    pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCPrepareCache {
         let rp = self.root_path_safe().await?;
 
         create_db_tables(self).await.map_err(|e| {
