@@ -73,6 +73,7 @@ impl CoreStateManager {
         let watcher = self.watcher.lock().await;
         let event_rx = watcher.subscribe_to_events().await;
 
+        // TODO: Find a way to actually await run_monitor, because right now it's not started when init returns. This only matters in tests, but still.
         task::spawn(async move {
             run_monitor(
                 event_rx,
@@ -95,13 +96,18 @@ impl CoreStateManager {
     pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCPrepareCache {
         let rp = self.root_path_safe().await?;
 
-        create_db_tables(self).await.map_err(|e| {
+        let mut db = self.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        create_db_tables(conn).await.map_err(|e| {
             ErrorFromRust::new("Error when creating tables in cache db")
                 .info("This should not happen. Try restarting the app, else report as bug.")
                 .raw(e)
         })?;
 
-        match cache_files_folders_schemas(&self, &rp).await {
+        let mut schemas_cache = self.schemas_cache.lock().await;
+
+        match cache_files_folders_schemas(&mut schemas_cache, conn, &rp).await {
             Err(e) => {
                 // We don't return error here because user can have a few problematic files, which is ok
                 send_err_to_frontend(&app, &e);
@@ -114,6 +120,8 @@ impl CoreStateManager {
 
     pub async fn watch_path(&self) -> IPCWatchPath {
         let rp = self.root_path_safe().await?;
+
+        println!("Watching path: {}", rp);
 
         let mut watcher = self.watcher.lock().await;
         watcher

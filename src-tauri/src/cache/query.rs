@@ -3,7 +3,7 @@ use sqlx::{Row, SqliteConnection};
 use std::collections::HashMap;
 use ts_rs::TS;
 
-use crate::core::core::CoreStateManager;
+use crate::schema::operations::SchemasInMemoryCache;
 use crate::schema::types::{AttrValue, Schema};
 use crate::utils::errorhandling::ErrorFromRust;
 
@@ -67,16 +67,12 @@ pub struct BookListGetResult {
 }
 
 pub async fn get_files_by_path(
-    core: &CoreStateManager,
+    conn: &mut SqliteConnection,
+    schemas_cache: &mut SchemasInMemoryCache,
     path: String,
     search_query: String,
 ) -> Result<BookListGetResult, ErrorFromRust> {
-    let schemas_cache = core.schemas_cache.lock().await;
-
     let schema = schemas_cache.get_schema_cached_safe(&path).await?;
-
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
 
     let files = get_files_abstact(conn, format!(
         "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') GROUP BY files.path",
@@ -90,10 +86,7 @@ pub async fn get_files_by_path(
     });
 }
 
-pub async fn get_all_tags(core: &CoreStateManager) -> Result<Vec<String>, sqlx::Error> {
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-
+pub async fn get_all_tags(conn: &mut SqliteConnection) -> Result<Vec<String>, sqlx::Error> {
     let res = sqlx::query("SELECT DISTINCT value FROM tags")
         .fetch_all(conn)
         .await?;
@@ -120,11 +113,8 @@ pub struct FolderOnDisk {
 }
 
 pub async fn get_all_folders(
-    core: &CoreStateManager,
+    conn: &mut SqliteConnection,
 ) -> Result<FolderListGetResult, ErrorFromRust> {
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-
     let res = sqlx::query(&format!("SELECT * FROM folders",))
         .fetch_all(conn)
         .await
@@ -145,12 +135,9 @@ pub async fn get_all_folders(
 }
 
 pub async fn get_all_folders_by_schema(
-    core: &CoreStateManager,
+    conn: &mut SqliteConnection,
     schema_path: String,
 ) -> Result<FolderListGetResult, ErrorFromRust> {
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-
     let res = sqlx::query(&format!(
         "SELECT * FROM folders WHERE schema_file_path = '{}'",
         schema_path

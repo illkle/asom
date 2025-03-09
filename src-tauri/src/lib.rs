@@ -85,13 +85,18 @@ async fn c_get_files_path<T: tauri::Runtime>(
     search_query: String,
 ) -> IPCGetFilesPath {
     let core = app.state::<CoreStateManager>();
-    get_files_by_path(&core, path, search_query).await
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+    let mut schemas_cache = core.schemas_cache.lock().await;
+    get_files_by_path(conn, &mut schemas_cache, path, search_query).await
 }
 
 #[tauri::command]
 async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
     let core = app.state::<CoreStateManager>();
-    get_all_tags(&core)
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+    get_all_tags(conn)
         .await
         .map_err(|e| ErrorFromRust::new("Error when getting all tags").raw(e))
 }
@@ -99,7 +104,9 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
 #[tauri::command]
 async fn c_get_all_folders<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllFolders {
     let core = app.state::<CoreStateManager>();
-    get_all_folders(&core).await
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+    get_all_folders(conn).await
 }
 
 #[tauri::command]
@@ -108,7 +115,9 @@ async fn c_get_all_folders_by_schema<T: tauri::Runtime>(
     schema_path: String,
 ) -> IPCGetAllFoldersBySchema {
     let core = app.state::<CoreStateManager>();
-    get_all_folders_by_schema(&core, schema_path).await
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+    get_all_folders_by_schema(conn, schema_path).await
 }
 
 #[tauri::command]
@@ -117,7 +126,8 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     path: String,
 ) -> IPCReadFileByPath {
     let core = app.state::<CoreStateManager>();
-    read_file_by_path(&core, &path, FileReadMode::FullFile).await
+    let mut schemas_cache = core.schemas_cache.lock().await;
+    read_file_by_path(&mut schemas_cache, &path, FileReadMode::FullFile).await
 }
 
 // This one returns only schemas with items

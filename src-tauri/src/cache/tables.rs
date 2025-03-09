@@ -1,9 +1,6 @@
-use crate::core::core::CoreStateManager;
+use sqlx::SqliteConnection;
 
-pub async fn create_db_tables(core: &CoreStateManager) -> Result<(), sqlx::Error> {
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-
+pub async fn create_db_tables(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
     sqlx::query("DROP TABLE IF EXISTS files;")
         .execute(&mut *conn)
         .await?;

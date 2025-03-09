@@ -1,4 +1,7 @@
-use std::time::{Duration, Instant};
+use std::{
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 use tauri::{test::MockRuntime, AppHandle, Manager};
 
@@ -71,9 +74,6 @@ pub async fn prepare_test_case(
 ) -> (PathBuf, Uuid) {
     let core = app.state::<CoreStateManager>();
 
-    let init_result = core.init(&app).await;
-    assert!(init_result.is_ok());
-
     let current_dir = current_dir().unwrap();
 
     let test_case_source = Path::new(&current_dir)
@@ -94,6 +94,12 @@ pub async fn prepare_test_case(
         &CopyOptions::new().content_only(true),
     )
     .unwrap();
+
+    let init_result = core.init(&app).await;
+    assert!(init_result.is_ok());
+
+    // Wait init to start monitor process
+    sleep(Duration::from_millis(100));
 
     core.test_only_set_root_path(test_dir.to_string_lossy().to_string())
         .await;

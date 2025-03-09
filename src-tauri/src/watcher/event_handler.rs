@@ -21,8 +21,11 @@ async fn handle_file_remove(
     path: &Path,
     ext: &OsStr,
 ) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+
     match ext.to_str() {
-        Some("md") => match remove_file_from_cache(&core, path).await {
+        Some("md") => match remove_file_from_cache(conn, path).await {
             Ok(_) => Ok(Some(IPCEmitEvent::FileRemove(
                 path.to_string_lossy().to_string(),
             ))),
@@ -31,12 +34,17 @@ async fn handle_file_remove(
         Some("yaml") => {
             let mut schemas_cache = core.schemas_cache.lock().await;
 
-            match schemas_cache.remove_schema(path.to_path_buf()).await {
+            let path_parent = match path.parent() {
+                Some(v) => v,
+                None => return Err(ErrorFromRust::new("Failed to get parent of schema.yaml")),
+            };
+
+            match schemas_cache.remove_schema(path_parent.to_path_buf()).await {
                 Ok(_) => (),
                 Err(e) => return Err(e),
             }
 
-            return match cache_folder_deep(&core, path).await {
+            return match cache_folder_deep(&mut schemas_cache, conn, path).await {
                 Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
                     schemas_cache.get_all_schemas_cached().await,
                 ))),
@@ -52,21 +60,21 @@ async fn handle_file_add(
     path: &Path,
     ext: &OsStr,
 ) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    let mut schemas_cache = core.schemas_cache.lock().await;
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+
     match ext.to_str() {
-        Some("md") => match cache_file(&core, path).await {
+        Some("md") => match cache_file(&mut schemas_cache, conn, path).await {
             Ok(v) => Ok(Some(IPCEmitEvent::FileAdd(v))),
             Err(e) => Err(e),
         },
-        Some("yaml") => {
-            let schemas_cache = core.schemas_cache.lock().await;
-
-            match cache_folder_deep(&core, path).await {
-                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
-                    schemas_cache.get_all_schemas_cached().await,
-                ))),
-                Err(e) => Err(e),
-            }
-        }
+        Some("yaml") => match cache_folder_deep(&mut schemas_cache, conn, path).await {
+            Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
+                schemas_cache.get_all_schemas_cached().await,
+            ))),
+            Err(e) => Err(e),
+        },
         _ => Ok(None),
     }
 }
@@ -76,21 +84,23 @@ async fn handle_file_update(
     path: &Path,
     ext: &OsStr,
 ) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
+    let mut schemas_cache = core.schemas_cache.lock().await;
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
+
     match ext.to_str() {
-        Some("md") => match cache_file(&core, path).await {
+        Some("md") => match cache_file(&mut schemas_cache, conn, path).await {
             Ok(v) => Ok(Some(IPCEmitEvent::FileUpdate(v))),
             Err(e) => Err(e),
         },
 
         Some("yaml") => {
-            let mut schemas_cache = core.schemas_cache.lock().await;
-
             match schemas_cache.cache_schema(path.to_path_buf()).await {
                 Ok(_) => (),
                 Err(e) => return Err(e),
             }
 
-            match cache_folder_deep(&core, path).await {
+            match cache_folder_deep(&mut schemas_cache, conn, path).await {
                 Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
                     schemas_cache.get_all_schemas_cached().await,
                 ))),
@@ -116,15 +126,19 @@ async fn handle_folder_remove(
     core: &CoreStateManager,
     path: &Path,
 ) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
-    let schemas_cache = core.schemas_cache.lock().await;
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
-    match remove_folder_from_cache(&core, path).await {
+    match remove_folder_from_cache(conn, path).await {
         Err(e) => Err(e),
-        Ok(_) => match remove_files_in_folder_rom_cache(&core, path).await {
+        Ok(_) => match remove_files_in_folder_rom_cache(conn, path).await {
             Err(e) => Err(e.clone()),
             Ok(_) => Ok(Some(IPCEmitEvent::FolderRemove(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),
-                schema_path: schemas_cache
+                schema_path: core
+                    .schemas_cache
+                    .lock()
+                    .await
                     .get_schema_owner_folder(&path.to_string_lossy())
                     .await,
             }))),
@@ -136,11 +150,13 @@ async fn handle_folder_add(
     core: &CoreStateManager,
     path: &Path,
 ) -> Result<Option<IPCEmitEvent>, ErrorFromRust> {
-    let schemas_cache = core.schemas_cache.lock().await;
+    let mut schemas_cache = core.schemas_cache.lock().await;
+    let mut db = core.database_conn.lock().await;
+    let conn = db.get_conn().await;
 
-    match cache_folder(&core, path).await {
+    match cache_folder(&mut schemas_cache, conn, path).await {
         Err(e) => Err(e),
-        Ok(_) => match cache_files_folders_schemas(&core, path).await {
+        Ok(_) => match cache_files_folders_schemas(&mut schemas_cache, conn, path).await {
             Err(e) => Err(e),
             Ok(_) => Ok(Some(IPCEmitEvent::FolderAdd(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),

@@ -33,7 +33,7 @@ impl SchemasInMemoryCache {
         self.map.remove(&path);
     }
 
-    fn get(&self, path: &Path) -> Option<Schema> {
+    fn get_schema(&self, path: &Path) -> Option<Schema> {
         if let Some(value) = self.map.get(path) {
             return Some(value.clone());
         }
@@ -49,7 +49,7 @@ impl SchemasInMemoryCache {
         None
     }
 
-    fn get_path(&self, path: &Path) -> Option<PathBuf> {
+    fn get_schema_owner(&self, path: &Path) -> Option<PathBuf> {
         if let Some(_) = self.map.get(path) {
             return Some(path.to_path_buf());
         }
@@ -82,7 +82,7 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn get_schema_owner_folder(&self, path: &str) -> Option<String> {
-        let res = self.get_path(Path::new(path));
+        let res = self.get_schema_owner(Path::new(path));
         match res {
             Some(v) => Some(v.to_string_lossy().to_string()),
             None => None,
@@ -90,7 +90,7 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn get_schema_cached(&self, path: &str) -> Option<Schema> {
-        let res = self.get(Path::new(path));
+        let res = self.get_schema(Path::new(path));
         match res {
             Some(v) => Some(v.clone()),
             None => None,
