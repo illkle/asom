@@ -1,0 +1,25 @@
+name: audiobooks
+version: '1.0'
+icon: Star
+items:
+  - name: title
+    value:
+      type: Text
+      settings:
+        settingsType: Text
+        size: L
+        font: Serif
+        theme: Hidden
+        isMultiline: true
+  - name: myRating
+    value:
+      type: Number
+      settings:
+        settingsType: Num
+        min: 0.0
+        max: 5.0
+        style: Slider
+  - name: listened
+    value:
+      type: DateCollection
+      settings: {}

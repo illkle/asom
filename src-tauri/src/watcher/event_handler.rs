@@ -131,18 +131,19 @@ async fn handle_folder_remove(
 
     match remove_folder_from_cache(conn, path).await {
         Err(e) => Err(e),
-        Ok(_) => match remove_files_in_folder_rom_cache(conn, path).await {
-            Err(e) => Err(e.clone()),
-            Ok(_) => Ok(Some(IPCEmitEvent::FolderRemove(FolderEventEmit {
+        Ok(_) => {
+            remove_files_in_folder_rom_cache(conn, path).await?;
+
+            let mut schemas_cache = core.schemas_cache.lock().await;
+            schemas_cache
+                .remove_schemas_with_children(path.to_path_buf())
+                .await?;
+
+            return Ok(Some(IPCEmitEvent::FolderRemove(FolderEventEmit {
                 path: path.to_string_lossy().to_string(),
-                schema_path: core
-                    .schemas_cache
-                    .lock()
-                    .await
-                    .get_schema_owner_folder(&path.to_string_lossy())
-                    .await,
-            }))),
-        },
+                schema_path: None,
+            })));
+        }
     }
 }
 

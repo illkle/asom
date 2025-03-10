@@ -26,6 +26,10 @@ pub const DEFAULT_RETRY_COUNT: usize = 20;
 pub const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_millis(10);
 pub const DEFAULT_RETRY_TIMEOUT: Duration = Duration::from_secs(2);
 
+/*
+ * This function reruns some check multiple times, useful when waiting for watcher to do it's job
+ * WARNING: Calling condition_fn the way this does might not release mutexes automatically, it's better to drop them explicitly at the end
+ */
 pub async fn wait_for_condition_async<F, Fut>(
     condition_fn: F,
     max_attempts: usize,
@@ -55,12 +59,16 @@ where
 
 pub enum TestCaseName {
     Basic,
+    Schemas,
+    Nested,
 }
 
 impl TestCaseName {
     pub fn get_path(&self) -> &str {
         match self {
             TestCaseName::Basic => "basic",
+            TestCaseName::Schemas => "schemas",
+            TestCaseName::Nested => "nested",
         }
     }
 }

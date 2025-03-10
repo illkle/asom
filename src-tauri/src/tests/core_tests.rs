@@ -295,7 +295,7 @@ async fn test_basic_folder_ops() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
 
-    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
+    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Schemas).await;
 
     // Check initial folders state
     {
@@ -319,8 +319,6 @@ async fn test_basic_folder_ops() {
      */
     let new_folder_path = test_dir.clone().join("articles");
     std::fs::create_dir(&new_folder_path).unwrap();
-
-    //  sleep(Duration::from_secs(1));
 
     let after_create = || async {
         let mut db = core.database_conn.lock().await;
@@ -464,7 +462,6 @@ async fn test_schema_ops() {
         assert!(
             schemas_cache
                 .get_schema_cached(&test_dir.clone().join("books").to_string_lossy().to_string())
-                .await
                 .is_some(),
             "Initial schema for owner folder was not returned by get_schema_cached"
         );
@@ -479,7 +476,6 @@ async fn test_schema_ops() {
                         .to_string_lossy()
                         .to_string()
                 )
-                .await
                 .is_some(),
             "Initial schema for sub folder was not returned by get_schema_cached"
         );
@@ -495,7 +491,6 @@ async fn test_schema_ops() {
                         .to_string_lossy()
                         .to_string()
                 )
-                .await
                 .is_some(),
             "Schema for existing file was not returned by get_schema_cached"
         );
@@ -510,7 +505,6 @@ async fn test_schema_ops() {
                         .to_string_lossy()
                         .to_string()
                 )
-                .await
                 .is_none(),
             "Schema for non existing folder was returned by get_schema_cached"
         );
@@ -555,16 +549,14 @@ async fn test_schema_ops() {
         let schemas_cache = core.schemas_cache.lock().await;
         let schemas = schemas_cache.get_all_schemas_cached().await;
 
-        let schema_for_favs = schemas_cache
-            .get_schema_cached(
-                &test_dir
-                    .clone()
-                    .join("books")
-                    .join("favorites")
-                    .to_string_lossy()
-                    .to_string(),
-            )
-            .await;
+        let schema_for_favs = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books")
+                .join("favorites")
+                .to_string_lossy()
+                .to_string(),
+        );
 
         return schemas.len() == 1 && schema_for_favs.is_some();
     };
@@ -578,6 +570,181 @@ async fn test_schema_ops() {
     .await;
 
     assert!(result, "Schema was not added back to cache after renaming");
+
+    cleanup_test_case(test_dir).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_nested_ops() {
+    let app = app_creator().await;
+    let core = app.state::<CoreStateManager>();
+
+    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
+
+    let initial_state_check = || async {
+        let schemas_cache = core.schemas_cache.lock().await;
+        let schemas = schemas_cache.get_all_schemas_cached().await;
+
+        let books_schema =
+            schemas.get(&test_dir.clone().join("books").to_string_lossy().to_string());
+
+        let movies_schema = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("movies")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        let schema_for_audiobook = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books")
+                .join("audiobooks")
+                .join("Sample Audiobook.md")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        let schema_for_book = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books")
+                .join("How to Take Smart Notes.md")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        return schemas.len() == 3
+            && books_schema.is_some()
+            && movies_schema.is_some()
+            && schema_for_audiobook.is_some_and(|s| s.name == "audiobooks")
+            && schema_for_book.is_some_and(|s| s.name == "books");
+    };
+
+    let result = wait_for_condition_async(
+        initial_state_check,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "Initial state was parsed incorrectly");
+
+    // rename books folder to books_renamed
+    std::fs::rename(
+        test_dir.clone().join("books"),
+        test_dir.clone().join("books_renamed"),
+    )
+    .unwrap();
+
+    //rename audiobooks folder to audiobooks_renamed
+    std::fs::rename(
+        test_dir.clone().join("books_renamed").join("audiobooks"),
+        test_dir
+            .clone()
+            .join("books_renamed")
+            .join("audiobooks_renamed"),
+    )
+    .unwrap();
+
+    let after_rename_schemas = || async {
+        let schemas_cache = core.schemas_cache.lock().await;
+
+        let books_schema = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books_renamed")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        let audiobooks_schema = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books_renamed")
+                .join("audiobooks_renamed")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        let schema_for_audiobook = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books_renamed")
+                .join("audiobooks_renamed")
+                .join("Sample Audiobook.md")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        let schema_for_book = schemas_cache.get_schema_cached(
+            &test_dir
+                .clone()
+                .join("books_renamed")
+                .join("How to Read a Book.md")
+                .to_string_lossy()
+                .to_string(),
+        );
+
+        return books_schema.is_some()
+            && audiobooks_schema.is_some()
+            && schema_for_book.is_some_and(|s| s.name == "books")
+            && schema_for_audiobook.is_some_and(|s| s.name == "audiobooks");
+    };
+
+    let result = wait_for_condition_async(
+        after_rename_schemas,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(
+        result,
+        "After renaming content is not showing up under new names"
+    );
+
+    let afrer_rename_counts = || async {
+        let schemas_cache = core.schemas_cache.lock().await;
+
+        let schemas = schemas_cache.get_all_schemas_cached().await;
+        drop(schemas_cache);
+
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+
+        let folders = get_all_folders(conn).await;
+
+        drop(db);
+
+        if !files.is_ok() || !folders.is_ok() {
+            return false;
+        }
+
+        let files = files.unwrap();
+        let folders = folders.unwrap();
+
+        println!("schemas: {:?}", schemas.len());
+        println!("files: {:?}", files.len());
+        println!("folders: {:?}", folders.folders.len());
+
+        return schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 5;
+    };
+
+    let result = wait_for_condition_async(
+        afrer_rename_counts,
+        DEFAULT_RETRY_COUNT,
+        DEFAULT_RETRY_INTERVAL,
+        DEFAULT_RETRY_TIMEOUT,
+    )
+    .await;
+
+    assert!(result, "Items count is not correct after nested renaming");
 
     cleanup_test_case(test_dir).await;
 }

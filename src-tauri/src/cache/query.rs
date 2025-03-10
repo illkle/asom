@@ -72,7 +72,7 @@ pub async fn get_files_by_path(
     path: String,
     search_query: String,
 ) -> Result<BookListGetResult, ErrorFromRust> {
-    let schema = schemas_cache.get_schema_cached_safe(&path).await?;
+    let schema = schemas_cache.get_schema_cached_safe(&path)?;
 
     let files = get_files_abstact(conn, format!(
         "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') GROUP BY files.path",

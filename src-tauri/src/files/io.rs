@@ -38,7 +38,7 @@ pub async fn read_file_by_path(
         }
     };
 
-    let files_schema = schemas_cache.get_schema_cached_safe(path_str).await?;
+    let files_schema = schemas_cache.get_schema_cached_safe(path_str)?;
     let p = path_str.to_string();
     let content = get_file_content(&path_str, &read_mode);
 

@@ -8,6 +8,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use super::types::{Schema, SCHEMA_VERSION};
@@ -27,10 +28,6 @@ impl SchemasInMemoryCache {
 
     fn insert(&mut self, path: PathBuf, value: Schema) {
         self.map.insert(path, value);
-    }
-
-    fn remove(&mut self, path: PathBuf) {
-        self.map.remove(&path);
     }
 
     fn get_schema(&self, path: &Path) -> Option<Schema> {
@@ -69,8 +66,8 @@ impl SchemasInMemoryCache {
         self.map.iter()
     }
 
-    pub async fn get_schema_cached_safe(&self, path: &str) -> Result<Schema, ErrorFromRust> {
-        let s = self.get_schema_cached(path).await;
+    pub fn get_schema_cached_safe(&self, path: &str) -> Result<Schema, ErrorFromRust> {
+        let s = self.get_schema_cached(path);
         match s {
             Some(s) => Ok(s),
             None => Err(ErrorFromRust::new("Unable to retrieve schema")
@@ -89,7 +86,7 @@ impl SchemasInMemoryCache {
         }
     }
 
-    pub async fn get_schema_cached(&self, path: &str) -> Option<Schema> {
+    pub fn get_schema_cached(&self, path: &str) -> Option<Schema> {
         let res = self.get_schema(Path::new(path));
         match res {
             Some(v) => Some(v.clone()),
@@ -160,7 +157,24 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), ErrorFromRust> {
-        self.remove(path);
+        self.map.remove(&path);
+        Ok(())
+    }
+
+    pub async fn remove_schemas_with_children(
+        &mut self,
+        path: PathBuf,
+    ) -> Result<(), ErrorFromRust> {
+        let paths_to_remove: Vec<PathBuf> = self
+            .iter()
+            .filter(|(p, _)| p.starts_with(&path))
+            .map(|(p, _)| p.clone())
+            .collect();
+
+        for p in paths_to_remove {
+            self.remove_schema(p).await?;
+        }
+
         Ok(())
     }
 
@@ -168,6 +182,7 @@ impl SchemasInMemoryCache {
         &mut self,
         folder_path: &PathBuf,
         mut schema: Schema,
+        conn: &mut SqliteConnection,
     ) -> Result<Schema, ErrorFromRust> {
         schema.version = SCHEMA_VERSION.to_string();
         let serialized = serde_yml::to_string(&schema)
