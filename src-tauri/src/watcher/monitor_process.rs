@@ -5,7 +5,7 @@ use tokio::select;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 
-use crate::watcher::event_handler::handle_event;
+use crate::watcher::event_handlers::handle_event;
 
 #[allow(dead_code)]
 pub enum MonitorCommand {

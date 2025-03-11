@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
 use ts_rs::TS;
 
-use crate::cache::query::BookFromDb;
-use crate::schema::operations::SchemasInMemoryCache;
+use crate::cache::query::RecordFromDb;
+use crate::schema::schema_cache::SchemasInMemoryCache;
 use crate::schema::types::{AttrValue, AttrValueOnDisk, Schema};
 use crate::utils::errorhandling::{ErrorActionCode, ErrorFromRust};
 
@@ -18,8 +19,8 @@ pub enum FileReadMode {
 
 #[derive(serde::Serialize, serde::Deserialize, TS)]
 #[ts(export)]
-pub struct BookReadResult {
-    pub book: BookFromDb,
+pub struct RecordReadResult {
+    pub record: RecordFromDb,
     pub parsing_error: Option<ErrorFromRust>,
     pub schema: Schema,
 }
@@ -28,7 +29,7 @@ pub async fn read_file_by_path(
     schemas_cache: &mut SchemasInMemoryCache,
     path_str: &str,
     read_mode: FileReadMode,
-) -> Result<BookReadResult, ErrorFromRust> {
+) -> Result<RecordReadResult, ErrorFromRust> {
     let file_modified = match get_file_modified_time(path_str) {
         Ok(v) => v,
         Err(e) => {
@@ -38,16 +39,20 @@ pub async fn read_file_by_path(
         }
     };
 
-    let files_schema = schemas_cache.get_schema_cached_safe(path_str)?;
+    let files_schema = match schemas_cache.get_schema(&Path::new(path_str)) {
+        Some(v) => v,
+        None => return Err(ErrorFromRust::new("Schema not found").raw(path_str)),
+    };
+
     let p = path_str.to_string();
     let content = get_file_content(&path_str, &read_mode);
 
     match content {
         Ok(c) => {
-            let parsed_meta = parse_metadata(&c.front_matter, &files_schema);
+            let parsed_meta = parse_metadata(&c.front_matter, &files_schema.schema);
 
-            return Ok(BookReadResult {
-                book: BookFromDb {
+            return Ok(RecordReadResult {
+                record: RecordFromDb {
                     path: Some(p),
                     markdown: match read_mode {
                         FileReadMode::OnlyMeta => None,
@@ -58,7 +63,7 @@ pub async fn read_file_by_path(
                     ..Default::default()
                 },
                 parsing_error: parsed_meta.err(),
-                schema: files_schema.clone(),
+                schema: files_schema.schema.clone(),
             });
         }
         Err(e) => {
@@ -71,22 +76,22 @@ pub async fn read_file_by_path(
 
 #[derive(serde::Serialize, serde::Deserialize, TS)]
 #[ts(export)]
-pub struct BookSaveResult {
+pub struct RecordSaveResult {
     pub path: String,
     pub modified: String,
 }
 
-pub fn save_file(book: BookFromDb, forced: bool) -> Result<BookSaveResult, ErrorFromRust> {
-    let path = match book.path {
+pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult, ErrorFromRust> {
+    let path = match record.path {
         Some(v) => v,
         None => {
-            return Err(ErrorFromRust::new("No path in book")
+            return Err(ErrorFromRust::new("No path in record")
                 .info("This is likely a frontend bug. Copy unsaved content and restart the app"))
         }
     };
 
     if !forced {
-        match book.modified {
+        match record.modified {
             Some(v) => {
                 let modified_before =
                     match get_file_modified_time(&path.clone().as_str()) {
@@ -110,11 +115,11 @@ pub fn save_file(book: BookFromDb, forced: bool) -> Result<BookSaveResult, Error
         }
     }
 
-    let markdown = book.markdown.unwrap_or("".to_string());
+    let markdown = record.markdown.unwrap_or("".to_string());
 
     let yaml =
-        serde_yml::to_string(&transform_attr_values_to_on_disk(book.attrs)).map_err(|e| {
-            ErrorFromRust::new("Error serializing book metadata")
+        serde_yml::to_string(&transform_attr_values_to_on_disk(record.attrs)).map_err(|e| {
+            ErrorFromRust::new("Error serializing record metadata")
                 .info("File was not saved")
                 .raw(e)
         })?;
@@ -129,7 +134,7 @@ pub fn save_file(book: BookFromDb, forced: bool) -> Result<BookSaveResult, Error
     })?;
 
     match get_file_modified_time(&path.clone().as_str()) {
-        Ok(v) => Ok(BookSaveResult {
+        Ok(v) => Ok(RecordSaveResult {
             path: path,
             modified: v,
         }),

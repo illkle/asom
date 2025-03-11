@@ -5,8 +5,8 @@ use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
 use crate::{
-    cache::query::BookFromDb, schema::types::Schema, utils::errorhandling::ErrorFromRust,
-    watcher::event_handler::FolderEventEmit,
+    cache::query::RecordFromDb, schema::types::Schema, utils::errorhandling::ErrorFromRust,
+    watcher::event_handlers::FolderEventEmit,
 };
 
 #[derive(Serialize, TS, Clone)]
@@ -15,12 +15,13 @@ use crate::{
 #[serde(tag = "t", content = "c")]
 pub enum IPCEmitEvent {
     FileRemove(String),
-    FileAdd(BookFromDb),
-    FileUpdate(BookFromDb),
+    FileAdd(RecordFromDb),
+    FileUpdate(RecordFromDb),
     FolderRemove(FolderEventEmit),
     FolderAdd(FolderEventEmit),
     ErrorHappened(ErrorFromRust),
     SchemasUpdated(HashMap<String, Schema>),
+    SchemaUpdated(Schema),
 }
 
 pub fn get_event_name(event: &IPCEmitEvent) -> String {
@@ -32,6 +33,7 @@ pub fn get_event_name(event: &IPCEmitEvent) -> String {
         IPCEmitEvent::FolderAdd(_) => "FolderAdd".to_string(),
         IPCEmitEvent::ErrorHappened(_) => "ErrorHappened".to_string(),
         IPCEmitEvent::SchemasUpdated(_) => "SchemasUpdated".to_string(),
+        IPCEmitEvent::SchemaUpdated(_) => "SchemaUpdated".to_string(),
     }
 }
 

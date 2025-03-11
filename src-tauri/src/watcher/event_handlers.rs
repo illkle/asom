@@ -6,9 +6,9 @@ use std::ffi::OsStr;
 use std::path::Path;
 use tauri::{AppHandle, Manager};
 
-use crate::cache::write::{
-    cache_file, cache_files_folders_schemas, cache_folder, cache_folder_deep,
-    remove_file_from_cache, remove_files_in_folder_rom_cache, remove_folder_from_cache,
+use crate::cache::cache_thing::{
+    cache_file, cache_files_folders_schemas, remove_file_from_cache,
+    remove_files_in_folder_rom_cache, remove_folder_from_cache,
 };
 use crate::core::core::CoreStateManager;
 use crate::emitter::{emit_event, IPCEmitEvent};
@@ -44,12 +44,13 @@ async fn handle_file_remove(
                 Err(e) => return Err(e),
             }
 
-            return match cache_folder_deep(&mut schemas_cache, conn, path).await {
-                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
-                    schemas_cache.get_all_schemas_cached().await,
-                ))),
-                Err(e) => Err(e),
-            };
+            schemas_cache
+                .rebuild_schema_index_in_db(conn, path_parent)
+                .await?;
+
+            Ok(Some(IPCEmitEvent::SchemasUpdated(
+                schemas_cache.get_schemas_list().await,
+            )))
         }
         _ => Ok(None),
     }
@@ -69,12 +70,25 @@ async fn handle_file_add(
             Ok(v) => Ok(Some(IPCEmitEvent::FileAdd(v))),
             Err(e) => Err(e),
         },
-        Some("yaml") => match cache_folder_deep(&mut schemas_cache, conn, path).await {
-            Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
-                schemas_cache.get_all_schemas_cached().await,
-            ))),
-            Err(e) => Err(e),
-        },
+        Some("yaml") => {
+            match schemas_cache.cache_schema(path.to_path_buf()).await {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+
+            let path_parent = match path.parent() {
+                Some(v) => v,
+                None => return Err(ErrorFromRust::new("Failed to get parent of schema.yaml")),
+            };
+
+            schemas_cache
+                .rebuild_schema_index_in_db(conn, path_parent)
+                .await?;
+
+            Ok(Some(IPCEmitEvent::SchemasUpdated(
+                schemas_cache.get_schemas_list().await,
+            )))
+        }
         _ => Ok(None),
     }
 }
@@ -94,19 +108,10 @@ async fn handle_file_update(
             Err(e) => Err(e),
         },
 
-        Some("yaml") => {
-            match schemas_cache.cache_schema(path.to_path_buf()).await {
-                Ok(_) => (),
-                Err(e) => return Err(e),
-            }
-
-            match cache_folder_deep(&mut schemas_cache, conn, path).await {
-                Ok(_) => Ok(Some(IPCEmitEvent::SchemasUpdated(
-                    schemas_cache.get_all_schemas_cached().await,
-                ))),
-                Err(e) => Err(e),
-            }
-        }
+        Some("yaml") => match schemas_cache.cache_schema(path.to_path_buf()).await {
+            Ok(v) => Ok(Some(IPCEmitEvent::SchemaUpdated(v))),
+            Err(e) => return Err(e),
+        },
         _ => Ok(None),
     }
 }
@@ -155,17 +160,14 @@ async fn handle_folder_add(
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
 
-    match cache_folder(&mut schemas_cache, conn, path).await {
+    match cache_files_folders_schemas(&mut schemas_cache, conn, path).await {
         Err(e) => Err(e),
-        Ok(_) => match cache_files_folders_schemas(&mut schemas_cache, conn, path).await {
-            Err(e) => Err(e),
-            Ok(_) => Ok(Some(IPCEmitEvent::FolderAdd(FolderEventEmit {
-                path: path.to_string_lossy().to_string(),
-                schema_path: schemas_cache
-                    .get_schema_owner_folder(&path.to_string_lossy())
-                    .await,
-            }))),
-        },
+        Ok(_) => Ok(Some(IPCEmitEvent::FolderAdd(FolderEventEmit {
+            path: path.to_string_lossy().to_string(),
+            schema_path: schemas_cache
+                .get_schema(path)
+                .map(|v| v.file_path.to_string_lossy().to_string()),
+        }))),
     }
 }
 

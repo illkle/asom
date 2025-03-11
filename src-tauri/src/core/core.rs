@@ -4,20 +4,21 @@ use tauri_plugin_store::StoreExt;
 
 use crate::{
     cache::{
-        dbconn::DatabaseConnection, tables::create_db_tables, write::cache_files_folders_schemas,
+        cache_thing::cache_files_folders_schemas, dbconn::DatabaseConnection,
+        create_tables::create_db_tables,
     },
-    schema::operations::SchemasInMemoryCache,
+    schema::schema_cache::SchemasInMemoryCache,
     utils::errorhandling::{send_err_to_frontend, ErrorFromRust},
     watcher::{
-        events_process::{run_monitor, MonitorConfig},
-        watcher_process::GlobalWatcher,
+        monitor_process::{run_monitor, MonitorConfig},
+        global_watcher::GlobalWatcher,
     },
     IPCInitOnce, IPCPrepareCache, IPCWatchPath,
 };
 
 use tokio::sync::Mutex;
 
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 use tokio::task;
 
@@ -107,7 +108,7 @@ impl CoreStateManager {
 
         let mut schemas_cache = self.schemas_cache.lock().await;
 
-        match cache_files_folders_schemas(&mut schemas_cache, conn, &rp).await {
+        match cache_files_folders_schemas(&mut schemas_cache, conn, &Path::new(&rp)).await {
             Err(e) => {
                 // We don't return error here because user can have a few problematic files, which is ok
                 send_err_to_frontend(&app, &e);

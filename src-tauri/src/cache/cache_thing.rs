@@ -2,16 +2,16 @@ use sqlx::SqliteConnection;
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::files::io::{read_file_by_path, FileReadMode};
-use crate::schema::operations::SchemasInMemoryCache;
+use crate::files::read_save::{read_file_by_path, FileReadMode};
+use crate::schema::schema_cache::SchemasInMemoryCache;
 use crate::utils::errorhandling::ErrorFromRust;
 
-use super::query::BookFromDb;
+use super::query::RecordFromDb;
 
 // Function to insert a file record into the database
 pub async fn insert_file_into_cache_db(
     conn: &mut SqliteConnection,
-    file: &BookFromDb,
+    file: &RecordFromDb,
 ) -> Result<(), ErrorFromRust> {
     let path = match file.path.as_ref() {
         Some(p) => p,
@@ -40,7 +40,7 @@ pub async fn cache_file(
     schemas_cache: &mut SchemasInMemoryCache,
     conn: &mut SqliteConnection,
     path: &Path,
-) -> Result<BookFromDb, ErrorFromRust> {
+) -> Result<RecordFromDb, ErrorFromRust> {
     match read_file_by_path(
         schemas_cache,
         &path.to_string_lossy(),
@@ -48,9 +48,9 @@ pub async fn cache_file(
     )
     .await
     {
-        Ok(file) => insert_file_into_cache_db(conn, &file.book)
+        Ok(file) => insert_file_into_cache_db(conn, &file.record)
             .await
-            .map(|_| file.book),
+            .map(|_| file.record),
         Err(e) => Err(e),
     }
 }
@@ -68,17 +68,14 @@ pub async fn remove_file_from_cache(
     Ok(())
 }
 
-pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
+pub async fn cache_files_folders_schemas(
     schemas_cache: &mut SchemasInMemoryCache,
     conn: &mut SqliteConnection,
-    dir: P,
+    dir: &Path,
 ) -> Result<(), ErrorFromRust> {
     let mut err = ErrorFromRust::new("Error when caching files and folders");
 
-    for entry in WalkDir::new(dir.as_ref())
-        .into_iter()
-        .filter_map(Result::ok)
-    {
+    for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
@@ -111,44 +108,6 @@ pub async fn cache_files_folders_schemas<P: AsRef<Path>>(
     Ok(())
 }
 
-pub async fn cache_folder_deep(
-    schemas_cache: &mut SchemasInMemoryCache,
-    conn: &mut SqliteConnection,
-    input_path: &Path,
-) -> Result<(), ErrorFromRust> {
-    let dir = match input_path.is_file() {
-        true => match input_path.parent() {
-            Some(p) => p,
-            None => {
-                return Err(ErrorFromRust::new("Error when caching folder")
-                    .info("Path is file but has no parent"));
-            }
-        },
-        false => input_path,
-    };
-
-    let mut err = ErrorFromRust::new("Error when caching files and folders");
-
-    for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
-        if entry.file_type().is_dir() {
-            let path = entry.path();
-
-            // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
-            let _ = schemas_cache.cache_schema(path.into()).await;
-
-            // This will use schema cache, so it must be after caching_schema
-            match cache_folder(schemas_cache, conn, &entry.path()).await {
-                Ok(_) => (),
-                Err(e) => {
-                    err = err.sub(e);
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
-
 pub async fn cache_folder(
     schemas_cache: &mut SchemasInMemoryCache,
     conn: &mut SqliteConnection,
@@ -160,9 +119,7 @@ pub async fn cache_folder(
         None => "/".to_string(),
     };
 
-    let files_schema = schemas_cache
-        .get_schema_owner_folder(&path.to_string_lossy().to_string())
-        .await;
+    let files_schema = schemas_cache.get_schema(&path);
 
     let has_schema = match files_schema.as_ref() {
         Some(_) => true,
@@ -170,12 +127,12 @@ pub async fn cache_folder(
     };
 
     let own_schema = match files_schema.as_ref() {
-        Some(schema) => *schema == path.to_string_lossy().to_string(),
+        Some(schema) => schema.file_path == path,
         None => false,
     };
 
     let schema_file_path = match files_schema.as_ref() {
-        Some(schema) => schema.clone(),
+        Some(schema) => schema.file_path.to_string_lossy().to_string(),
         None => "".to_string(),
     };
 

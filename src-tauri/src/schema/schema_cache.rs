@@ -8,6 +8,7 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use sqlx::Row;
 use sqlx::SqliteConnection;
 use ts_rs::TS;
 
@@ -17,6 +18,13 @@ use crate::utils::errorhandling::ErrorFromRust;
 #[derive(Debug)]
 pub struct SchemasInMemoryCache {
     map: BTreeMap<PathBuf, Schema>,
+}
+
+#[derive(Debug)]
+pub struct SchemaResult {
+    pub file_path: PathBuf,
+    pub owner_folder: PathBuf,
+    pub schema: Schema,
 }
 
 impl SchemasInMemoryCache {
@@ -30,31 +38,23 @@ impl SchemasInMemoryCache {
         self.map.insert(path, value);
     }
 
-    fn get_schema(&self, path: &Path) -> Option<Schema> {
+    pub fn get_schema(&self, path: &Path) -> Option<SchemaResult> {
         if let Some(value) = self.map.get(path) {
-            return Some(value.clone());
+            return Some(SchemaResult {
+                file_path: path.to_path_buf(),
+                owner_folder: path.parent().unwrap().to_path_buf(),
+                schema: value.clone(),
+            });
         }
 
         let mut current = path;
         while let Some(parent) = current.parent() {
             if let Some(value) = self.map.get(parent) {
-                return Some(value.clone());
-            }
-            current = parent;
-        }
-
-        None
-    }
-
-    fn get_schema_owner(&self, path: &Path) -> Option<PathBuf> {
-        if let Some(_) = self.map.get(path) {
-            return Some(path.to_path_buf());
-        }
-
-        let mut current = path;
-        while let Some(parent) = current.parent() {
-            if let Some(_) = self.map.get(parent) {
-                return Some(parent.to_path_buf());
+                return Some(SchemaResult {
+                    file_path: parent.to_path_buf().join("schema.yaml"),
+                    owner_folder: parent.to_path_buf(),
+                    schema: value.clone(),
+                });
             }
             current = parent;
         }
@@ -66,35 +66,19 @@ impl SchemasInMemoryCache {
         self.map.iter()
     }
 
-    pub fn get_schema_cached_safe(&self, path: &str) -> Result<Schema, ErrorFromRust> {
-        let s = self.get_schema_cached(path);
+    pub fn get_schema_safe(&self, path: &Path) -> Result<SchemaResult, ErrorFromRust> {
+        let s = self.get_schema(path);
         match s {
             Some(s) => Ok(s),
             None => Err(ErrorFromRust::new("Unable to retrieve schema")
                 .info(
                     "Unless you changed files manually this should not happen. Try restarting the app",
                 )
-                .raw(path)),
+                .raw(path.to_string_lossy().to_string())),
         }
     }
 
-    pub async fn get_schema_owner_folder(&self, path: &str) -> Option<String> {
-        let res = self.get_schema_owner(Path::new(path));
-        match res {
-            Some(v) => Some(v.to_string_lossy().to_string()),
-            None => None,
-        }
-    }
-
-    pub fn get_schema_cached(&self, path: &str) -> Option<Schema> {
-        let res = self.get_schema(Path::new(path));
-        match res {
-            Some(v) => Some(v.clone()),
-            None => None,
-        }
-    }
-
-    pub async fn get_all_schemas_cached(&self) -> HashMap<String, Schema> {
+    pub async fn get_schemas_list(&self) -> HashMap<String, Schema> {
         self.iter()
             .filter_map(|(path, v)| match v.items.is_empty() {
                 true => None,
@@ -182,7 +166,6 @@ impl SchemasInMemoryCache {
         &mut self,
         folder_path: &PathBuf,
         mut schema: Schema,
-        conn: &mut SqliteConnection,
     ) -> Result<Schema, ErrorFromRust> {
         schema.version = SCHEMA_VERSION.to_string();
         let serialized = serde_yml::to_string(&schema)
@@ -205,6 +188,42 @@ impl SchemasInMemoryCache {
         self.insert(schema_path.clone(), schema.clone());
 
         Ok(schema)
+    }
+
+    pub async fn rebuild_schema_index_in_db(
+        &mut self,
+        conn: &mut SqliteConnection,
+        from_path: &Path,
+    ) -> Result<(), ErrorFromRust> {
+        let all_folders = sqlx::query("SELECT path FROM folders WHERE path LIKE concat(?1, '%')")
+            .bind(from_path.to_string_lossy().to_string())
+            .fetch_all(&mut *conn)
+            .await
+            .map_err(|e| ErrorFromRust::new("Error fetching all folders").raw(e))?;
+
+        for folder in all_folders {
+            let folder_path = PathBuf::from(folder.get::<String, _>(0));
+            let schema = self.get_schema(&folder_path);
+
+            sqlx::query("UPDATE folders SET schema_file_path = ?, has_schema = ?, own_schema = ? WHERE path = ?")
+                .bind(match schema.as_ref() {
+                    Some(schema) => schema.file_path.to_string_lossy().to_string(),
+                    None => "".to_string(),
+                })
+                .bind(match schema.as_ref() {
+                    Some(_) => true,
+                    None => false,
+                })
+                .bind(match schema.as_ref() {
+                    Some(s) => s.owner_folder == folder_path,
+                    None => false,
+                })
+                .execute(&mut *conn)
+                .await
+                .map_err(|e| ErrorFromRust::new("Error updating db folders for new schema").raw(e))?;
+        }
+
+        Ok(())
     }
 }
 

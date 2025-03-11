@@ -12,10 +12,12 @@ use core::core::CoreStateManager;
 use std::{collections::HashMap, path::PathBuf};
 
 use cache::query::{
-    get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path, BookFromDb,
-    BookListGetResult, FolderListGetResult,
+    get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path,
+    FolderListGetResult, RecordFromDb, RecordListGetResult,
 };
-use files::io::{read_file_by_path, save_file, BookReadResult, BookSaveResult, FileReadMode};
+use files::read_save::{
+    read_file_by_path, save_file, FileReadMode, RecordReadResult, RecordSaveResult,
+};
 use schema::defaults::get_default_schemas;
 use schema::{defaults::DefaultSchema, types::Schema};
 use tauri::test::{mock_builder, MockRuntime};
@@ -29,15 +31,15 @@ use utils::errorhandling::ErrorFromRust;
 type IPCInitOnce = Result<bool, ErrorFromRust>;
 type IPCPrepareCache = Result<bool, ErrorFromRust>;
 type IPCWatchPath = Result<bool, ErrorFromRust>;
-type IPCGetFilesPath = Result<BookListGetResult, ErrorFromRust>;
+type IPCGetFilesPath = Result<RecordListGetResult, ErrorFromRust>;
 type IPCGetAllTags = Result<Vec<String>, ErrorFromRust>;
 type IPCGetAllFolders = Result<FolderListGetResult, ErrorFromRust>;
 type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrorFromRust>;
-type IPCReadFileByPath = Result<BookReadResult, ErrorFromRust>;
+type IPCReadFileByPath = Result<RecordReadResult, ErrorFromRust>;
 type IPCGetSchemas = Result<HashMap<String, Schema>, ErrorFromRust>;
 type IPCLoadSchema = Result<Schema, ErrorFromRust>;
 type IPCSaveSchema = Result<Schema, ErrorFromRust>;
-type IPCSaveFile = Result<BookSaveResult, ErrorFromRust>;
+type IPCSaveFile = Result<RecordSaveResult, ErrorFromRust>;
 type IPCGetDefaultSchemas = Result<Vec<DefaultSchema>, ErrorFromRust>;
 
 #[derive(TS)]
@@ -135,7 +137,7 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
 async fn c_get_schemas<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
     let core = app.state::<CoreStateManager>();
     let cache = core.schemas_cache.lock().await;
-    let schemas = cache.get_all_schemas_cached().await;
+    let schemas = cache.get_schemas_list().await;
     Ok(schemas)
 }
 
@@ -163,8 +165,12 @@ async fn c_get_default_schemas<T: tauri::Runtime>(_: AppHandle<T>) -> IPCGetDefa
 }
 
 #[tauri::command]
-fn c_save_file<T: tauri::Runtime>(_: AppHandle<T>, book: BookFromDb, forced: bool) -> IPCSaveFile {
-    save_file(book, forced)
+fn c_save_file<T: tauri::Runtime>(
+    _: AppHandle<T>,
+    record: RecordFromDb,
+    forced: bool,
+) -> IPCSaveFile {
+    save_file(record, forced)
 }
 
 pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T> {

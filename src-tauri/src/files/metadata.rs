@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::schema::types::{AttrValue, DateRead, Schema, SchemaAttrType};
+use crate::schema::types::{AttrValue, DatePair, Schema, SchemaAttrType};
 use crate::utils::errorhandling::ErrorFromRust;
 
 pub fn parse_metadata(
@@ -68,7 +68,7 @@ pub fn parse_metadata(
                         Some(serde_yml::Value::Sequence(vec)),
                         SchemaAttrType::DatesPairCollection(_),
                     ) => {
-                        let arr: Vec<DateRead> = vec
+                        let arr: Vec<DatePair> = vec
                             .iter()
                             .filter_map(|v| match v.as_mapping() {
                                 Some(s) => {
@@ -79,7 +79,7 @@ pub fn parse_metadata(
                                         return None;
                                     }
 
-                                    Some(DateRead {
+                                    Some(DatePair {
                                         started: started
                                             .and_then(|v| v.as_str())
                                             .and_then(|v| Some(v.to_string())),
@@ -94,7 +94,7 @@ pub fn parse_metadata(
 
                         file_meta.insert(
                             name,
-                            AttrValue::DateReadVec(match arr.len() {
+                            AttrValue::DatePairVec(match arr.len() {
                                 0 => None,
                                 _ => Some(arr),
                             }),
@@ -122,7 +122,7 @@ pub fn parse_metadata(
                         file_meta.insert(name, AttrValue::StringVec(None));
                     }
                     (_, SchemaAttrType::DatesPairCollection(_)) => {
-                        file_meta.insert(name, AttrValue::DateReadVec(None));
+                        file_meta.insert(name, AttrValue::DatePairVec(None));
                     }
                 }
             }
@@ -227,16 +227,16 @@ tags: 555
             ("myRating".into(), AttrValue::Float(Some(2.5))),
             (
                 "read".into(),
-                AttrValue::DateReadVec(Some(vec![
-                    DateRead {
+                AttrValue::DatePairVec(Some(vec![
+                    DatePair {
                         started: Some("s1".into()),
                         finished: Some("f1".into()),
                     },
-                    DateRead {
+                    DatePair {
                         started: Some("s2".into()),
                         finished: None,
                     },
-                    DateRead {
+                    DatePair {
                         started: None,
                         finished: Some("f3".into()),
                     },
@@ -264,7 +264,7 @@ tags: 555
             ("title".into(), AttrValue::String(None)),
             ("year".into(), AttrValue::Integer(None)),
             ("myRating".into(), AttrValue::Float(None)),
-            ("read".into(), AttrValue::DateReadVec(None)),
+            ("read".into(), AttrValue::DatePairVec(None)),
             ("tags".into(), AttrValue::StringVec(None)),
         ]);
 
@@ -286,7 +286,7 @@ tags: 555
             ("title".into(), AttrValue::String(None)),
             ("year".into(), AttrValue::Integer(None)),
             ("myRating".into(), AttrValue::Float(None)),
-            ("read".into(), AttrValue::DateReadVec(None)),
+            ("read".into(), AttrValue::DatePairVec(None)),
             ("tags".into(), AttrValue::StringVec(None)),
         ]);
 

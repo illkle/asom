@@ -1,16 +1,17 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqliteConnection};
 use std::collections::HashMap;
+use std::path::Path;
 use ts_rs::TS;
 
-use crate::schema::operations::SchemasInMemoryCache;
+use crate::schema::schema_cache::SchemasInMemoryCache;
 use crate::schema::types::{AttrValue, Schema};
 use crate::utils::errorhandling::ErrorFromRust;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
 #[serde_with::skip_serializing_none]
-pub struct BookFromDb {
+pub struct RecordFromDb {
     pub path: Option<String>,
     pub modified: Option<String>,
     pub markdown: Option<String>,
@@ -18,9 +19,9 @@ pub struct BookFromDb {
     pub attrs: HashMap<String, AttrValue>,
 }
 
-impl Default for BookFromDb {
-    fn default() -> BookFromDb {
-        BookFromDb {
+impl Default for RecordFromDb {
+    fn default() -> RecordFromDb {
+        RecordFromDb {
             attrs: HashMap::new(),
             modified: None,
             path: None,
@@ -32,7 +33,7 @@ impl Default for BookFromDb {
 pub async fn get_files_abstact(
     db: &mut SqliteConnection,
     where_clause: String,
-) -> Result<Vec<BookFromDb>, ErrorFromRust> {
+) -> Result<Vec<RecordFromDb>, ErrorFromRust> {
     let q = format!(
         "SELECT path, modified, attributes FROM files {}",
         where_clause
@@ -48,7 +49,7 @@ pub async fn get_files_abstact(
         let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
             .map_err(|e| ErrorFromRust::new("Error when parsing attributes").raw(e));
 
-        return BookFromDb {
+        return RecordFromDb {
             path: r.get("path"),
             modified: r.get("modified"),
             attrs: attrs.unwrap(),
@@ -61,9 +62,9 @@ pub async fn get_files_abstact(
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
-pub struct BookListGetResult {
+pub struct RecordListGetResult {
     pub schema: Schema,
-    pub books: Vec<BookFromDb>,
+    pub records: Vec<RecordFromDb>,
 }
 
 pub async fn get_files_by_path(
@@ -71,8 +72,8 @@ pub async fn get_files_by_path(
     schemas_cache: &mut SchemasInMemoryCache,
     path: String,
     search_query: String,
-) -> Result<BookListGetResult, ErrorFromRust> {
-    let schema = schemas_cache.get_schema_cached_safe(&path)?;
+) -> Result<RecordListGetResult, ErrorFromRust> {
+    let schema = schemas_cache.get_schema_safe(&Path::new(&path))?;
 
     let files = get_files_abstact(conn, format!(
         "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') GROUP BY files.path",
@@ -80,9 +81,9 @@ pub async fn get_files_by_path(
     ))
     .await?;
 
-    return Ok(BookListGetResult {
-        schema: schema,
-        books: files,
+    return Ok(RecordListGetResult {
+        schema: schema.schema,
+        records: files,
     });
 }
 

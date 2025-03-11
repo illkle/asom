@@ -451,7 +451,7 @@ async fn test_schema_ops() {
     {
         let schemas_cache = core.schemas_cache.lock().await;
 
-        let schemas = schemas_cache.get_all_schemas_cached().await;
+        let schemas = schemas_cache.get_schemas_list().await;
         assert!(schemas.len() == 1, "Initial schemas count is not correct");
 
         assert!(
@@ -461,35 +461,26 @@ async fn test_schema_ops() {
 
         assert!(
             schemas_cache
-                .get_schema_cached(&test_dir.clone().join("books").to_string_lossy().to_string())
+                .get_schema(&test_dir.clone().join("books"))
                 .is_some(),
             "Initial schema for owner folder was not returned by get_schema_cached"
         );
 
         assert!(
             schemas_cache
-                .get_schema_cached(
-                    &test_dir
-                        .clone()
-                        .join("books")
-                        .join("favorites")
-                        .to_string_lossy()
-                        .to_string()
-                )
+                .get_schema(&test_dir.clone().join("books").join("favorites"))
                 .is_some(),
             "Initial schema for sub folder was not returned by get_schema_cached"
         );
 
         assert!(
             schemas_cache
-                .get_schema_cached(
+                .get_schema(
                     &test_dir
                         .clone()
                         .join("books")
                         .join("favorites")
                         .join("How to Read a Book.md")
-                        .to_string_lossy()
-                        .to_string()
                 )
                 .is_some(),
             "Schema for existing file was not returned by get_schema_cached"
@@ -497,14 +488,7 @@ async fn test_schema_ops() {
 
         assert!(
             schemas_cache
-                .get_schema_cached(
-                    &test_dir
-                        .clone()
-                        .join("lol")
-                        .join("nonexisting")
-                        .to_string_lossy()
-                        .to_string()
-                )
+                .get_schema(&test_dir.clone().join("lol").join("nonexisting"))
                 .is_none(),
             "Schema for non existing folder was returned by get_schema_cached"
         );
@@ -522,7 +506,7 @@ async fn test_schema_ops() {
 
     let after_rename = || async {
         let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_all_schemas_cached().await;
+        let schemas = schemas_cache.get_schemas_list().await;
         return schemas.len() == 0;
     };
 
@@ -547,16 +531,10 @@ async fn test_schema_ops() {
 
     let after_rename_back = || async {
         let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_all_schemas_cached().await;
+        let schemas = schemas_cache.get_schemas_list().await;
 
-        let schema_for_favs = schemas_cache.get_schema_cached(
-            &test_dir
-                .clone()
-                .join("books")
-                .join("favorites")
-                .to_string_lossy()
-                .to_string(),
-        );
+        let schema_for_favs =
+            schemas_cache.get_schema(&test_dir.clone().join("books").join("favorites"));
 
         return schemas.len() == 1 && schema_for_favs.is_some();
     };
@@ -583,43 +561,33 @@ async fn test_nested_ops() {
 
     let initial_state_check = || async {
         let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_all_schemas_cached().await;
+        let schemas = schemas_cache.get_schemas_list().await;
 
         let books_schema =
             schemas.get(&test_dir.clone().join("books").to_string_lossy().to_string());
 
-        let movies_schema = schemas_cache.get_schema_cached(
-            &test_dir
-                .clone()
-                .join("movies")
-                .to_string_lossy()
-                .to_string(),
-        );
+        let movies_schema = schemas_cache.get_schema(&test_dir.clone().join("movies"));
 
-        let schema_for_audiobook = schemas_cache.get_schema_cached(
+        let schema_for_audiobook = schemas_cache.get_schema(
             &test_dir
                 .clone()
                 .join("books")
                 .join("audiobooks")
-                .join("Sample Audiobook.md")
-                .to_string_lossy()
-                .to_string(),
+                .join("Sample Audiobook.md"),
         );
 
-        let schema_for_book = schemas_cache.get_schema_cached(
+        let schema_for_book = schemas_cache.get_schema(
             &test_dir
                 .clone()
                 .join("books")
-                .join("How to Take Smart Notes.md")
-                .to_string_lossy()
-                .to_string(),
+                .join("How to Take Smart Notes.md"),
         );
 
         return schemas.len() == 3
             && books_schema.is_some()
             && movies_schema.is_some()
-            && schema_for_audiobook.is_some_and(|s| s.name == "audiobooks")
-            && schema_for_book.is_some_and(|s| s.name == "books");
+            && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks")
+            && schema_for_book.is_some_and(|s| s.schema.name == "books");
     };
 
     let result = wait_for_condition_async(
@@ -652,46 +620,34 @@ async fn test_nested_ops() {
     let after_rename_schemas = || async {
         let schemas_cache = core.schemas_cache.lock().await;
 
-        let books_schema = schemas_cache.get_schema_cached(
+        let books_schema = schemas_cache.get_schema(&test_dir.clone().join("books_renamed"));
+
+        let audiobooks_schema = schemas_cache.get_schema(
             &test_dir
                 .clone()
                 .join("books_renamed")
-                .to_string_lossy()
-                .to_string(),
+                .join("audiobooks_renamed"),
         );
 
-        let audiobooks_schema = schemas_cache.get_schema_cached(
+        let schema_for_audiobook = schemas_cache.get_schema(
             &test_dir
                 .clone()
                 .join("books_renamed")
                 .join("audiobooks_renamed")
-                .to_string_lossy()
-                .to_string(),
+                .join("Sample Audiobook.md"),
         );
 
-        let schema_for_audiobook = schemas_cache.get_schema_cached(
+        let schema_for_book = schemas_cache.get_schema(
             &test_dir
                 .clone()
                 .join("books_renamed")
-                .join("audiobooks_renamed")
-                .join("Sample Audiobook.md")
-                .to_string_lossy()
-                .to_string(),
-        );
-
-        let schema_for_book = schemas_cache.get_schema_cached(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("How to Read a Book.md")
-                .to_string_lossy()
-                .to_string(),
+                .join("How to Read a Book.md"),
         );
 
         return books_schema.is_some()
             && audiobooks_schema.is_some()
-            && schema_for_book.is_some_and(|s| s.name == "books")
-            && schema_for_audiobook.is_some_and(|s| s.name == "audiobooks");
+            && schema_for_book.is_some_and(|s| s.schema.name == "books")
+            && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks");
     };
 
     let result = wait_for_condition_async(
@@ -710,7 +666,7 @@ async fn test_nested_ops() {
     let afrer_rename_counts = || async {
         let schemas_cache = core.schemas_cache.lock().await;
 
-        let schemas = schemas_cache.get_all_schemas_cached().await;
+        let schemas = schemas_cache.get_schemas_list().await;
         drop(schemas_cache);
 
         let mut db = core.database_conn.lock().await;
@@ -728,10 +684,6 @@ async fn test_nested_ops() {
 
         let files = files.unwrap();
         let folders = folders.unwrap();
-
-        println!("schemas: {:?}", schemas.len());
-        println!("files: {:?}", files.len());
-        println!("folders: {:?}", folders.folders.len());
 
         return schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 5;
     };

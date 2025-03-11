@@ -13,7 +13,7 @@ use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Clone, Hash, Debug, PartialEq, TS)]
 #[ts(export)]
-pub struct DateRead {
+pub struct DatePair {
     #[ts(optional)]
     pub started: Option<String>,
     #[ts(optional)]
@@ -32,7 +32,7 @@ pub struct DateRead {
 pub enum AttrValue {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
-    DateReadVec(Option<Vec<DateRead>>),
+    DatePairVec(Option<Vec<DatePair>>),
     Integer(Option<i32>),
     Float(Option<f64>),
 }
@@ -45,7 +45,7 @@ pub enum AttrValue {
 pub enum AttrValueOnDisk {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
-    DateReadVec(Option<Vec<DateRead>>),
+    DatePairVec(Option<Vec<DatePair>>),
     Integer(Option<i32>),
     Float(Option<f64>),
 }
@@ -55,7 +55,7 @@ impl From<AttrValue> for AttrValueOnDisk {
         match attr {
             AttrValue::String(v) => AttrValueOnDisk::String(v),
             AttrValue::StringVec(v) => AttrValueOnDisk::StringVec(v),
-            AttrValue::DateReadVec(v) => AttrValueOnDisk::DateReadVec(v),
+            AttrValue::DatePairVec(v) => AttrValueOnDisk::DatePairVec(v),
             AttrValue::Integer(v) => AttrValueOnDisk::Integer(v),
             AttrValue::Float(v) => AttrValueOnDisk::Float(v),
         }
