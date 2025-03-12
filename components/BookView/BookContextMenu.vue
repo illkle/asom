@@ -32,12 +32,12 @@
 <script setup lang="ts">
 import { debounce as _debounce } from 'lodash';
 
-import { useStore } from '~~/utils/store';
+import { useMainStore, type OpenNewOneParams } from '~/composables/stores/useMainStore';
 
 import { remove } from '@tauri-apps/plugin-fs';
 export type IBookStyle = 'CARDS' | 'LINES';
 
-const store = useStore();
+const store = useMainStore();
 
 const props = defineProps({
   path: {

@@ -1,8 +1,8 @@
 import { format, parse, isValid } from 'date-fns';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
-import type { DateRead } from '~/types';
-import { useStore } from '~~/utils/store';
-import { useSettings } from '~/utils/settingsStore';
+import type { DatePair } from '~/types';
+import { useMainStore } from '~/composables/stores/useMainStore';
+import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
   const value = rootElement
@@ -30,7 +30,7 @@ const parseDate = (stringToParse: string, possibleFormats: string[]): Date | und
   }
 };
 
-const getDates = (rootElement: Element, dateFormat: string): DateRead[] => {
+const getDates = (rootElement: Element, dateFormat: string): DatePair[] => {
   // Date started and date finished are separate in a table, each date is marked with a class
   // like date_started_amzn1grreading_sessionv141zd03da758c4d922gx543baa13a0a0 to identify pairs
   const hashes = new Set();
@@ -40,13 +40,13 @@ const getDates = (rootElement: Element, dateFormat: string): DateRead[] => {
     hashes.add(classes[1].replace('date_started', '').replace('date_read', ''));
   }
 
-  const result: DateRead[] = [];
+  const result: DatePair[] = [];
 
   // No idea why but the seccond format appeared in my export, even though the date is seen on the web
   const possibleFormats = ['MMM dd, y', 'MMM yyyy'];
 
   for (const hash of hashes) {
-    const date: DateRead = {};
+    const date: DatePair = {};
 
     const startedEl = rootElement.getElementsByClassName('date_started' + hash);
     if (startedEl.length) {
@@ -87,7 +87,7 @@ type GoodreadsParsedBook = {
   isbn13: number;
   year?: number;
   rating: number;
-  read: DateRead[];
+  read: DatePair[];
 };
 
 const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBook => {
@@ -112,8 +112,8 @@ export const importGoodReadsHTML = (event: Event) => {
     return;
   }
 
-  const { settings } = useSettings();
-  const store = useStore();
+  const ss = useSettingsStore();
+  const store = useMainStore();
 
   const fr = new FileReader();
   const parser = new DOMParser();
@@ -126,10 +126,10 @@ export const importGoodReadsHTML = (event: Event) => {
 
       const result: GoodreadsParsedBook[] = [];
 
-      if (!settings || !store.rootPath) return;
+      if (!ss.settings || !store.rootPath) return;
 
       for (const book of books) {
-        result.push(parseBook(book, settings?.dateFormat));
+        result.push(parseBook(book, ss.settings.dateFormat));
       }
 
       // write result somewhere

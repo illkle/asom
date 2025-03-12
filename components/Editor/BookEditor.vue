@@ -22,7 +22,7 @@ import type { PropType } from 'vue';
 
 import type { IOpenedFile } from '~/api/openedTabs';
 
-import { useBookEditor } from './useFileState';
+import { useBookEditor } from '../../composables/useBookEditor';
 
 const props = defineProps({
   opened: {

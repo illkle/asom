@@ -73,7 +73,6 @@ import { cloneDeep as _cloneDeep } from 'lodash';
 import type { PropType } from 'vue';
 import type { IOpenedPath } from '~/api/openedTabs';
 import EmptyBooksPlaceholder from '~/components/Placeholders/EmptyBooksPlaceholder.vue';
-import { useFilesList } from './useFileList';
 import { useVirtualList } from '@vueuse/core';
 import {
   DropdownMenu,
@@ -88,8 +87,9 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from '~/components/_shadcn/resizable';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
-const store = useStore();
+const store = useMainStore();
 
 const tes = ref();
 onMounted(() => (tes.value = Math.random()));
@@ -128,7 +128,7 @@ const { data, loading } = useFilesList({
   searchQuery: searchQuery,
 });
 
-const books = computed(() => data.value?.books || []);
+const books = computed(() => data.value?.records || []);
 
 type IVisibleNames = Record<string, boolean>;
 const visibleNames = ref<IVisibleNames>({});

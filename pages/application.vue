@@ -24,11 +24,11 @@
 <script setup lang="ts">
 import { debounce as _debounce } from 'lodash';
 
-import { useStore } from '~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import BookEditor from '~/components/Editor/BookEditor.vue';
 import TableView from '~/components/BookView/BooksView.vue';
 
-const store = useStore();
+const store = useMainStore();
 
 definePageMeta({
   layout: 'app',

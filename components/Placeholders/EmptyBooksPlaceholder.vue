@@ -12,10 +12,10 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
-const store = useStore();
+const store = useMainStore();
 
 const isRootOpened = store.openedItem?.thing === store.rootPath;
 

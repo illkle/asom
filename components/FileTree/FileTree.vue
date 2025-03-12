@@ -5,9 +5,10 @@
 <script lang="ts" setup>
 import FileTreeInner from './FileTreeInner.vue';
 import { filePathsToTree, dropIfSingleFolder } from './filePathsToTree';
-import { useListenToEvent } from '~/api/tauriEvents';
 import { throttle } from 'lodash';
 import { c_get_all_folders_by_schema } from '~/api/tauriActions';
+import { useMainStore } from '~/composables/stores/useMainStore';
+import { useListenToEvent } from '~/composables/useListenToEvent';
 
 const props = defineProps<{
   schemaPath: string;
@@ -19,7 +20,7 @@ const { data, refetch, status } = useQuery({
   query: async () => await c_get_all_folders_by_schema(props.schemaPath),
 });
 
-const store = useStore();
+const store = useMainStore();
 
 const transformed = computed(() =>
   !data.value || 'isError' in data.value ? [] : filePathsToTree(data.value, store.rootPath || ''),

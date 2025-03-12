@@ -39,12 +39,12 @@
 <script setup lang="ts">
 import { cloneDeep as _cloneDeep } from 'lodash';
 import { ChevronDown, FolderIcon, LibraryIcon, HashIcon } from 'lucide-vue-next';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
 import { buttonVariants } from '~/components/_shadcn/button';
 import { ref, watch, watchEffect } from 'vue';
 
-const store = useStore();
+const store = useMainStore();
 
 const props = defineProps({
   name: {

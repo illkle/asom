@@ -1,10 +1,10 @@
 import { onMounted } from 'vue';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { onUnmounted } from 'vue';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 export const setupTabsHotkeys = () => {
-  const store = useStore();
+  const store = useMainStore();
 
   const actionKey = navigator.platform.indexOf('Mac') > -1 ? 'metaKey' : 'ctrlKey';
 

@@ -4,15 +4,15 @@ import type { ShallowRef } from 'vue';
 
 import type { IOpenedFile } from '~/api/openedTabs';
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';
-import { rustErrorNotification, useListenToEvent } from '~/api/tauriEvents';
+import { useRustErrorNotification, useListenToEvent } from '~/composables/useRustErrorNotifcation';
 import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
-import type { BookFromDb, Schema } from '~/types';
+import type { RecordFromDb, Schema } from '~/types';
 
 export const useBookEditor = (
   opened: IOpenedFile,
   editorTemplateRef: Readonly<ShallowRef<HTMLDivElement | null>>,
 ) => {
-  const file = ref<BookFromDb | null>(null);
+  const file = ref<RecordFromDb | null>(null);
 
   /*
    * We need to trigger saving when user changes something.
@@ -38,20 +38,20 @@ export const useBookEditor = (
     const res = await c_read_file_by_path(opened.thing).catch(returnErrorHandler);
 
     if ('isError' in res) {
-      rustErrorNotification(res, {
+      useRustErrorNotification(res, {
         FileReadRetry: () => loadFileFromDisk(),
       });
       return;
     }
 
     if (res.parsing_error) {
-      rustErrorNotification(res.parsing_error);
+      useRustErrorNotification(res.parsing_error);
     }
 
     pauseWatcher();
     schema.value = res.schema;
-    file.value = res.book;
-    createOrUpdateEditor(res.book.markdown || '');
+    file.value = res.record;
+    createOrUpdateEditor(res.record.markdown || '');
     await nextTick();
     resumeWatcher();
   };
@@ -68,7 +68,7 @@ export const useBookEditor = (
     createOrUpdateEditor(file.value?.markdown || '');
   });
 
-  const updateHandler = async (update: BookFromDb) => {
+  const updateHandler = async (update: RecordFromDb) => {
     if (update.modified === file.value?.modified) return;
     await loadFileFromDisk();
   };
@@ -87,7 +87,7 @@ export const useBookEditor = (
     const res = await c_save_file(file.value, forced).catch(returnErrorHandler);
 
     if ('isError' in res) {
-      rustErrorNotification(res, {
+      useRustErrorNotification(res, {
         FileSaveRetry: () => saveFile(),
         FileSaveRetryForced: () => saveFile(forced),
       });

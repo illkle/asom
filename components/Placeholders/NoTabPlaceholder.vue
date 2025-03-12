@@ -11,11 +11,11 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
-import { rustErrorNotification } from '~/api/tauriEvents';
+import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 
-const store = useStore();
+const store = useMainStore();
 
 const r = useRouter();
 

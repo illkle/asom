@@ -12,7 +12,7 @@
       <div
         v-for="item in store.openedTabs"
         :key="item.id"
-        class="absolute left-0 top-0 h-10 select-none px-2 py-1"
+        class="absolute top-0 left-0 h-10 px-2 py-1 select-none"
         :style="{
           width: TAB_WIDTH_PX + 'px',
           transform: `translateX(${getXPosition(item.id)}px)`,
@@ -22,7 +22,7 @@
         @dragover="dragOverHandler(item.id)"
       ></div>
       <div
-        class="absolute left-0 top-0 h-10 select-none px-2 py-1"
+        class="absolute top-0 left-0 h-10 px-2 py-1 select-none"
         :style="{
           width: `calc(100% - ${TAB_WIDTH_PX * store.openedTabs.length}px)`,
           transform: `translateX(${TAB_WIDTH_PX * store.openedTabs.length}px)`,
@@ -35,7 +35,7 @@
       v-for="(item, index) in store.openedTabs"
       :key="item.id"
       :class="[
-        'absolute left-0 top-0 select-none',
+        'absolute top-0 left-0 select-none',
         item.id !== store.openedTabsActiveId && 'cursor-pointer',
         item.id === store.openedTabsActiveId && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
       ]"
@@ -59,7 +59,7 @@
     </div>
     <div
       data-tauri-drag-region
-      class="dragApp absolute left-0 top-0 h-10 select-none bg-neutral-200 dark:bg-neutral-900"
+      class="dragApp absolute top-0 left-0 h-10 bg-neutral-200 select-none dark:bg-neutral-900"
       :style="{
         width: `calc(100% - ${TAB_WIDTH_PX * store.openedTabs.length}px)`,
         transform: `translateX(${TAB_WIDTH_PX * store.openedTabs.length}px)`,
@@ -72,7 +72,7 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, onUpdated, ref, watch } from 'vue';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';
 import { clamp } from 'lodash';
@@ -80,7 +80,7 @@ import { clamp } from 'lodash';
 import { useElementSize, useMouse } from '@vueuse/core';
 import type { IOpened } from '~/api/openedTabs';
 
-const store = useStore();
+const store = useMainStore();
 
 //
 // Style helpers

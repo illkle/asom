@@ -59,7 +59,7 @@ export const saveSettings = async (settings: ISettings) => {
   return;
 };
 
-const useSettingsStore = defineStore('userSettings', {
+export const useSettingsStore = defineStore('userSettings', {
   state: (): { settings: ISettings } => {
     return { settings: zSettings.parse({}) };
   },
@@ -75,9 +75,3 @@ const useSettingsStore = defineStore('userSettings', {
     },
   },
 });
-
-export const useSettings = () => {
-  const { settings, updateSettings, loadSettings } = useSettingsStore();
-
-  return { settings, updateSettings, loadSettings };
-};

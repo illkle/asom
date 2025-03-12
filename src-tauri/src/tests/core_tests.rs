@@ -1,9 +1,10 @@
+use pretty_assertions::assert_eq;
 use std::{thread::sleep, time::Duration};
 
 use tauri::Manager;
 
 use crate::{
-    cache::query::{get_all_folders, get_files_abstact},
+    cache::query::{get_all_folders, get_files_abstact, FolderListGetResult, FolderOnDisk},
     core::core::CoreStateManager,
     schema::types::AttrValue,
     tests::test_utils::{
@@ -299,10 +300,7 @@ async fn test_basic_folder_ops() {
 
     // Check initial folders state
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let folders_result = get_all_folders(conn).await;
+        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
         assert!(folders_result.is_ok());
 
         let folders = folders_result.unwrap();
@@ -321,10 +319,7 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir(&new_folder_path).unwrap();
 
     let after_create = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let folders_result = get_all_folders(conn).await;
+        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -350,10 +345,7 @@ async fn test_basic_folder_ops() {
     std::fs::rename(&new_folder_path, &renamed_folder_path).unwrap();
 
     let after_rename = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let folders_result = get_all_folders(conn).await;
+        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -383,10 +375,7 @@ async fn test_basic_folder_ops() {
     std::fs::remove_dir(&renamed_folder_path).unwrap();
 
     let after_delete = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let folders_result = get_all_folders(conn).await;
+        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -412,9 +401,7 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir_all(&nested_folder_path).unwrap();
 
     let after_nested_create = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-        let folders_result = get_all_folders(conn).await;
+        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -583,7 +570,30 @@ async fn test_nested_ops() {
                 .join("How to Take Smart Notes.md"),
         );
 
-        return schemas.len() == 3
+        drop(schemas_cache);
+
+        let mut db = core.database_conn.lock().await;
+        let conn = db.get_conn().await;
+
+        let files = get_files_abstact(conn, "".to_string()).await;
+        drop(db);
+
+        let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+
+        if !files.is_ok() || !folders.is_ok() {
+            return false;
+        }
+
+        let files = files.unwrap();
+        let folders = folders.unwrap();
+
+        println!("files: {:?}", files.len());
+        println!("folders: {:?}", folders.folders.len());
+        println!("schemas: {:?}", schemas.len());
+
+        return files.len() == 4
+            && folders.folders.len() == 7
+            && schemas.len() == 3
             && books_schema.is_some()
             && movies_schema.is_some()
             && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks")
@@ -673,10 +683,9 @@ async fn test_nested_ops() {
         let conn = db.get_conn().await;
 
         let files = get_files_abstact(conn, "".to_string()).await;
-
-        let folders = get_all_folders(conn).await;
-
         drop(db);
+
+        let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
 
         if !files.is_ok() || !folders.is_ok() {
             return false;
@@ -685,7 +694,7 @@ async fn test_nested_ops() {
         let files = files.unwrap();
         let folders = folders.unwrap();
 
-        return schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 5;
+        return schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 7;
     };
 
     let result = wait_for_condition_async(
@@ -699,4 +708,258 @@ async fn test_nested_ops() {
     assert!(result, "Items count is not correct after nested renaming");
 
     cleanup_test_case(test_dir).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn test_folder_schema_status() {
+    let app = app_creator().await;
+    let core = app.state::<CoreStateManager>();
+
+    let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
+
+    let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+    assert!(folders.is_ok());
+
+    let mut folders = folders.unwrap();
+
+    let bks_s = test_dir
+        .clone()
+        .join("books")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+    let abks_s = test_dir
+        .clone()
+        .join("books")
+        .join("audiobooks")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+    let mvs_s = test_dir
+        .clone()
+        .join("movies")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+
+    let mut expected = FolderListGetResult {
+        folders: vec![
+            FolderOnDisk {
+                name: test_dir
+                    .clone()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
+                path: test_dir.clone().to_string_lossy().to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+            FolderOnDisk {
+                name: "books".to_string(),
+                path: test_dir.clone().join("books").to_string_lossy().to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: bks_s.clone(),
+            },
+            FolderOnDisk {
+                name: "favorites".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("books")
+                    .join("favorites")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: false,
+                schema_file_path: bks_s,
+            },
+            FolderOnDisk {
+                name: "audiobooks".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("books")
+                    .join("audiobooks")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: abks_s,
+            },
+            FolderOnDisk {
+                name: "movies".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("movies")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: mvs_s,
+            },
+            FolderOnDisk {
+                name: "noschema".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("noschema")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+            FolderOnDisk {
+                name: "nestno".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("noschema")
+                    .join("nestno")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+        ],
+    };
+
+    folders.folders.sort_by_key(|f| f.path.clone());
+    expected.folders.sort_by_key(|f| f.path.clone());
+    assert_eq!(folders, expected);
+
+    // rename books folder to books_renamed
+    std::fs::rename(
+        test_dir.clone().join("books"),
+        test_dir.clone().join("books_renamed"),
+    )
+    .unwrap();
+
+    //rename audiobooks folder to audiobooks_renamed
+    std::fs::rename(
+        test_dir.clone().join("books_renamed").join("audiobooks"),
+        test_dir
+            .clone()
+            .join("books_renamed")
+            .join("audiobooks_renamed"),
+    )
+    .unwrap();
+
+    // Wait for watcher
+    sleep(Duration::from_millis(300));
+
+    let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+    assert!(folders.is_ok());
+
+    let mut folders = folders.unwrap();
+
+    let bks_s = test_dir
+        .clone()
+        .join("books_renamed")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+    let abks_s = test_dir
+        .clone()
+        .join("books_renamed")
+        .join("audiobooks_renamed")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+    let mvs_s = test_dir
+        .clone()
+        .join("movies")
+        .join("schema.yaml")
+        .to_string_lossy()
+        .to_string();
+
+    let mut expected = FolderListGetResult {
+        folders: vec![
+            FolderOnDisk {
+                name: test_dir
+                    .clone()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
+                path: test_dir.clone().to_string_lossy().to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+            FolderOnDisk {
+                name: "books_renamed".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: bks_s.clone(),
+            },
+            FolderOnDisk {
+                name: "favorites".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .join("favorites")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: false,
+                schema_file_path: bks_s,
+            },
+            FolderOnDisk {
+                name: "audiobooks_renamed".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .join("audiobooks_renamed")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: abks_s,
+            },
+            FolderOnDisk {
+                name: "movies".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("movies")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: true,
+                own_schema: true,
+                schema_file_path: mvs_s,
+            },
+            FolderOnDisk {
+                name: "noschema".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("noschema")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+            FolderOnDisk {
+                name: "nestno".to_string(),
+                path: test_dir
+                    .clone()
+                    .join("noschema")
+                    .join("nestno")
+                    .to_string_lossy()
+                    .to_string(),
+                has_schema: false,
+                own_schema: false,
+                schema_file_path: "".to_string(),
+            },
+        ],
+    };
+
+    folders.folders.sort_by_key(|f| f.path.clone());
+    expected.folders.sort_by_key(|f| f.path.clone());
+    assert_eq!(folders, expected);
 }

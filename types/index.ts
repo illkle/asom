@@ -6,18 +6,17 @@ import type { TextSettings } from '../src-tauri/bindings/TextSettings';
 import type { SchemaItem } from '../src-tauri/bindings/SchemaItem';
 import type { InputSize } from '../src-tauri/bindings/InputSize';
 import type { Schema } from '../src-tauri/bindings/Schema';
-import type { SchemaAttrKey } from '../src-tauri/bindings/SchemaAttrKey';
+import type { SchemaAttrType } from '../src-tauri/bindings/SchemaAttrType';
 import type { NumberStyle } from '../src-tauri/bindings/NumberStyle';
 import type { NumberSettings } from '../src-tauri/bindings/NumberSettings';
 import type { EmptySettings } from '../src-tauri/bindings/EmptySettings';
 import type { DefaultSchema } from '../src-tauri/bindings/DefaultSchema';
-import type { DateRead } from '../src-tauri/bindings/DateRead';
-import type { AttrKey } from '../src-tauri/bindings/AttrKey';
+import type { DatePair } from '../src-tauri/bindings/DatePair';
 import type { AttrValue } from '../src-tauri/bindings/AttrValue';
-import type { ErrorFromRust } from '../src-tauri/bindings/ErrorFromRust';
-import type { ErrorActionCode } from '../src-tauri/bindings/ErrorActionCode';
-import type { BookFromDb } from '../src-tauri/bindings/BookFromDb';
-import type { BookListGetResult } from '../src-tauri/bindings/BookListGetResult';
+import type { ErrFR } from '../src-tauri/bindings/ErrFR';
+import type { ErrFRActionCode } from '../src-tauri/bindings/ErrFRActionCode';
+import type { RecordFromDb } from '../src-tauri/bindings/RecordFromDb';
+import type { RecordListGetResult } from '../src-tauri/bindings/RecordListGetResult';
 import type { IPCEmitEvent } from '../src-tauri/bindings/IPCEmitEvent';
 import type { IPCResponces } from '../src-tauri/bindings/IPCResponces';
 
@@ -32,12 +31,11 @@ type ExtractIpcResponcesType<K extends keyof IPCResponces> = Extract<
 >['Ok'];
 
 export const AttrValueKeys: AttrValue['type'][] = [
-  'Text',
-  'Number',
-  'Date',
-  'DateCollection',
-  'Image',
-  'TextCollection',
+  'DatePairVec',
+  'Float',
+  'Integer',
+  'String',
+  'StringVec',
 ] as const;
 
 export type {
@@ -49,16 +47,15 @@ export type {
   NumberSettings,
   EmptySettings,
   SchemaItem,
-  SchemaAttrKey,
+  SchemaAttrType,
   Schema,
   TextSettings,
-  BookListGetResult,
-  ErrorFromRust,
-  ErrorActionCode,
-  BookFromDb,
+  RecordListGetResult,
+  ErrFR,
+  ErrFRActionCode,
+  RecordFromDb,
   DefaultSchema,
-  DateRead,
-  AttrKey,
+  DatePair,
   AttrValue,
   IPCEmitEvent,
   ExtractIPCEmitEventData,

@@ -1,49 +1,96 @@
 <template>
   <div class="px-4 pb-4"></div>
 
-  <div v-for="(schema, path) in schemas">
-    {{ path }}
-  </div>
-
   <div class="mx-auto max-w-[600px]">
     <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
 
-    <TreeRoot
-      v-if="!foldersPending && !schemasPending"
-      v-slot="{ flattenItems }"
-      :items="transformedFolders?.[0]?.children || []"
-      :default-expanded="allFolderIds"
-      multiple
-      :get-key="(opt) => opt.rawPath"
-      class="flex flex-col gap-2"
-    >
-      <template v-for="item in flattenItems">
-        <TreeItem v-bind="item.bind" v-slot="{ isExpanded }">
-          <div :style="`padding-left: ${item.level - 1}rem`">
-            <ShButton
-              variant="outline"
-              size="xs"
-              class="flex w-full justify-start gap-2"
-              :class="cn(!item.value.hasSchema && 'opacity-50')"
-            >
-              <ChevronDown
-                v-if="item.value.children.length > 0"
-                :size="12"
-                :class="[!isExpanded && '-rotate-90']"
-              />
-              <FolderIcon v-else :size="12" />
+    <div class="flex items-center justify-between">
+      <div class="flex flex-col gap-1">
+        <div>Root path:</div>
+        <div class="font-mono text-sm opacity-30">
+          {{ store.rootPath }}
+        </div>
+      </div>
+      <ShButton variant="outline">Change root path</ShButton>
+    </div>
 
-              {{ item.value.name }}
+    <div class="mt-6 rounded-lg border px-4 py-6 dark:border-neutral-900">
+      <TreeRoot
+        v-if="!isPending && !schemasPending"
+        v-slot="{ flattenItems }"
+        :items="foldersAsTree?.[0]?.children || []"
+        :default-expanded="allFolderIds"
+        multiple
+        :get-key="(opt) => opt.rawPath"
+        class="flex flex-col gap-2"
+      >
+        <template v-for="item in flattenItems">
+          <TreeItem v-bind="item.bind" v-slot="{ isExpanded }">
+            <ShContextMenu>
+              <ShContextMenuTrigger class="w-full">
+                <div :style="`padding-left: ${item.level - 1}rem`" class="flex items-center gap-2">
+                  <ShButton
+                    variant="outline"
+                    size="xs"
+                    class="flex w-full justify-start gap-2"
+                    :class="cn(!item.value.hasSchema && 'opacity-50')"
+                  >
+                    <ChevronDown
+                      v-if="item.value.children.length > 0"
+                      :size="12"
+                      :class="[!isExpanded && '-rotate-90']"
+                    />
+                    <FolderIcon v-else :size="12" />
 
-              <div v-if="item.value.ownSchema" class="ml-auto flex items-center gap-2 text-xs">
-                Schema Owner
-                <FileIcon :size="12" />
-              </div>
-            </ShButton>
-          </div>
-        </TreeItem>
-      </template>
-    </TreeRoot>
+                    {{ item.value.name }}
+
+                    <div
+                      v-if="item.value.ownSchema"
+                      class="ml-auto flex items-center gap-2 text-xs opacity-80"
+                    >
+                      <FileIcon :size="12" />
+
+                      Schema owner
+                    </div>
+                  </ShButton>
+                  <div v-if="item.value.ownSchema" class="ml-auto flex items-center gap-2 text-xs">
+                    <ShButton
+                      v-if="item.value.schemaFilePath"
+                      variant="outline"
+                      size="xs"
+                      @click.stop="openSchemaEditor(item.value.schemaFilePath)"
+                      >Edit</ShButton
+                    >
+                  </div>
+                </div>
+              </ShContextMenuTrigger>
+              <ShContextMenuContent>
+                <ShContextMenuItem v-if="item.value.hasSchema" @click="">
+                  Edit schema
+                </ShContextMenuItem>
+                <ShContextMenuItem
+                  v-if="!item.value.ownSchema"
+                  @click="addNewSchema(item.value.name, item.value.rawPath)"
+                >
+                  Create schema
+                </ShContextMenuItem>
+                <ShContextMenuItem v-if="item.value.ownSchema" @click="">
+                  Delete schema
+                </ShContextMenuItem>
+
+                <ShContextMenuSeparator />
+
+                <ShContextMenuItem
+                  @click="async () => await remove(item.value.rawPath, { recursive: true })"
+                >
+                  Delete Folder
+                </ShContextMenuItem>
+              </ShContextMenuContent>
+            </ShContextMenu>
+          </TreeItem>
+        </template>
+      </TreeRoot>
+    </div>
   </div>
 </template>
 
@@ -55,11 +102,12 @@ import {
   c_save_schema,
 } from '~/api/tauriActions';
 import { useQuery, useQueryCache } from '@pinia/colada';
-import { filePathsToTree } from '../FileTree/filePathsToTree';
-import { TreeItem, TreeRoot, TreeVirtualizer } from 'reka-ui';
-import { ChevronDown, FolderDown, FolderIcon, FileIcon } from 'lucide-vue-next';
+import { TreeItem, TreeRoot } from 'reka-ui';
+import { ChevronDown, FolderIcon, FileIcon } from 'lucide-vue-next';
 
-const selectedPeople = ref([]);
+import { remove } from '@tauri-apps/plugin-fs';
+import { useFoldersList } from '~/composables/useFoldersList';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
 const qc = useQueryCache();
 
@@ -73,49 +121,42 @@ const { data: schemas, isPending: schemasPending } = useQuery({
   query: c_get_schemas,
 });
 
-const { data: folders, isPending: foldersPending } = useQuery({
-  key: ['folders', 'all'],
-  query: c_get_all_folders,
-});
+const { folders, isPending, refetch, throttledRefetch, foldersAsTree } = useFoldersList();
 
-const store = useStore();
+const store = useMainStore();
 
 onMounted(() => {
   if (!store.rootPath) {
-    console.log('fetching root path');
     store.fetchRootPath();
   }
 });
-
-const transformedFolders = computed(() =>
-  !folders.value || 'isError' in folders.value
-    ? []
-    : filePathsToTree(folders.value, store.rootPath || ''),
-);
 
 const allFolderIds = computed(() => {
   return folders.value?.folders.map((v) => v.path) ?? [];
 });
 
-const addNewSchema = async (path: string) => {
-  if (!newSchemaName.value || !selectedDefaultSchema.value) return;
-  const res = await c_save_schema(path, {
-    items: selectedDefaultSchema.value.schema_items,
-    name: newSchemaName.value,
+const addNewSchema = async (folderName: string, folderPath: string) => {
+  await c_save_schema(folderPath, {
+    items: [],
+    name: folderName,
     version: 'to be set by backend',
     icon: '',
+  }).catch((e) => {
+    console.log(e);
   });
-
-  isCreateDialogOpen.value = false;
 
   qc.invalidateQueries({ key: ['schemas'] });
 };
 
-const isCreateDialogOpen = ref(false);
-const newSchemaName = ref('');
 const newSchemaTemplate = ref<string>('0');
 const selectedDefaultSchema = computed(() => {
   if (!defaultSchemas.value) return null;
   return defaultSchemas.value[Number(newSchemaTemplate.value)];
 });
+
+const router = useRouter();
+
+const openSchemaEditor = (path: string) => {
+  router.push(`/schemas/edit?path=${path}`);
+};
 </script>

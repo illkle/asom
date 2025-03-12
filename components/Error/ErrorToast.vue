@@ -6,9 +6,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ErrorFromRust } from '~/api/tauriEvents';
+import type { ErrFR } from '~/types';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
-const store = useStore();
+const store = useMainStore();
 
 const readFullError = () => {
   store.setError(props.err);
@@ -16,7 +17,7 @@ const readFullError = () => {
 
 const props = defineProps({
   err: {
-    type: Object as PropType<ErrorFromRust>,
+    type: Object as PropType<ErrFR>,
     default: 'no prop',
   },
 });

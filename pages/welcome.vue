@@ -10,9 +10,9 @@
 
 <script lang="ts" setup>
 import { selectAndSetRootPath } from '~/api/rootPath';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
-const store = useStore();
+const store = useMainStore();
 
 watch(
   () => store.rootPath,

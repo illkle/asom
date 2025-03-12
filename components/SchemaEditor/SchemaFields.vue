@@ -11,6 +11,10 @@
 
     <div class="max-w-[600px]">
       <div>
+        <ShInput v-model="schema.name" />
+      </div>
+
+      <div>
         Icon from Lucide
 
         <p>CamelCase style: StarHalf, BookAudio, etc.</p>
@@ -35,12 +39,12 @@
 </template>
 
 <script setup lang="ts">
-import { isOurError, rustErrorNotification } from '~/api/tauriEvents';
+import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 
 import { ArrowLeftIcon } from 'lucide-vue-next';
 import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
 
-import type { ErrorFromRust, Schema } from '~/types';
+import type { ErrFR, Schema } from '~/types';
 
 const route = useRoute();
 
@@ -50,9 +54,9 @@ const goBack = () => {
 
 const save = async () => {
   if (!schema.value) return;
-  const r = await c_save_schema(schema.value.internal_name, schema.value).catch(returnErrorHandler);
+  const r = await c_save_schema(route.query.path as string, schema.value).catch(returnErrorHandler);
   if ('isError' in r) {
-    rustErrorNotification(r);
+    useRustErrorNotification(r);
     return;
   }
   goBack();
@@ -62,13 +66,13 @@ const schema = ref<Schema | null>(null);
 
 onMounted(async () => {
   try {
-    const res = await c_load_schema(route.params.path as string);
+    const res = await c_load_schema(route.query.path as string);
     schema.value = res;
   } catch (e) {
     if (isOurError(e)) {
-      rustErrorNotification(e as ErrorFromRust);
+      useRustErrorNotification(e as ErrFR);
     }
-    navigateTo('/schemas', { replace: true });
+    //  navigateTo('/schemas', { replace: true });
   }
 });
 

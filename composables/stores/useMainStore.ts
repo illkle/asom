@@ -12,7 +12,7 @@ import {
   getOpenedTabs,
 } from '~/api/openedTabs';
 import { getRootPath } from '~/api/rootPath';
-import type { ErrorFromRust, Schema } from '~/types';
+import type { ErrFR, Schema } from '~/types';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -20,7 +20,7 @@ export type StateType = {
   rootPath: string | null;
   openedTabs: IOpenedTabs['tabs'];
   openedTabsActiveId: IOpenedTabs['activeId'];
-  errorModal: ErrorFromRust | null;
+  errorModal: ErrFR | null;
   schemas: Schema[];
 };
 
@@ -35,7 +35,7 @@ export type OpenNewOneParams =
       focus?: boolean;
     };
 
-export const useStore = defineStore('main', {
+export const useMainStore = defineStore('main', {
   state: (): StateType => {
     return {
       rootPath: null,
@@ -142,7 +142,7 @@ export const useStore = defineStore('main', {
     },
 
     // Err
-    setError(data: ErrorFromRust) {
+    setError(data: ErrFR) {
       this.errorModal = data;
     },
   },
@@ -160,7 +160,7 @@ export const useStore = defineStore('main', {
     },
     currentViewSettings(): IViewSettings | undefined {
       if (!this.openedItem) return;
-      if (this.openedItem.type !== 'folder' && this.openedItem.type !== 'tag') return undefined;
+      if (this.openedItem.type !== 'folder') return undefined;
 
       return this.openedItem.settings;
     },
@@ -168,11 +168,11 @@ export const useStore = defineStore('main', {
 });
 
 if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useStore, import.meta.hot));
+  import.meta.hot.accept(acceptHMRUpdate(useMainStore, import.meta.hot));
 }
 
 export const rootPathFromStore = () => {
-  const store = useStore();
+  const store = useMainStore();
 
   const r = store.rootPath;
 

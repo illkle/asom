@@ -53,7 +53,7 @@ import { computed, onUpdated, ref, watchEffect, nextTick } from 'vue';
 import { cloneDeep as _cloneDeep } from 'lodash';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 import type { PropType } from 'vue';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
 import TreeCell from './TreeCell.vue';
 import type { FolderNode } from '../FileTree/filePathsToTree';
@@ -61,7 +61,7 @@ import { once } from '@tauri-apps/api/event';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
 
-const store = useStore();
+const store = useMainStore();
 
 const props = defineProps({
   content: {

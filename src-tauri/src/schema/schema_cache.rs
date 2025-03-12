@@ -8,15 +8,14 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
-use sqlx::SqliteConnection;
 use ts_rs::TS;
 
 use super::types::{Schema, SCHEMA_VERSION};
-use crate::utils::errorhandling::ErrorFromRust;
+use crate::utils::errorhandling::ErrFR;
 
 #[derive(Debug)]
 pub struct SchemasInMemoryCache {
+    // Path is the owner folder path. So file is key + schema.yaml
     map: BTreeMap<PathBuf, Schema>,
 }
 
@@ -41,8 +40,8 @@ impl SchemasInMemoryCache {
     pub fn get_schema(&self, path: &Path) -> Option<SchemaResult> {
         if let Some(value) = self.map.get(path) {
             return Some(SchemaResult {
-                file_path: path.to_path_buf(),
-                owner_folder: path.parent().unwrap().to_path_buf(),
+                file_path: path.to_path_buf().join("schema.yaml"),
+                owner_folder: path.to_path_buf(),
                 schema: value.clone(),
             });
         }
@@ -66,11 +65,11 @@ impl SchemasInMemoryCache {
         self.map.iter()
     }
 
-    pub fn get_schema_safe(&self, path: &Path) -> Result<SchemaResult, ErrorFromRust> {
+    pub fn get_schema_safe(&self, path: &Path) -> Result<SchemaResult, ErrFR> {
         let s = self.get_schema(path);
         match s {
             Some(s) => Ok(s),
-            None => Err(ErrorFromRust::new("Unable to retrieve schema")
+            None => Err(ErrFR::new("Unable to retrieve schema")
                 .info(
                     "Unless you changed files manually this should not happen. Try restarting the app",
                 )
@@ -87,19 +86,19 @@ impl SchemasInMemoryCache {
             .collect()
     }
 
-    pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Schema, ErrorFromRust> {
-        let schema_path = match path.is_dir() {
+    pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Schema, ErrFR> {
+        let schema_file_path = match path.is_dir() {
             true => path.join("schema.yaml"),
             false => match path.file_name() {
                 Some(v) => {
                     if v == "schema.yaml" {
                         path
                     } else {
-                        return Err(ErrorFromRust::new("Schema file must be named schema.yaml"));
+                        return Err(ErrFR::new("Schema file must be named schema.yaml"));
                     }
                 }
                 None => {
-                    return Err(ErrorFromRust::new("Unable to get basename from schema path")
+                    return Err(ErrFR::new("Unable to get basename from schema path")
                         .info(&format!(
                             "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
                             &path.clone().to_string_lossy()
@@ -108,30 +107,30 @@ impl SchemasInMemoryCache {
             },
         };
 
-        if !schema_path.exists() {
-            return Err(ErrorFromRust::new("Schema file does not exist")
-                .info(&schema_path.clone().to_string_lossy()));
+        if !schema_file_path.exists() {
+            return Err(ErrFR::new("Schema file does not exist")
+                .info(&schema_file_path.clone().to_string_lossy()));
         }
 
-        let file_content = read_to_string(schema_path.clone()).map_err(|e| {
-            ErrorFromRust::new("Error when reading schema file")
-                .info(&schema_path.clone().to_string_lossy())
+        let file_content = read_to_string(schema_file_path.clone()).map_err(|e| {
+            ErrFR::new("Error when reading schema file")
+                .info(&schema_file_path.clone().to_string_lossy())
                 .raw(e)
         })?;
 
         let sch: Schema = serde_yml::from_str(&file_content).map_err(|e| {
-            ErrorFromRust::new("Error parsing schema")
-                .info(&schema_path.clone().to_string_lossy())
+            ErrFR::new("Error parsing schema")
+                .info(&schema_file_path.clone().to_string_lossy())
                 .raw(e)
         })?;
 
-        let folder_path = match schema_path.parent() {
+        let folder_path = match schema_file_path.parent() {
             Some(v) => v,
             None => {
-                return Err(ErrorFromRust::new(
+                return Err(ErrFR::new(
                     "Unable to get parent from schema path. This is unexpected, please report bug.",
                 )
-                .info(&schema_path.clone().to_string_lossy()));
+                .info(&schema_file_path.clone().to_string_lossy()));
             }
         };
 
@@ -140,15 +139,12 @@ impl SchemasInMemoryCache {
         Ok(sch)
     }
 
-    pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), ErrorFromRust> {
+    pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), ErrFR> {
         self.map.remove(&path);
         Ok(())
     }
 
-    pub async fn remove_schemas_with_children(
-        &mut self,
-        path: PathBuf,
-    ) -> Result<(), ErrorFromRust> {
+    pub async fn remove_schemas_with_children(&mut self, path: PathBuf) -> Result<(), ErrFR> {
         let paths_to_remove: Vec<PathBuf> = self
             .iter()
             .filter(|(p, _)| p.starts_with(&path))
@@ -166,13 +162,13 @@ impl SchemasInMemoryCache {
         &mut self,
         folder_path: &PathBuf,
         mut schema: Schema,
-    ) -> Result<Schema, ErrorFromRust> {
+    ) -> Result<Schema, ErrFR> {
         schema.version = SCHEMA_VERSION.to_string();
         let serialized = serde_yml::to_string(&schema)
-            .map_err(|e| ErrorFromRust::new("Error serializing schema").raw(e))?;
+            .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
         create_dir_all(folder_path).map_err(|e| {
-            ErrorFromRust::new("Error creating directory")
+            ErrFR::new("Error creating directory")
                 .info("Could not create schema folder")
                 .raw(e)
         })?;
@@ -180,7 +176,7 @@ impl SchemasInMemoryCache {
         let schema_path = folder_path.join("schema.yaml");
 
         write(schema_path.clone(), serialized).map_err(|e| {
-            ErrorFromRust::new("Error writing to disk")
+            ErrFR::new("Error writing to disk")
                 .info("File was not saved")
                 .raw(e)
         })?;
@@ -189,47 +185,11 @@ impl SchemasInMemoryCache {
 
         Ok(schema)
     }
-
-    pub async fn rebuild_schema_index_in_db(
-        &mut self,
-        conn: &mut SqliteConnection,
-        from_path: &Path,
-    ) -> Result<(), ErrorFromRust> {
-        let all_folders = sqlx::query("SELECT path FROM folders WHERE path LIKE concat(?1, '%')")
-            .bind(from_path.to_string_lossy().to_string())
-            .fetch_all(&mut *conn)
-            .await
-            .map_err(|e| ErrorFromRust::new("Error fetching all folders").raw(e))?;
-
-        for folder in all_folders {
-            let folder_path = PathBuf::from(folder.get::<String, _>(0));
-            let schema = self.get_schema(&folder_path);
-
-            sqlx::query("UPDATE folders SET schema_file_path = ?, has_schema = ?, own_schema = ? WHERE path = ?")
-                .bind(match schema.as_ref() {
-                    Some(schema) => schema.file_path.to_string_lossy().to_string(),
-                    None => "".to_string(),
-                })
-                .bind(match schema.as_ref() {
-                    Some(_) => true,
-                    None => false,
-                })
-                .bind(match schema.as_ref() {
-                    Some(s) => s.owner_folder == folder_path,
-                    None => false,
-                })
-                .execute(&mut *conn)
-                .await
-                .map_err(|e| ErrorFromRust::new("Error updating db folders for new schema").raw(e))?;
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct SchemaLoadList {
     pub schemas: HashMap<String, Schema>,
-    pub error: Option<ErrorFromRust>,
+    pub error: Option<ErrFR>,
 }

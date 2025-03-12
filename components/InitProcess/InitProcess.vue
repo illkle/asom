@@ -53,20 +53,13 @@
 </template>
 
 <script lang="ts" setup>
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { CheckIcon, LoaderCircle, XIcon } from 'lucide-vue-next';
-import {
-  c_get_schemas,
-  c_init_once,
-  c_load_schemas,
-  c_prepare_cache,
-  c_watch_path,
-  returnErrorHandler,
-} from '~/api/tauriActions';
-import type { ErrorFromRust } from '~/types';
-import { isOurError } from '~/api/tauriEvents';
+import { c_init_once, c_prepare_cache, c_watch_path } from '~/api/tauriActions';
+import type { ErrFR } from '~/types';
+import { isOurError } from '~/composables/useRustErrorNotifcation';
 
-const store = useStore();
+const store = useMainStore();
 
 const running = ref(false);
 
@@ -101,6 +94,7 @@ const watcherMutation = useMutation({
   mutation: c_watch_path,
   onError: stopRunning,
   onSuccess: async () => {
+    console.log('c_watch_path success');
     await navigateTo('/application', { replace: true });
   },
 });

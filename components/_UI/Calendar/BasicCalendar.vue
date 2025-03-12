@@ -6,23 +6,23 @@ import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next';
 import DaysRenderer from './DaysRenderer.vue';
 
 import BasicInput from '~/components/_UI/BasicInput.vue';
-import { useSettings } from '~/utils/settingsStore';
+import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
-const { settings } = useSettings();
+const s = useSettingsStore();
 
 // Input is a date string in a format that you can change in settings
 // This function converts it do js Date
 const stringToDate = (dateString: string) => {
-  if (!settings) {
+  if (!s.settings) {
     throw new Error('No settings loaded');
   }
-  return parse(dateString, settings.dateFormat, new Date());
+  return parse(dateString, s.settings.dateFormat, new Date());
 };
 const dateToString = (date: Date) => {
-  if (!settings) {
+  if (!s.settings) {
     throw new Error('No settings loaded');
   }
-  return format(date, settings.dateFormat);
+  return format(date, s.settings.dateFormat);
 };
 
 const props = defineProps<{

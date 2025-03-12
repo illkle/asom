@@ -6,7 +6,7 @@
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-    <ShToaster :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
+    <Sonner :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
     <ErrorModal />
 
     <div id="customTeleport" class="absolute top-[-1000px]"></div>
@@ -15,9 +15,11 @@
 
 <script setup lang="ts">
 import { debounce as _debounce } from 'lodash';
-import { handleErrorsFromRust, useListenToEvent } from './api/tauriEvents';
+import { handleErrorsFromRust } from './composables/useRustErrorNotifcation';
+import { useMainStore } from '~/composables/stores/useMainStore';
+import Sonner from '~/components/_shadcn/sonner/Sonner.vue';
 
-const store = useStore();
+const store = useMainStore();
 
 onBeforeMount(async () => {
   await store.fetchRootPath();

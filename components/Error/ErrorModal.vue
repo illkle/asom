@@ -27,7 +27,9 @@
 </template>
 
 <script setup lang="ts">
-const store = useStore();
+import { useMainStore } from '~/composables/stores/useMainStore';
+
+const store = useMainStore();
 
 const err = computed(() => store.errorModal);
 </script>

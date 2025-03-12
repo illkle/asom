@@ -3,11 +3,12 @@ import { cloneDeep as _cloneDeep } from 'lodash';
 
 import type { IOpenedPath } from '~/api/openedTabs';
 
-import { rustErrorNotification, useListenToEvent } from '~/api/tauriEvents';
-import { useThrottledEvents } from '~/utils/useTrottledEvents';
+import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
+import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import path from 'path-browserify';
 import { c_get_files_path, returnErrorHandler } from '~/api/tauriActions';
-import type { BookFromDb } from '~/types';
+import type { RecordFromDb } from '~/types';
+import { useListenToEvent } from '~/composables/useListenToEvent';
 
 export const useFilesList = ({
   opened,
@@ -27,7 +28,7 @@ export const useFilesList = ({
     if (opened.type === 'folder') {
       const res = await c_get_files_path(opened.thing, searchQuery.value).catch(returnErrorHandler);
       if ('isError' in res) {
-        rustErrorNotification(res, {});
+        useRustErrorNotification(res, {});
         return;
       }
       data.value = res;
@@ -52,9 +53,9 @@ export const useFilesList = ({
   //
   // Update event handling
   //
-  const updateOrAddToFiles = (book: BookFromDb) => {
+  const updateOrAddToFiles = (book: RecordFromDb) => {
     if (!data.value) return;
-    const books = data.value.books;
+    const books = data.value.records;
     // Do not assume that add event will be called once
     // I encountered watcher on mac emitting duplicate events when copying files
     const index = books.findIndex((v) => v.path === book.path);
@@ -68,7 +69,7 @@ export const useFilesList = ({
 
   const removeFromFiles = (path: string) => {
     if (!data.value) return;
-    const books = data.value.books;
+    const books = data.value.records;
     const index = books.findIndex((v) => v.path === path);
 
     if (index >= 0) {
@@ -122,11 +123,11 @@ const isChangedFolderRelevant = (myPath: string, eventPath: string) => {
 type FileListEvent =
   | {
       event: 'add';
-      book: BookFromDb;
+      book: RecordFromDb;
     }
   | {
       event: 'update';
-      book: BookFromDb;
+      book: RecordFromDb;
     }
   | {
       event: 'remove';

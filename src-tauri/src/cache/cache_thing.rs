@@ -2,26 +2,28 @@ use sqlx::SqliteConnection;
 use std::path::Path;
 use walkdir::WalkDir;
 
+use crate::core::core::{DatabaseConnectionMutex, SchemasCacheMutex};
 use crate::files::read_save::{read_file_by_path, FileReadMode};
-use crate::schema::schema_cache::SchemasInMemoryCache;
-use crate::utils::errorhandling::ErrorFromRust;
+use crate::utils::errorhandling::ErrFR;
 
 use super::query::RecordFromDb;
 
 // Function to insert a file record into the database
 pub async fn insert_file_into_cache_db(
-    conn: &mut SqliteConnection,
+    dbm: &DatabaseConnectionMutex,
     file: &RecordFromDb,
-) -> Result<(), ErrorFromRust> {
+) -> Result<(), ErrFR> {
     let path = match file.path.as_ref() {
         Some(p) => p,
         None => return Ok(()),
     };
 
     let attrs = serde_json::to_string(&file.attrs).map_err(|e| {
-        ErrorFromRust::new("Error when serializing file attributes. This should never happen.")
-            .raw(e)
+        ErrFR::new("Error when serializing file attributes. This should never happen.").raw(e)
     })?;
+
+    let mut db = dbm.lock().await;
+    let conn = db.get_conn().await;
 
     sqlx::query(
         "INSERT INTO files (path, modified, attributes) VALUES (?1, ?2, ?3) ON CONFLICT(path) DO UPDATE SET modified=excluded.modified, attributes=excluded.attributes",
@@ -31,16 +33,16 @@ pub async fn insert_file_into_cache_db(
     .bind(attrs)
     .execute(conn)
     .await
-    .map_err(|e| ErrorFromRust::new("Error when inserting file").raw(e))?;
+    .map_err(|e| ErrFR::new("Error when inserting file").raw(e))?;
 
     Ok(())
 }
 
 pub async fn cache_file(
-    schemas_cache: &mut SchemasInMemoryCache,
-    conn: &mut SqliteConnection,
+    schemas_cache: &SchemasCacheMutex,
+    dbm: &DatabaseConnectionMutex,
     path: &Path,
-) -> Result<RecordFromDb, ErrorFromRust> {
+) -> Result<RecordFromDb, ErrFR> {
     match read_file_by_path(
         schemas_cache,
         &path.to_string_lossy(),
@@ -48,7 +50,7 @@ pub async fn cache_file(
     )
     .await
     {
-        Ok(file) => insert_file_into_cache_db(conn, &file.record)
+        Ok(file) => insert_file_into_cache_db(dbm, &file.record)
             .await
             .map(|_| file.record),
         Err(e) => Err(e),
@@ -56,30 +58,33 @@ pub async fn cache_file(
 }
 
 pub async fn remove_file_from_cache(
-    conn: &mut SqliteConnection,
+    dbm: &DatabaseConnectionMutex,
     path: &Path,
-) -> Result<(), ErrorFromRust> {
+) -> Result<(), ErrFR> {
+    let mut db = dbm.lock().await;
+    let conn = db.get_conn().await;
+
     sqlx::query(&format!("DELETE FROM files WHERE path=?1",))
         .bind(path.to_string_lossy().to_string())
         .execute(conn)
         .await
-        .map_err(|e| ErrorFromRust::new("Error when removing file from cache").raw(e))?;
+        .map_err(|e| ErrFR::new("Error when removing file from cache").raw(e))?;
 
     Ok(())
 }
 
 pub async fn cache_files_folders_schemas(
-    schemas_cache: &mut SchemasInMemoryCache,
-    conn: &mut SqliteConnection,
+    schemas_cache: &SchemasCacheMutex,
+    dbm: &DatabaseConnectionMutex,
     dir: &Path,
-) -> Result<(), ErrorFromRust> {
-    let mut err = ErrorFromRust::new("Error when caching files and folders");
+) -> Result<(), ErrFR> {
+    let mut err = ErrFR::new("Error when caching files and folders");
 
     for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
-                    match cache_file(schemas_cache, conn, &entry.path()).await {
+                    match cache_file(schemas_cache, dbm, &entry.path()).await {
                         Ok(_) => (),
                         Err(e) => {
                             err = err.sub(e.info(&entry.file_name().to_string_lossy()));
@@ -90,13 +95,13 @@ pub async fn cache_files_folders_schemas(
         }
 
         if entry.file_type().is_dir() {
-            let path = entry.path();
-
-            // Cache schema if if exists. If it doesn't exist, it will error and we don't care.
-            let _ = schemas_cache.cache_schema(path.into()).await;
-
-            // This will use schema cache, so it must be after caching_schema
-            match cache_folder(schemas_cache, conn, &entry.path()).await {
+            // We have to cache schema, because it's required to properly cache files
+            // (when walking through dir it goes folder > content inside)
+            {
+                let mut schemas_cache = schemas_cache.lock().await;
+                let _ = schemas_cache.cache_schema(entry.path().into()).await;
+            }
+            match cache_folder(dbm, &entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
                     err = err.sub(e);
@@ -108,48 +113,27 @@ pub async fn cache_files_folders_schemas(
     Ok(())
 }
 
-pub async fn cache_folder(
-    schemas_cache: &mut SchemasInMemoryCache,
-    conn: &mut SqliteConnection,
-    path: &Path,
-) -> Result<(), ErrorFromRust> {
+pub async fn cache_folder(dbm: &DatabaseConnectionMutex, path: &Path) -> Result<(), ErrFR> {
     let folder_name = match path.file_name() {
         Some(s) => s.to_string_lossy().to_string(),
         // None is root path(technically it's also "some/folder/" but I assume this will never happen)
         None => "/".to_string(),
     };
 
-    let files_schema = schemas_cache.get_schema(&path);
-
-    let has_schema = match files_schema.as_ref() {
-        Some(_) => true,
-        None => false,
-    };
-
-    let own_schema = match files_schema.as_ref() {
-        Some(schema) => schema.file_path == path,
-        None => false,
-    };
-
-    let schema_file_path = match files_schema.as_ref() {
-        Some(schema) => schema.file_path.to_string_lossy().to_string(),
-        None => "".to_string(),
-    };
+    let mut db = dbm.lock().await;
+    let conn = db.get_conn().await;
 
     sqlx::query(
        &format!(
-            "INSERT INTO folders (path, name, has_schema, own_schema, schema_file_path) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(path) DO UPDATE SET name=excluded.name, has_schema=excluded.has_schema, own_schema=excluded.own_schema, schema_file_path=excluded.schema_file_path"
+            "INSERT INTO folders (path, name) VALUES (?1, ?2) ON CONFLICT(path) DO UPDATE SET name=excluded.name"
         )
     )
     .bind(path.to_string_lossy().to_string())
     .bind(folder_name)
-    .bind(has_schema)
-    .bind(own_schema)
-    .bind(schema_file_path)
     .execute(conn)
     .await
     .map_err(|e| {
-        ErrorFromRust::new("Error when caching folder").raw(e)
+        ErrFR::new("Error when caching folder").raw(e)
     })?;
 
     Ok(())
@@ -158,14 +142,14 @@ pub async fn cache_folder(
 pub async fn remove_folder_from_cache(
     conn: &mut SqliteConnection,
     path: &Path,
-) -> Result<(), ErrorFromRust> {
+) -> Result<(), ErrFR> {
     sqlx::query(&format!(
         "DELETE FROM folders WHERE path LIKE concat(?1, '%')",
     ))
     .bind(path.to_string_lossy().to_string())
     .execute(conn)
     .await
-    .map_err(|e| ErrorFromRust::new("Error when removing folder from cache").raw(e))?;
+    .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 
     Ok(())
 }
@@ -173,14 +157,14 @@ pub async fn remove_folder_from_cache(
 pub async fn remove_files_in_folder_rom_cache(
     conn: &mut SqliteConnection,
     path: &Path,
-) -> Result<(), ErrorFromRust> {
+) -> Result<(), ErrFR> {
     sqlx::query(&format!(
         "DELETE FROM files WHERE path LIKE concat(?1, '%')",
     ))
     .bind(path.to_string_lossy().to_string())
     .execute(conn)
     .await
-    .map_err(|e| ErrorFromRust::new("Error when removing folder from cache").raw(e))?;
+    .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 
     Ok(())
 }

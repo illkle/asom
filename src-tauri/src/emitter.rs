@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
 use crate::{
-    cache::query::RecordFromDb, schema::types::Schema, utils::errorhandling::ErrorFromRust,
+    cache::query::RecordFromDb, schema::types::Schema, utils::errorhandling::ErrFR,
     watcher::event_handlers::FolderEventEmit,
 };
 
@@ -19,7 +19,7 @@ pub enum IPCEmitEvent {
     FileUpdate(RecordFromDb),
     FolderRemove(FolderEventEmit),
     FolderAdd(FolderEventEmit),
-    ErrorHappened(ErrorFromRust),
+    ErrorHappened(ErrFR),
     SchemasUpdated(HashMap<String, Schema>),
     SchemaUpdated(Schema),
 }

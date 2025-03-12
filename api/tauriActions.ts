@@ -1,8 +1,8 @@
-import { isOurError, rustErrorNotification } from '~/api/tauriEvents';
+import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { invoke } from '@tauri-apps/api/core';
-import type { ErrorFromRust, Schema, BookFromDb, ExtractIpcResponcesType } from '~/types';
+import type { ErrFR, Schema, RecordFromDb, ExtractIpcResponcesType } from '~/types';
 
-export const returnErrorHandler = (e: unknown): ErrorFromRust => {
+export const returnErrorHandler = (e: unknown): ErrFR => {
   if (isOurError(e)) {
     console.error('Error from rust', e);
 
@@ -16,7 +16,7 @@ export const returnErrorHandler = (e: unknown): ErrorFromRust => {
   return {
     title: 'Unknown Javascript or Tauri error',
     info: 'See console for more details',
-  } as ErrorFromRust;
+  } as ErrFR;
 };
 
 export const c_init_once = async () => {
@@ -28,7 +28,15 @@ export const c_prepare_cache = async () => {
 };
 
 export const c_watch_path = async () => {
-  return invoke('c_watch_path').then((v) => v as ExtractIpcResponcesType<'c_watch_path'>);
+  const res = await invoke('c_watch_path')
+    .then((v) => v as ExtractIpcResponcesType<'c_watch_path'>)
+    .catch((e) => {
+      console.log('c_watch_path', e);
+    });
+
+  console.log('c_watch_path', res);
+
+  return res;
 };
 
 /**
@@ -36,7 +44,7 @@ export const c_watch_path = async () => {
  *  1. Book.modified is not null but is not equal to file last modified
  *  2. File does not exist already.
  */
-export const c_save_file = async (book: BookFromDb, forced = false) => {
+export const c_save_file = async (book: RecordFromDb, forced = false) => {
   return invoke('c_save_file', { book, forced }).then(
     (v) => v as ExtractIpcResponcesType<'c_save_file'>,
   );
@@ -54,6 +62,7 @@ export const c_get_all_tags = async () => {
 
 export const c_get_all_folders = async () => {
   return invoke('c_get_all_folders').then((v) => {
+    console.log('c_get_all_folders', v);
     return v as ExtractIpcResponcesType<'c_get_all_folders'>;
   });
 };
@@ -65,10 +74,10 @@ export const c_get_all_folders_by_schema = async (schemaPath: string) => {
 };
 
 export type BookReadResult = {
-  book: BookFromDb;
+  book: RecordFromDb;
   // This error happens when file is read, but metadata parsing encountered error.
   // Book will default to empty values, except for path, markdown and modified.
-  parsing_error?: ErrorFromRust;
+  parsing_error?: ErrFR;
   schema: Schema;
 };
 
@@ -83,8 +92,8 @@ export const c_get_schemas = async () => {
   return invoke('c_get_schemas').then((v) => v as ExtractIpcResponcesType<'c_get_schemas'>);
 };
 
-export const c_save_schema = async (folderName: string, schema: Schema) => {
-  return invoke('c_save_schema', { folderName, schema }).then(
+export const c_save_schema = async (path: string, schema: Schema) => {
+  return invoke('c_save_schema', { path, schema }).then(
     (v) => v as ExtractIpcResponcesType<'c_save_schema'>,
   );
 };

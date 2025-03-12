@@ -25,9 +25,11 @@
 <script setup lang="ts">
 import Sidebar from '~/components/Sidebar/Sidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
+import { useSettingsStore } from '~/composables/stores/useSettingsStore';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
-const store = useStore();
-const { loadSettings } = useSettings();
+const store = useMainStore();
+const ss = useSettingsStore();
 
 // Root Path loading Logic
 watch(
@@ -37,7 +39,7 @@ watch(
       await navigateTo('/welcome');
       return;
     }
-    await loadSettings();
+    await ss.loadSettings();
     await await store.fetchOpened();
   },
   { immediate: true },

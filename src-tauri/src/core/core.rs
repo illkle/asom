@@ -4,14 +4,14 @@ use tauri_plugin_store::StoreExt;
 
 use crate::{
     cache::{
-        cache_thing::cache_files_folders_schemas, dbconn::DatabaseConnection,
-        create_tables::create_db_tables,
+        cache_thing::cache_files_folders_schemas, create_tables::create_db_tables,
+        dbconn::DatabaseConnection,
     },
     schema::schema_cache::SchemasInMemoryCache,
-    utils::errorhandling::{send_err_to_frontend, ErrorFromRust},
+    utils::errorhandling::{send_err_to_frontend, ErrFR},
     watcher::{
-        monitor_process::{run_monitor, MonitorConfig},
         global_watcher::GlobalWatcher,
+        monitor_process::{run_monitor, MonitorConfig},
     },
     IPCInitOnce, IPCPrepareCache, IPCWatchPath,
 };
@@ -24,13 +24,16 @@ use tokio::task;
 
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
+pub type DatabaseConnectionMutex = Mutex<DatabaseConnection>;
+pub type SchemasCacheMutex = Mutex<SchemasInMemoryCache>;
+
 #[derive(Debug)]
 pub struct CoreStateManager {
     root_path: Mutex<Option<String>>,
     watcher: Mutex<GlobalWatcher>,
-    pub schemas_cache: Mutex<SchemasInMemoryCache>,
+    pub schemas_cache: SchemasCacheMutex,
 
-    pub database_conn: Mutex<DatabaseConnection>,
+    pub database_conn: DatabaseConnectionMutex,
 }
 
 impl CoreStateManager {
@@ -60,12 +63,12 @@ impl CoreStateManager {
         };
     }
 
-    pub async fn root_path_safe(&self) -> Result<String, ErrorFromRust> {
+    pub async fn root_path_safe(&self) -> Result<String, ErrFR> {
         self.root_path
             .lock()
             .await
             .clone()
-            .ok_or(ErrorFromRust::new("Root path is not set"))
+            .ok_or(ErrFR::new("Root path is not set"))
     }
 
     pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCInitOnce {
@@ -97,18 +100,15 @@ impl CoreStateManager {
     pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCPrepareCache {
         let rp = self.root_path_safe().await?;
 
-        let mut db = self.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        create_db_tables(conn).await.map_err(|e| {
-            ErrorFromRust::new("Error when creating tables in cache db")
+        create_db_tables(&self.database_conn).await.map_err(|e| {
+            ErrFR::new("Error when creating tables in cache db")
                 .info("This should not happen. Try restarting the app, else report as bug.")
                 .raw(e)
         })?;
 
-        let mut schemas_cache = self.schemas_cache.lock().await;
-
-        match cache_files_folders_schemas(&mut schemas_cache, conn, &Path::new(&rp)).await {
+        match cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, &Path::new(&rp))
+            .await
+        {
             Err(e) => {
                 // We don't return error here because user can have a few problematic files, which is ok
                 send_err_to_frontend(&app, &e);
@@ -129,7 +129,7 @@ impl CoreStateManager {
             .watch_path(&rp)
             .await
             .map_err(|e| {
-                ErrorFromRust::new("Error starting watcher")
+                ErrFR::new("Error starting watcher")
                     .info("Try restarting app")
                     .raw(e)
             })

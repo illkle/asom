@@ -13,7 +13,7 @@
     </div>
 
     <ShButton variant="ghost" size="iconSm" @mousedown.stop @click.stop="emit('close')">
-      <XIcon class="duration-[0] text-neutral-300 dark:text-neutral-600" />
+      <XIcon class="text-neutral-300 duration-[0] dark:text-neutral-600" />
     </ShButton>
   </div>
 </template>
@@ -23,7 +23,7 @@ import { XIcon } from 'lucide-vue-next';
 
 import type { IOpened } from '~/api/openedTabs';
 import { computed, type PropType } from 'vue';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 
 const props = defineProps({
   isNewAndAnimating: {
@@ -47,7 +47,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const store = useStore();
+const store = useMainStore();
 
 const capitalize = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);

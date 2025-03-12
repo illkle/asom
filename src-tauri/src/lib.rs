@@ -23,24 +23,24 @@ use schema::{defaults::DefaultSchema, types::Schema};
 use tauri::test::{mock_builder, MockRuntime};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
-use utils::errorhandling::ErrorFromRust;
+use utils::errorhandling::ErrFR;
 
 /*
   Define types and pack them into IPCResponces, which gets exported to TS types
 */
-type IPCInitOnce = Result<bool, ErrorFromRust>;
-type IPCPrepareCache = Result<bool, ErrorFromRust>;
-type IPCWatchPath = Result<bool, ErrorFromRust>;
-type IPCGetFilesPath = Result<RecordListGetResult, ErrorFromRust>;
-type IPCGetAllTags = Result<Vec<String>, ErrorFromRust>;
-type IPCGetAllFolders = Result<FolderListGetResult, ErrorFromRust>;
-type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrorFromRust>;
-type IPCReadFileByPath = Result<RecordReadResult, ErrorFromRust>;
-type IPCGetSchemas = Result<HashMap<String, Schema>, ErrorFromRust>;
-type IPCLoadSchema = Result<Schema, ErrorFromRust>;
-type IPCSaveSchema = Result<Schema, ErrorFromRust>;
-type IPCSaveFile = Result<RecordSaveResult, ErrorFromRust>;
-type IPCGetDefaultSchemas = Result<Vec<DefaultSchema>, ErrorFromRust>;
+type IPCInitOnce = Result<bool, ErrFR>;
+type IPCPrepareCache = Result<bool, ErrFR>;
+type IPCWatchPath = Result<bool, ErrFR>;
+type IPCGetFilesPath = Result<RecordListGetResult, ErrFR>;
+type IPCGetAllTags = Result<Vec<String>, ErrFR>;
+type IPCGetAllFolders = Result<FolderListGetResult, ErrFR>;
+type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrFR>;
+type IPCReadFileByPath = Result<RecordReadResult, ErrFR>;
+type IPCGetSchemas = Result<HashMap<String, Schema>, ErrFR>;
+type IPCLoadSchema = Result<Schema, ErrFR>;
+type IPCSaveSchema = Result<Schema, ErrFR>;
+type IPCSaveFile = Result<RecordSaveResult, ErrFR>;
+type IPCGetDefaultSchemas = Result<Vec<DefaultSchema>, ErrFR>;
 
 #[derive(TS)]
 #[ts(export)]
@@ -100,15 +100,13 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
     let conn = db.get_conn().await;
     get_all_tags(conn)
         .await
-        .map_err(|e| ErrorFromRust::new("Error when getting all tags").raw(e))
+        .map_err(|e| ErrFR::new("Error when getting all tags").raw(e))
 }
 
 #[tauri::command]
 async fn c_get_all_folders<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllFolders {
     let core = app.state::<CoreStateManager>();
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-    get_all_folders(conn).await
+    get_all_folders(&core.database_conn, &core.schemas_cache).await
 }
 
 #[tauri::command]
@@ -117,9 +115,7 @@ async fn c_get_all_folders_by_schema<T: tauri::Runtime>(
     schema_path: String,
 ) -> IPCGetAllFoldersBySchema {
     let core = app.state::<CoreStateManager>();
-    let mut db = core.database_conn.lock().await;
-    let conn = db.get_conn().await;
-    get_all_folders_by_schema(conn, schema_path).await
+    get_all_folders_by_schema(&core.database_conn, &core.schemas_cache, schema_path).await
 }
 
 #[tauri::command]
@@ -128,8 +124,7 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     path: String,
 ) -> IPCReadFileByPath {
     let core = app.state::<CoreStateManager>();
-    let mut schemas_cache = core.schemas_cache.lock().await;
-    read_file_by_path(&mut schemas_cache, &path, FileReadMode::FullFile).await
+    read_file_by_path(&core.schemas_cache, &path, FileReadMode::FullFile).await
 }
 
 // This one returns only schemas with items

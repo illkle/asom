@@ -15,13 +15,13 @@
 <script lang="ts" setup>
 import { cloneDeep as _cloneDeep } from 'lodash';
 import { computed } from 'vue';
-import { useStore } from '~~/utils/store';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import TreeCell from '~/components/FileTree/TreeCell.vue';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 import { c_get_all_tags } from '~/api/tauriActions';
 
-const store = useStore();
+const store = useMainStore();
 const { data, refresh } = useAsyncData(() => {
   return c_get_all_tags();
 });

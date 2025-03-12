@@ -1,6 +1,9 @@
-use sqlx::SqliteConnection;
+use crate::core::core::DatabaseConnectionMutex;
 
-pub async fn create_db_tables(conn: &mut SqliteConnection) -> Result<(), sqlx::Error> {
+pub async fn create_db_tables(dbm: &DatabaseConnectionMutex) -> Result<(), sqlx::Error> {
+    let mut db = dbm.lock().await;
+    let conn = db.get_conn().await;
+
     sqlx::query("DROP TABLE IF EXISTS files;")
         .execute(&mut *conn)
         .await?;
@@ -16,7 +19,7 @@ pub async fn create_db_tables(conn: &mut SqliteConnection) -> Result<(), sqlx::E
     .await?;
 
     sqlx::query(&format!(
-        "CREATE TABLE folders (path TEXT PRIMARY KEY, name TEXT, has_schema BOOLEAN, own_schema BOOLEAN, schema_file_path TEXT);",
+        "CREATE TABLE folders (path TEXT PRIMARY KEY, name TEXT);",
     ))
     .execute(&mut *conn)
     .await?;

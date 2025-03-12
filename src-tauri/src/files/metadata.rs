@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use crate::schema::types::{AttrValue, DatePair, Schema, SchemaAttrType};
-use crate::utils::errorhandling::ErrorFromRust;
+use crate::utils::errorhandling::ErrFR;
 
 pub fn parse_metadata(
     front_matter: &str,
     schema: &Schema,
-) -> Result<HashMap<String, AttrValue>, ErrorFromRust> {
+) -> Result<HashMap<String, AttrValue>, ErrFR> {
     let parsed_meta: Result<HashMap<String, serde_yml::Value>, serde_yml::Error> =
         serde_yml::from_str(&front_matter);
 
@@ -129,7 +129,7 @@ pub fn parse_metadata(
 
             Ok(file_meta)
         }
-        Err(e) => Err(ErrorFromRust::new("Parsing error")
+        Err(e) => Err(ErrFR::new("Parsing error")
             .info("Metadata might be lost on save")
             .raw(e)),
     }
