@@ -90,7 +90,8 @@ async fn handle_file_update(
             let mut schemas_cache = core.schemas_cache.lock().await;
 
             match schemas_cache.cache_schema(path.to_path_buf()).await {
-                Ok(v) => Ok(Some(IPCEmitEvent::SchemaUpdated(v))),
+                Ok(Some(v)) => Ok(Some(IPCEmitEvent::SchemaUpdated(v))),
+                Ok(None) => Ok(None),
                 Err(e) => Err(e),
             }
         }

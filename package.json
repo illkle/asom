@@ -35,7 +35,8 @@
     "unplugin-auto-expose": "0.3.0",
     "vitest": "^3.0.5",
     "vue": "3.5.13",
-    "vue-router": "4.5.0"
+    "vue-router": "4.5.0",
+    "vue-tsc": "^2.1.10"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.0",
@@ -64,6 +65,7 @@
     "lucide-vue-next": "^0.474.0",
     "path-browserify": "^1.0.1",
     "pinia": "^2.3.1",
+    "prettier-plugin-organize-imports": "^4.1.0",
     "radix-vue": "^1.9.13",
     "reka-ui": "^2.0.2",
     "short-unique-id": "^5.2.0",

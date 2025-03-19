@@ -1,9 +1,9 @@
-import { toast } from 'vue-sonner';
 import { markRaw } from 'vue';
+import { toast } from 'vue-sonner';
 
 import ErrorToast from '~/components/Error/ErrorToast.vue';
-import type { ErrFR, ErrFRActionCode } from '~/types';
 import { useListenToEvent } from '~/composables/useListenToEvent';
+import type { ErrFR, ErrFRActionCode } from '~/types';
 
 export function isOurError(v: unknown): v is ErrFR {
   return Boolean(v && typeof v === 'object' && 'isError' in v && v.isError === true);
@@ -13,6 +13,7 @@ export const useRustErrorNotification = (
   e: ErrFR,
   codeBinds?: Partial<Record<ErrFRActionCode, () => void>>,
 ) => {
+  console.log('e', e);
   toast.error(e.title, {
     description: markRaw(ErrorToast),
     componentProps: {

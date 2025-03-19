@@ -4,7 +4,7 @@ import type { ShallowRef } from 'vue';
 
 import type { IOpenedFile } from '~/api/openedTabs';
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';
-import { useRustErrorNotification, useListenToEvent } from '~/composables/useRustErrorNotifcation';
+import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
 import type { RecordFromDb, Schema } from '~/types';
 

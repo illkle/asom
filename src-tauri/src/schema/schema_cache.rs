@@ -86,7 +86,7 @@ impl SchemasInMemoryCache {
             .collect()
     }
 
-    pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Schema, ErrFR> {
+    pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Option<Schema>, ErrFR> {
         let schema_file_path = match path.is_dir() {
             true => path.join("schema.yaml"),
             false => match path.file_name() {
@@ -108,8 +108,7 @@ impl SchemasInMemoryCache {
         };
 
         if !schema_file_path.exists() {
-            return Err(ErrFR::new("Schema file does not exist")
-                .info(&schema_file_path.clone().to_string_lossy()));
+            return Ok(None);
         }
 
         let file_content = read_to_string(schema_file_path.clone()).map_err(|e| {
@@ -136,7 +135,7 @@ impl SchemasInMemoryCache {
 
         self.insert(folder_path.into(), sch.clone());
 
-        Ok(sch)
+        Ok(Some(sch))
     }
 
     pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), ErrFR> {
@@ -167,11 +166,13 @@ impl SchemasInMemoryCache {
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
-        create_dir_all(folder_path).map_err(|e| {
-            ErrFR::new("Error creating directory")
-                .info("Could not create schema folder")
-                .raw(e)
-        })?;
+        if !folder_path.exists() {
+            create_dir_all(folder_path).map_err(|e| {
+                ErrFR::new("Error creating directory")
+                    .info("Could not create schema folder")
+                    .raw(e)
+            })?;
+        }
 
         let schema_path = folder_path.join("schema.yaml");
 

@@ -25,8 +25,8 @@
 <script setup lang="ts">
 import Sidebar from '~/components/Sidebar/Sidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
-import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 import { useMainStore } from '~/composables/stores/useMainStore';
+import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
 const store = useMainStore();
 const ss = useSettingsStore();

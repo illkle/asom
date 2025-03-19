@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import * as fs from '@tauri-apps/plugin-fs';
 import * as path from '@tauri-apps/api/path';
+import { rootPathFromStore } from '~/composables/stores/useMainStore';
 
 export const zSortByOption = z.enum([
   'Title',
@@ -64,11 +65,7 @@ export const zOpenedInnerPage = z.object({
 
 export type IOpenedInnerPage = z.infer<typeof zOpenedInnerPage>;
 
-export const zOpened = z.discriminatedUnion('type', [
-  zOpenedFile,
-  zOpenedInnerPage,
-  zOpenedPath,
-]);
+export const zOpened = z.discriminatedUnion('type', [zOpenedFile, zOpenedInnerPage, zOpenedPath]);
 
 export type IOpened = z.infer<typeof zOpened>;
 

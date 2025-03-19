@@ -1,8 +1,8 @@
 <template>
-  <div class="relative h-full w-full overflow-hidden @container">
+  <div class="@container relative h-full w-full overflow-hidden">
     <div
       v-if="!showImage"
-      class="absolute left-0 top-0 flex h-full w-full flex-col rounded-md border border-neutral-200 p-3 shadow-lg transition-opacity dark:border-neutral-800"
+      class="absolute top-0 left-0 flex h-full w-full flex-col rounded-md border border-neutral-200 p-3 shadow-lg transition-opacity dark:border-neutral-800"
     >
       <div
         class="title x h-1/2 shrink overflow-hidden align-middle text-xs leading-tight @[10rem]:text-lg"
@@ -30,13 +30,13 @@ import { debounce as _debounce } from 'lodash';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 import type { PropType } from 'vue';
-import type { BookFromDb } from '~/types';
-import { getSettings } from '~/api/settings';
 import path from 'path-browserify';
-
+import { rootPathFromStore } from '~/composables/stores/useMainStore';
+import type { RecordFromDb } from '~/types';
+import { getSettings } from '~/composables/stores/useSettingsStore';
 const props = defineProps({
   file: {
-    type: Object as PropType<BookFromDb>,
+    type: Object as PropType<RecordFromDb>,
     required: true,
   },
 });

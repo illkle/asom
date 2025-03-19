@@ -2,6 +2,7 @@ import * as fs from '@tauri-apps/plugin-fs';
 import * as path from '@tauri-apps/api/path';
 
 import { z } from 'zod';
+import { rootPathFromStore } from '~/composables/stores/useMainStore';
 
 export const zSettings = z.object({
   recursiveFolders: z.boolean().default(false),

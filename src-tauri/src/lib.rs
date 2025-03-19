@@ -140,7 +140,11 @@ async fn c_get_schemas<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
 async fn c_load_schema<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCLoadSchema {
     let core = app.state::<CoreStateManager>();
     let mut cache = core.schemas_cache.lock().await;
-    cache.cache_schema(PathBuf::from(path)).await
+    match cache.cache_schema(PathBuf::from(&path)).await {
+        Ok(Some(v)) => Ok(v),
+        Ok(None) => Err(ErrFR::new("Schema not found").info(&path)),
+        Err(e) => Err(e),
+    }
 }
 
 #[tauri::command]

@@ -94,8 +94,8 @@ const watcherMutation = useMutation({
   mutation: c_watch_path,
   onError: stopRunning,
   onSuccess: async () => {
-    console.log('c_watch_path success');
     await navigateTo('/application', { replace: true });
+    console.log('c_watch_path success');
   },
 });
 

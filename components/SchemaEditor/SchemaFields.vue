@@ -14,18 +14,7 @@
         <ShInput v-model="schema.name" />
       </div>
 
-      <div>
-        Icon from Lucide
-
-        <p>CamelCase style: StarHalf, BookAudio, etc.</p>
-
-        <div class="mb-2 flex gap-2">
-          <UIBasicInput size="S" v-model="schema.icon" />
-          <UIDynamicIcon :name="schema.icon" />
-        </div>
-      </div>
-
-      <div>
+      <div class="mt-4">
         <div class="grid grid-cols-[40px_3fr_1fr_40px] gap-x-2 gap-y-2">
           <template v-for="(_, i) in schema.items" class="flex gap-2">
             <SchemaEditorShemaItem v-model:model-value="schema.items[i]" @delete="deleteItem(i)" />
@@ -41,9 +30,9 @@
 <script setup lang="ts">
 import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 
-import { ArrowLeftIcon } from 'lucide-vue-next';
 import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
 
+import { ArrowLeftIcon } from 'lucide-vue-next';
 import type { ErrFR, Schema } from '~/types';
 
 const route = useRoute();
