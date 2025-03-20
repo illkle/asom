@@ -1,12 +1,13 @@
 use notify::RecommendedWatcher;
 use notify::{Event, RecursiveMode, Watcher};
 use std::path::Path;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, Mutex};
 
 #[derive(Debug)]
 pub struct GlobalWatcher {
     watcher: RecommendedWatcher,
     sender: broadcast::Sender<Event>,
+    current_path: Mutex<Option<String>>,
 }
 
 impl GlobalWatcher {
@@ -20,12 +21,25 @@ impl GlobalWatcher {
             }
         })?;
 
-        Ok(GlobalWatcher { watcher, sender })
+        Ok(GlobalWatcher {
+            watcher,
+            sender,
+            current_path: Mutex::new(None),
+        })
     }
 
     pub async fn watch_path(&mut self, path: &str) -> notify::Result<()> {
-        self.watcher
-            .watch(Path::new(path), RecursiveMode::Recursive)
+        if let Some(current_path) = self.current_path.lock().await.take() {
+            self.watcher.unwatch(Path::new(&current_path))?;
+        }
+
+        let res = self
+            .watcher
+            .watch(Path::new(path), RecursiveMode::Recursive)?;
+
+        *self.current_path.lock().await = Some(path.to_string());
+
+        Ok(res)
     }
 
     pub async fn subscribe_to_events(&self) -> broadcast::Receiver<Event> {

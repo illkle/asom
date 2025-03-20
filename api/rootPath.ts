@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 const KEY = 'ROOT_PATH';
 
 import { load, Store } from '@tauri-apps/plugin-store';
+import { c_init } from '~/api/tauriActions';
 
 let tauriStore: Store | null = null;
 
@@ -29,22 +30,13 @@ export const selectAndSetRootPath = async () => {
   if (!result) return;
 
   const store = await getStore();
-
   await store.set(KEY, result);
   await store.save();
+
+  await c_init();
+
+  const qc = useQueryCache();
+  await qc.invalidateQueries({ key: ['root'] });
+
   return result;
-};
-
-export const getRootPath = async () => {
-  if (process.env['FORCE_USER_PATH']) {
-    return process.env['FORCE_USER_PATH'];
-  }
-
-  const store = await getStore();
-
-  const res = await store.get(KEY);
-
-  if (typeof res !== 'string') return null;
-
-  return res;
 };

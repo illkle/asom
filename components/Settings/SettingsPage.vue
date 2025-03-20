@@ -1,17 +1,10 @@
 <template>
   <ShDialogTitle>Settings</ShDialogTitle>
   <div v-if="s.settings" class="w-full max-w-[500px]">
-    <PathControllerVue
-      v-if="store.rootPath"
-      title="Working Directory"
-      :path="store.rootPath"
-      @change="changeRootPathHandler"
-    />
-
     <div class="mt-4 flex flex-col gap-2">
-      <div>Schemas: {{ schemas?.length }}</div>
+      <span class="font-mono text-xs opacity-50">{{ rootPath.data }}</span>
       <ShButton class="w-fit min-w-36" variant="outline" @click="navigateTo('/schemas')">
-        Edit
+        Root Path & Schema
       </ShButton>
     </div>
 
@@ -34,18 +27,17 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import PathControllerVue from './PathController.vue';
 
-import { selectAndSetRootPath } from '~/api/rootPath';
-import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 import { useMainStore } from '~/composables/stores/useMainStore';
+import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
 const s = useSettingsStore();
 const colorMode = useColorMode();
 
 const store = useMainStore();
 
-const { data: schemas, error } = useUsableSchemas();
+const schemas = useUsableSchemas();
+const rootPath = useRootPath();
 
 const darkMode = computed({
   get: () => {
@@ -62,13 +54,6 @@ const importHTMLButton = ref<HTMLElement>();
 
 const importHTML = () => {
   if (importHTMLButton.value) importHTMLButton.value.click();
-};
-
-const changeRootPathHandler = async () => {
-  const updated = await selectAndSetRootPath();
-  if (updated) {
-    store.fetchRootPath();
-  }
 };
 </script>
 

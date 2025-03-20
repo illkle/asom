@@ -13,7 +13,6 @@ use crate::{
         global_watcher::GlobalWatcher,
         monitor_process::{run_monitor, MonitorConfig},
     },
-    IPCInitOnce, IPCPrepareCache, IPCWatchPath,
 };
 
 use tokio::sync::Mutex;
@@ -29,6 +28,7 @@ pub type SchemasCacheMutex = Mutex<SchemasInMemoryCache>;
 
 #[derive(Debug)]
 pub struct CoreStateManager {
+    init_done: Mutex<bool>,
     root_path: Mutex<Option<String>>,
     watcher: Mutex<GlobalWatcher>,
     pub schemas_cache: SchemasCacheMutex,
@@ -39,6 +39,7 @@ pub struct CoreStateManager {
 impl CoreStateManager {
     pub fn new() -> Self {
         Self {
+            init_done: Mutex::new(false),
             root_path: Mutex::new(None),
             watcher: Mutex::new(GlobalWatcher::new().unwrap()),
             schemas_cache: Mutex::new(SchemasInMemoryCache::new()),
@@ -52,15 +53,28 @@ impl CoreStateManager {
         *root_path = Some(path);
     }
 
-    pub async fn load_root_path_from_store<T: tauri::Runtime>(&self, app: &AppHandle<T>) {
-        let root_path = app.get_store("appData.bin").unwrap().get(ROOT_PATH_KEY);
-
-        match root_path {
-            Some(Value::String(s)) => {
-                let _ = self.root_path.lock().await.insert(s);
+    pub async fn load_root_path_from_store<T: tauri::Runtime>(
+        &self,
+        app: &AppHandle<T>,
+    ) -> Result<Option<String>, ErrFR> {
+        let store = match app.store("appData.bin") {
+            Ok(store) => store,
+            Err(e) => {
+                return Err(ErrFR::new("Error getting store").raw(e.to_string()));
             }
-            _ => (),
         };
+
+        match store.get(ROOT_PATH_KEY) {
+            Some(Value::String(path)) => {
+                if !Path::new(&path).exists() {
+                    return Ok(None);
+                }
+                let _ = self.root_path.lock().await.insert(path.clone());
+
+                Ok(Some(path))
+            }
+            _ => Ok(None),
+        }
     }
 
     pub async fn root_path_safe(&self) -> Result<String, ErrFR> {
@@ -71,13 +85,18 @@ impl CoreStateManager {
             .ok_or(ErrFR::new("Root path is not set"))
     }
 
-    pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCInitOnce {
+    pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
+        let mut init_done = self.init_done.lock().await;
+        if *init_done {
+            return Ok(());
+        }
+
         let app_handle = app.clone();
 
         let watcher = self.watcher.lock().await;
         let event_rx = watcher.subscribe_to_events().await;
 
-        // TODO: Find a way to actually await run_monitor, because right now it's not started when init returns. This only matters in tests, but still.
+        // TODO: Find a way to actually await run_monitor, because right now it's not started when init returns. This only seem to matter in tests tho.
         task::spawn(async move {
             run_monitor(
                 event_rx,
@@ -94,12 +113,15 @@ impl CoreStateManager {
             }
         });
 
-        Ok(true)
+        *init_done = true;
+
+        Ok(())
     }
 
-    pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> IPCPrepareCache {
+    pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
         let rp = self.root_path_safe().await?;
 
+        self.schemas_cache.lock().await.clear_cache();
         create_db_tables(&self.database_conn).await.map_err(|e| {
             ErrFR::new("Error when creating tables in cache db")
                 .info("This should not happen. Try restarting the app, else report as bug.")
@@ -116,23 +138,19 @@ impl CoreStateManager {
             Ok(_) => (),
         }
 
-        return Ok(true);
+        Ok(())
     }
 
-    pub async fn watch_path(&self) -> IPCWatchPath {
+    pub async fn watch_path(&self) -> Result<(), ErrFR> {
         let rp = self.root_path_safe().await?;
 
         println!("Watching path: {}", rp);
 
         let mut watcher = self.watcher.lock().await;
-        watcher
-            .watch_path(&rp)
-            .await
-            .map_err(|e| {
-                ErrFR::new("Error starting watcher")
-                    .info("Try restarting app")
-                    .raw(e)
-            })
-            .map(|_| true)
+        watcher.watch_path(&rp).await.map_err(|e| {
+            ErrFR::new("Error starting watcher")
+                .info("Try restarting app")
+                .raw(e)
+        })
     }
 }

@@ -2,16 +2,21 @@
   <div class="px-4 pb-4"></div>
 
   <div class="mx-auto max-w-[600px]">
-    <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-
     <div class="flex items-center justify-between">
+      <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
+      <ShButton @click="navigateTo('/')" variant="outline">Save </ShButton>
+
+      <Link href="/"> </Link>
+    </div>
+
+    <div class="flex items-center justify-between mt-4">
       <div class="flex flex-col gap-1">
         <div>Root path:</div>
         <div class="font-mono text-sm opacity-30">
-          {{ store.rootPath }}
+          {{ rootPath.data.value }}
         </div>
       </div>
-      <ShButton variant="outline">Change root path</ShButton>
+      <ShButton variant="ghost" @click="changeRootPathHandler">Change root path</ShButton>
     </div>
 
     <ShButton
@@ -20,7 +25,7 @@
       class="mt-6 ml-auto w-fit border-neutral-200 px-2 rounded-t-lg dark:border-neutral-900 border border-b-0"
       @click="
         () => {
-          folderCreationPath = store.rootPath ?? '';
+          folderCreationPath = rootPath.data.value ?? '';
           isNewFolderDialogOpen = true;
         }
       "
@@ -81,9 +86,21 @@ import { c_get_default_schemas, c_get_schemas, c_save_schema } from '~/api/tauri
 import { mkdir } from '@tauri-apps/plugin-fs';
 import { FolderIcon, PlusIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
-import { useMainStore } from '~/composables/stores/useMainStore';
+import { selectAndSetRootPath } from '~/api/rootPath';
 import { useFoldersList } from '~/composables/useFoldersList';
 import FolderNode from './FolderNode.vue';
+
+const rootPath = useRootPath();
+
+watch(rootPath.data, (v) => {
+  if (!v) {
+    navigateTo('/');
+  }
+});
+
+const changeRootPathHandler = async () => {
+  await selectAndSetRootPath();
+};
 
 const isNewFolderDialogOpen = ref(false);
 const newFolderName = ref('');
@@ -101,24 +118,16 @@ const createNewFolder = async () => {
 const qc = useQueryCache();
 
 const { data: defaultSchemas, error: defaultSchemasError } = useQuery({
-  key: ['defaultSchemas'],
+  key: ['root', 'defaultSchemas'],
   query: c_get_default_schemas,
 });
 
 const { data: schemas, isPending: schemasPending } = useQuery({
-  key: ['schemas', 'load'],
+  key: ['root', 'schemas', 'load'],
   query: c_get_schemas,
 });
 
 const { folders, isPending, refetch, throttledRefetch, foldersAsTree } = useFoldersList();
-
-const store = useMainStore();
-
-onMounted(() => {
-  if (!store.rootPath) {
-    store.fetchRootPath();
-  }
-});
 
 const allFolderIds = computed(() => {
   return folders.value?.folders.map((v) => v.path) ?? [];

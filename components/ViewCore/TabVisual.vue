@@ -21,8 +21,8 @@
 <script lang="ts" setup>
 import { XIcon } from 'lucide-vue-next';
 
-import type { IOpened } from '~/api/openedTabs';
 import { computed, type PropType } from 'vue';
+import type { IOpened } from '~/api/openedTabs';
 import { useMainStore } from '~/composables/stores/useMainStore';
 
 const props = defineProps({
@@ -48,22 +48,19 @@ const emit = defineEmits<{
 }>();
 
 const store = useMainStore();
+const rootPath = useRootPath();
 
 const capitalize = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
 const text = computed(() => {
-  if (!store.rootPath || !props.item) return '';
+  if (!rootPath.data.value || !props.item) return '';
   if (props.item.type === 'folder') {
-    if (props.item.thing === store.rootPath || !props.item.thing.length) {
+    if (props.item.thing === rootPath.data.value || !props.item.thing.length) {
       return 'All Books';
     }
-    return props.item.thing.replace(store.rootPath, '').replace(/[\\/]/, '');
-  }
-
-  if (props.item.type === 'tag') {
-    return '#' + props.item.thing;
+    return props.item.thing.replace(rootPath.data.value, '').replace(/[\\/]/, '');
   }
 
   if (props.item.type === 'file') {

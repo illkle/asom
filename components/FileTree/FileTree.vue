@@ -3,12 +3,12 @@
 </template>
 
 <script lang="ts" setup>
-import FileTreeInner from './FileTreeInner.vue';
-import { filePathsToTree, dropIfSingleFolder } from './filePathsToTree';
 import { throttle } from 'lodash';
 import { c_get_all_folders_by_schema } from '~/api/tauriActions';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { useListenToEvent } from '~/composables/useListenToEvent';
+import FileTreeInner from './FileTreeInner.vue';
+import { filePathsToTree } from './filePathsToTree';
 
 const props = defineProps<{
   schemaPath: string;
@@ -23,7 +23,7 @@ const { data, refetch, status } = useQuery({
 const store = useMainStore();
 
 const transformed = computed(() =>
-  !data.value || 'isError' in data.value ? [] : filePathsToTree(data.value, store.rootPath || ''),
+  !data.value || 'isError' in data.value ? [] : filePathsToTree(data.value),
 );
 
 const throttledRefresh = throttle(refetch, 1000, {

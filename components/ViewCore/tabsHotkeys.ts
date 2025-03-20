@@ -1,21 +1,30 @@
-import { onMounted } from 'vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
-import { onUnmounted } from 'vue';
+import path from 'path-browserify';
+import { onMounted, onUnmounted } from 'vue';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 export const setupTabsHotkeys = () => {
-  const store = useMainStore();
+  const store = useTabsStore();
+
+  const rootPath = useRootPath();
 
   const actionKey = navigator.platform.indexOf('Mac') > -1 ? 'metaKey' : 'ctrlKey';
+
+  const usableSchemas = useUsableSchemas();
 
   const hotkeyHandler = (e: KeyboardEvent) => {
     if (e.code === 'KeyT' && e[actionKey]) {
       e.preventDefault();
+
       store.openNewOne(
         {
           id: store.generateRandomId(),
           type: 'folder',
-          thing: store.rootPath as string,
+          thing: store.openedItem
+            ? store.openedItem.type === 'file'
+              ? path.dirname(store.openedItem.thing)
+              : store.openedItem.thing
+            : Object.keys(usableSchemas.data.value ?? {})[0],
           settings: getDefaultViewSettings(),
           scrollPosition: 0,
           recursive: true,

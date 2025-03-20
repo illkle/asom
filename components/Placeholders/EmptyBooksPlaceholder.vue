@@ -4,31 +4,31 @@
     <div class="mt-4 flex gap-4">
       <ShButton variant="outline" @click="openAllBooks">View All Books</ShButton>
 
-      <IconsMenuBookAdder>
-        <ShButton variant="outline">Add New Book</ShButton>
-      </IconsMenuBookAdder>
+      <ShButton variant="outline">Add New Book</ShButton>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useMainStore } from '~/composables/stores/useMainStore';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
-const store = useMainStore();
+const ts = useTabsStore();
 
-const isRootOpened = store.openedItem?.thing === store.rootPath;
+const rootPath = useRootPath();
+
+const isRootOpened = ts.openedItem?.thing === rootPath.data.value;
 
 const openAllBooks = () => {
-  if (!store.rootPath) {
+  if (!rootPath.data.value) {
     throw new Error('NoTabPlaceholder handler: no root path');
   }
 
-  store.openNewOne(
+  ts.openNewOne(
     {
-      id: store.generateRandomId(),
+      id: ts.generateRandomId(),
       type: 'folder',
-      thing: store.rootPath,
+      thing: rootPath.data.value,
       scrollPosition: 0,
       settings: getDefaultViewSettings(),
       recursive: true,

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import * as fs from '@tauri-apps/plugin-fs';
 import * as path from '@tauri-apps/api/path';
-import { rootPathFromStore } from '~/composables/stores/useMainStore';
+import * as fs from '@tauri-apps/plugin-fs';
+import { c_get_root_path } from '~/api/tauriActions';
 
 export const zSortByOption = z.enum([
   'Title',
@@ -79,7 +79,7 @@ export type IOpenedTabs = z.infer<typeof ZOpenedTabs>;
 const JSON_NAME = 'openedTabs.json';
 
 export const getOpenedTabs = async () => {
-  const rootPath = rootPathFromStore();
+  const rootPath = await c_get_root_path();
 
   if (!rootPath) {
     throw new Error('Trying to read settings without root path present');
@@ -100,7 +100,7 @@ export const getOpenedTabs = async () => {
 };
 
 export const setOpenedTabs = async (tabs: IOpenedTabs) => {
-  const rootPath = rootPathFromStore();
+  const rootPath = await c_get_root_path();
 
   if (!rootPath) {
     throw new Error('Trying to write settings without root path present');

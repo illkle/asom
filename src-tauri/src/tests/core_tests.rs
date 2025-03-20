@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use std::{thread::sleep, time::Duration};
+use std::{path::PathBuf, thread::sleep, time::Duration};
 
 use tauri::Manager;
 
@@ -300,7 +300,12 @@ async fn test_basic_folder_ops() {
 
     // Check initial folders state
     {
-        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders_result = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
         assert!(folders_result.is_ok());
 
         let folders = folders_result.unwrap();
@@ -319,7 +324,12 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir(&new_folder_path).unwrap();
 
     let after_create = || async {
-        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders_result = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -345,7 +355,12 @@ async fn test_basic_folder_ops() {
     std::fs::rename(&new_folder_path, &renamed_folder_path).unwrap();
 
     let after_rename = || async {
-        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders_result = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -375,7 +390,12 @@ async fn test_basic_folder_ops() {
     std::fs::remove_dir(&renamed_folder_path).unwrap();
 
     let after_delete = || async {
-        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders_result = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -401,7 +421,12 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir_all(&nested_folder_path).unwrap();
 
     let after_nested_create = || async {
-        let folders_result = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders_result = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
         if !folders_result.is_ok() {
             return false;
         }
@@ -578,7 +603,12 @@ async fn test_nested_ops() {
         let files = get_files_abstact(conn, "".to_string()).await;
         drop(db);
 
-        let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
 
         if !files.is_ok() || !folders.is_ok() {
             return false;
@@ -685,7 +715,12 @@ async fn test_nested_ops() {
         let files = get_files_abstact(conn, "".to_string()).await;
         drop(db);
 
-        let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+        let folders = get_all_folders(
+            core.root_path_safe().await.unwrap(),
+            &core.database_conn,
+            &core.schemas_cache,
+        )
+        .await;
 
         if !files.is_ok() || !folders.is_ok() {
             return false;
@@ -717,7 +752,12 @@ async fn test_folder_schema_status() {
 
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
 
-    let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+    let folders = get_all_folders(
+        core.root_path_safe().await.unwrap(),
+        &core.database_conn,
+        &core.schemas_cache,
+    )
+    .await;
     assert!(folders.is_ok());
 
     let mut folders = folders.unwrap();
@@ -752,6 +792,7 @@ async fn test_folder_schema_status() {
                     .to_string_lossy()
                     .to_string(),
                 path: test_dir.clone().to_string_lossy().to_string(),
+                path_relative: PathBuf::from("").to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -759,6 +800,7 @@ async fn test_folder_schema_status() {
             FolderOnDisk {
                 name: "books".to_string(),
                 path: test_dir.clone().join("books").to_string_lossy().to_string(),
+                path_relative: PathBuf::from("/books").to_string_lossy().to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: bks_s.clone(),
@@ -769,6 +811,9 @@ async fn test_folder_schema_status() {
                     .clone()
                     .join("books")
                     .join("favorites")
+                    .to_string_lossy()
+                    .to_string(),
+                path_relative: PathBuf::from("/books/favorites")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -783,6 +828,9 @@ async fn test_folder_schema_status() {
                     .join("audiobooks")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/books/audiobooks")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: abks_s,
@@ -794,6 +842,7 @@ async fn test_folder_schema_status() {
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/movies").to_string_lossy().to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: mvs_s,
@@ -805,6 +854,7 @@ async fn test_folder_schema_status() {
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/noschema").to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -815,6 +865,9 @@ async fn test_folder_schema_status() {
                     .clone()
                     .join("noschema")
                     .join("nestno")
+                    .to_string_lossy()
+                    .to_string(),
+                path_relative: PathBuf::from("/noschema/nestno")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: false,
@@ -848,7 +901,12 @@ async fn test_folder_schema_status() {
     // Wait for watcher
     sleep(Duration::from_millis(300));
 
-    let folders = get_all_folders(&core.database_conn, &core.schemas_cache).await;
+    let folders = get_all_folders(
+        core.root_path_safe().await.unwrap(),
+        &core.database_conn,
+        &core.schemas_cache,
+    )
+    .await;
     assert!(folders.is_ok());
 
     let mut folders = folders.unwrap();
@@ -883,6 +941,7 @@ async fn test_folder_schema_status() {
                     .to_string_lossy()
                     .to_string(),
                 path: test_dir.clone().to_string_lossy().to_string(),
+                path_relative: PathBuf::from("").to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -892,6 +951,9 @@ async fn test_folder_schema_status() {
                 path: test_dir
                     .clone()
                     .join("books_renamed")
+                    .to_string_lossy()
+                    .to_string(),
+                path_relative: PathBuf::from("/books_renamed")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -906,6 +968,9 @@ async fn test_folder_schema_status() {
                     .join("favorites")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/books_renamed/favorites")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: true,
                 own_schema: false,
                 schema_file_path: bks_s,
@@ -916,6 +981,9 @@ async fn test_folder_schema_status() {
                     .clone()
                     .join("books_renamed")
                     .join("audiobooks_renamed")
+                    .to_string_lossy()
+                    .to_string(),
+                path_relative: PathBuf::from("/books_renamed/audiobooks_renamed")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -929,6 +997,7 @@ async fn test_folder_schema_status() {
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/movies").to_string_lossy().to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: mvs_s,
@@ -940,6 +1009,7 @@ async fn test_folder_schema_status() {
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
+                path_relative: PathBuf::from("/noschema").to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -950,6 +1020,9 @@ async fn test_folder_schema_status() {
                     .clone()
                     .join("noschema")
                     .join("nestno")
+                    .to_string_lossy()
+                    .to_string(),
+                path_relative: PathBuf::from("/noschema/nestno")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: false,

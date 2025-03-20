@@ -1,8 +1,8 @@
-import * as fs from '@tauri-apps/plugin-fs';
 import * as path from '@tauri-apps/api/path';
+import * as fs from '@tauri-apps/plugin-fs';
 
 import { z } from 'zod';
-import { rootPathFromStore } from '~/composables/stores/useMainStore';
+import { c_get_root_path } from '~/api/tauriActions';
 
 export const zSettings = z.object({
   recursiveFolders: z.boolean().default(false),
@@ -18,7 +18,7 @@ const FOLDER_NAME = '.internal';
 const JSON_NAME = 'settings.json';
 
 export const getSettings = async () => {
-  const rootPath = rootPathFromStore();
+  const rootPath = await c_get_root_path();
 
   if (!rootPath) {
     throw new Error('Trying to read settings without root path present');
@@ -43,7 +43,7 @@ export const getSettings = async () => {
 };
 
 export const saveSettings = async (settings: ISettings) => {
-  const rootPath = rootPathFromStore();
+  const rootPath = await c_get_root_path();
 
   if (!rootPath) {
     throw new Error('Trying to write settings without root path present');

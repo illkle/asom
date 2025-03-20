@@ -25,15 +25,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { debounce as _debounce } from 'lodash';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { computed, ref, watch } from 'vue';
 
-import type { PropType } from 'vue';
 import path from 'path-browserify';
-import { rootPathFromStore } from '~/composables/stores/useMainStore';
-import type { RecordFromDb } from '~/types';
+import type { PropType } from 'vue';
 import { getSettings } from '~/composables/stores/useSettingsStore';
+import type { RecordFromDb } from '~/types';
 const props = defineProps({
   file: {
     type: Object as PropType<RecordFromDb>,
@@ -42,7 +40,6 @@ const props = defineProps({
 });
 
 const locateCover = async (filename: string) => {
-  const root = rootPathFromStore();
   const localSettings = await getSettings();
   return await path.join(root, localSettings.coversPath, filename);
 };

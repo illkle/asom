@@ -16,11 +16,11 @@ export type FolderNode = {
 /**
  * Takes a list of file path strings and turns it into a `Node[]`.
  */
-export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
+export function filePathsToTree(paths: FolderListGetResult) {
   const separator = path.sep;
 
   const folders = paths.folders.reduce((currentResults, currentFolder) => {
-    const pathParts = currentFolder.path.replace(rootPath, '').split(separator);
+    const pathParts = currentFolder.path_relative.split(separator);
     const byPath: Record<string, FolderNode> = {};
 
     pathParts.reduce((nodes, name, index, arr) => {
@@ -52,16 +52,6 @@ export function filePathsToTree(paths: FolderListGetResult, rootPath: string) {
   }, [] as FolderNode[]);
 
   return folders;
-
-  return [
-    {
-      name: 'root',
-      children: folders,
-      path: '',
-      rawPath: '',
-      parent: null,
-    } as FolderNode,
-  ];
 }
 
 export const dropIfSingleFolder = (tree: FolderNode[]) => {

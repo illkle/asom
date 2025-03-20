@@ -8,9 +8,8 @@ import type { RecordSaveResult } from './RecordSaveResult';
 import type { Schema } from './Schema';
 
 export type IPCResponces = {
-  c_init_once: { Ok: boolean } | { Err: ErrFR };
-  c_prepare_cache: { Ok: boolean } | { Err: ErrFR };
-  c_watch_path: { Ok: boolean } | { Err: ErrFR };
+  c_init: { Ok: string | null } | { Err: ErrFR };
+  c_get_root_path: { Ok: string | null } | { Err: ErrFR };
   c_get_files_path: { Ok: RecordListGetResult } | { Err: ErrFR };
   c_get_all_tags: { Ok: Array<string> } | { Err: ErrFR };
   c_get_all_folders: { Ok: FolderListGetResult } | { Err: ErrFR };

@@ -1,6 +1,6 @@
 <template>
   <ShDialog v-model:open="newFileOpened">
-    <ShDialogTrigger>
+    <ShDialogTrigger class="w-full">
       <slot />
     </ShDialogTrigger>
 
@@ -20,10 +20,10 @@
 </template>
 
 <script lang="ts" setup>
+import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
-import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
-import { useMainStore } from '~/composables/stores/useMainStore';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 const props = defineProps({
   pathToSave: {
     type: String,
@@ -31,7 +31,7 @@ const props = defineProps({
   },
 });
 
-const store = useMainStore();
+const ts = useTabsStore();
 
 const newFileOpened = ref(false);
 const newFileName = ref('');
@@ -60,9 +60,9 @@ const addBook = async () => {
 
   await writeTextFile(finalPath, '');
 
-  store.openNewOne(
+  ts.openNewOne(
     {
-      id: store.generateRandomId(),
+      id: ts.generateRandomId(),
       type: 'file',
       thing: finalPath,
       scrollPosition: 0,

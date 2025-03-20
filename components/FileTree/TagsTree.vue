@@ -13,27 +13,24 @@
 </template>
 
 <script lang="ts" setup>
-import { cloneDeep as _cloneDeep } from 'lodash';
 import { computed } from 'vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import TreeCell from '~/components/FileTree/TreeCell.vue';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 import { c_get_all_tags } from '~/api/tauriActions';
+import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
 
-const store = useMainStore();
+const ts = useTabsStore();
 const { data, refresh } = useAsyncData(() => {
   return c_get_all_tags();
 });
 
-const openedTag = computed(
-  () => store.openedItem && store.openedItem.type === 'tag' && store.openedItem.thing,
-);
+const openedTag = computed(() => ts.openedItem && ts.openedItem.thing);
 
 const select = (tag: string, params: OpenNewOneParams) => {
-  store.openNewOne(
+  ts.openNewOne(
     {
-      id: store.generateRandomId(),
+      id: ts.generateRandomId(),
       type: 'tag',
       thing: tag,
       scrollPosition: 0,

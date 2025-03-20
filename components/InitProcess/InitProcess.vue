@@ -1,49 +1,64 @@
 <template>
+  <div v-if="appState.status === 'noRootPath'" class="flex h-full flex-col justify-center p-10">
+    <div class="text-3xl font-serif">To begin please set working directory</div>
+    <div class="text-regular mt-2">Your files & settings will be saved there.</div>
+    <ShButton variant="outline" class="mt-4" @click="selectAndSetRootPath">
+      Set Working Directory
+    </ShButton>
+  </div>
+
+  <div v-if="appState.status === 'zeroSchemas'" class="flex h-full flex-col justify-center p-10">
+    <div class="text-3xl font-serif">You do not have any schemas yet</div>
+    <div class="text-regular mt-2">Schema defines what data is tracked on your entries</div>
+
+    <ShButton variant="outline" class="mt-4" @click="">
+      Create default schemas and let me try the app
+    </ShButton>
+
+    <ShButton variant="outline" class="mt-4" @click="navigateTo('/schemas')"
+      >Open schemas editor</ShButton
+    >
+  </div>
+
   <div
+    v-else
     class="bg-card text-card-foreground w-full max-w-[400px] rounded-lg border-neutral-300 px-6 py-4 shadow-sm dark:border-neutral-600"
   >
-    <div class="font-serif text-3xl">Initializing</div>
-
     <div class="mt-4 flex flex-col gap-3 font-light">
-      <div v-for="(step, i) in steps" class="">
+      <div>
         <div
-          class="flex justify-between border border-neutral-200 p-2 px-4 dark:border-neutral-800"
-          :class="step.mutation.error.value && 'border-b-0'"
+          class="flex justify-between items-center border border-neutral-200 p-2 px-4 dark:border-neutral-800"
+          :class="appState.error && 'border-b-0'"
         >
-          {{ step.name }}
+          <div class="font-serif text-xl">Initializing...</div>
           <div>
-            <LoaderCircle
-              v-if="step.mutation.status.value === 'pending' && running"
-              class="animate-spin"
-            />
-            <XIcon v-else-if="step.mutation.status.value === 'error' && !running" class="" />
-            <XIcon v-else-if="typeof step === 'object' && 'isError' in step" />
-            <CheckIcon v-else />
+            <LoaderCircle v-if="appState.status === 'pending'" class="animate-spin" />
+            <XIcon v-else-if="appState.status === 'error'" class="" />
           </div>
         </div>
-        <div
-          v-if="step.mutation.error.value"
-          class="border border-neutral-300 p-4 dark:border-neutral-800"
-        >
-          <template v-if="isOurError(step.mutation.error.value)">
+        <div v-if="appState.error" class="border border-neutral-300 p-4 dark:border-neutral-800">
+          <template v-if="isOurError(appState.error)">
             <div class="text-regular font-bold">
-              {{ step.mutation.error.value.title }}
+              {{ appState.error.title }}
             </div>
-            <div v-if="'info' in step.mutation.error.value" class="mt-1 text-xs">
-              {{ step.mutation.error.value.info }}
+            <div v-if="'info' in appState.error" class="mt-1 text-xs">
+              {{ appState.error.info }}
             </div>
             <div class="mt-4 flex gap-2">
               <ShButton
-                v-if="'rawError' in step.mutation.error.value"
+                v-if="'rawError' in appState.error"
                 variant="outline"
-                @click="store.setError(step.mutation.error.value)"
+                @click="store.setError(appState.error)"
                 class="w-full"
               >
-                Show full error</ShButton
-              >
-              <ShButton variant="outline" @click="initLoop" class="w-full">
-                {{ 'Retry' }}
+                Show full error
               </ShButton>
+            </div>
+          </template>
+          <template v-else>
+            <div class="text-regular font-bold">Unexpected error</div>
+            <div v-if="'info' in appState.error" class="mt-1 text-xs">
+              {{ String(appState.error) }}
             </div>
           </template>
         </div>
@@ -53,73 +68,12 @@
 </template>
 
 <script lang="ts" setup>
+import { LoaderCircle, XIcon } from 'lucide-vue-next';
+import { selectAndSetRootPath } from '~/api/rootPath';
 import { useMainStore } from '~/composables/stores/useMainStore';
-import { CheckIcon, LoaderCircle, XIcon } from 'lucide-vue-next';
-import { c_init_once, c_prepare_cache, c_watch_path } from '~/api/tauriActions';
-import type { ErrFR } from '~/types';
 import { isOurError } from '~/composables/useRustErrorNotifcation';
 
 const store = useMainStore();
 
-const running = ref(false);
-
-const stopRunning = () => {
-  running.value = false;
-};
-
-const initMutation = useMutation({
-  mutation: c_init_once,
-  onError: stopRunning,
-  onSuccess: async () => {
-    await store.fetchRootPath();
-    if (typeof store.rootPath !== 'string') {
-      await navigateTo('/welcome', { replace: true });
-      running.value = false;
-      return;
-    }
-
-    cacheMutation.mutate();
-  },
-});
-
-const cacheMutation = useMutation({
-  mutation: c_prepare_cache,
-  onError: stopRunning,
-  onSuccess: async () => {
-    await watcherMutation.mutate();
-  },
-});
-
-const watcherMutation = useMutation({
-  mutation: c_watch_path,
-  onError: stopRunning,
-  onSuccess: async () => {
-    await navigateTo('/application', { replace: true });
-    console.log('c_watch_path success');
-  },
-});
-
-const steps = [
-  {
-    name: 'Initialize',
-    mutation: initMutation,
-  },
-  {
-    name: 'Setup cache',
-    mutation: cacheMutation,
-  },
-  {
-    name: 'Start watcher',
-    mutation: watcherMutation,
-  },
-];
-
-const initLoop = async () => {
-  running.value = true;
-  steps.find((s) => s.mutation.status.value !== 'success')?.mutation.mutate();
-};
-
-onMounted(() => {
-  initLoop();
-});
+const appState = useIsAppUsable();
 </script>

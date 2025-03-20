@@ -70,17 +70,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUpdated, ref, watch } from 'vue';
+import { clamp } from 'lodash';
+import { computed, onMounted, ref, watch } from 'vue';
 import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';
-import { clamp } from 'lodash';
 
 import { useElementSize, useMouse } from '@vueuse/core';
 import type { IOpened } from '~/api/openedTabs';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 
-const store = useMainStore();
+const store = useTabsStore();
 
 //
 // Style helpers

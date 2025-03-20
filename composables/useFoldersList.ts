@@ -2,21 +2,23 @@ import { throttle } from 'lodash';
 import { c_get_all_folders } from '~/api/tauriActions';
 import { filePathsToTree } from '~/components/FileTree/filePathsToTree';
 import { useListenToEvent } from '~/composables/useListenToEvent';
-import { useMainStore } from '~/composables/stores/useMainStore';
 /**
  * Gets data about all folders. Even ones without schema.
  */
 export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {}) => {
+  const root = useRootPath();
+
   const {
     data: foldersRaw,
     isPending,
     refetch,
   } = useQuery({
-    key: ['folders', 'all'],
-    query: c_get_all_folders,
+    key: () => ['root', root.data.value ?? 'noRoot', 'folders', 'all'],
+    query: async () => {
+      console.log('querying folders', root.data.value);
+      return await c_get_all_folders();
+    },
   });
-
-  const store = useMainStore();
 
   const throttledRefetch = throttle(refetch, throttleMs, {});
 
@@ -37,9 +39,7 @@ export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {
   });
 
   const foldersAsTree = computed(() =>
-    !foldersRaw.value || 'isError' in foldersRaw.value
-      ? []
-      : filePathsToTree(foldersRaw.value, store.rootPath || ''),
+    !foldersRaw.value || 'isError' in foldersRaw.value ? [] : filePathsToTree(foldersRaw.value),
   );
 
   return { folders: foldersRaw, isPending, refetch, throttledRefetch, foldersAsTree };

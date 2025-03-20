@@ -62,21 +62,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUpdated, ref, watchEffect, nextTick } from 'vue';
+import { computed, onUpdated, ref, watchEffect } from 'vue';
 
-import { cloneDeep as _cloneDeep } from 'lodash';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 import type { PropType } from 'vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
+import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
-import TreeCell from './TreeCell.vue';
-import type { FolderNode } from './filePathsToTree';
 import { once } from '@tauri-apps/api/event';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
+import { ChevronDown, FolderIcon, LibraryIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
-import { FolderIcon, LibraryIcon, ChevronDown } from 'lucide-vue-next';
+import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
+import TreeCell from './TreeCell.vue';
+import type { FolderNode } from './filePathsToTree';
 
-const store = useMainStore();
+const ts = useTabsStore();
 
 const props = defineProps({
   content: {
@@ -103,21 +102,20 @@ watchEffect(() => {
   if (renameLock.value) {
     return;
   }
-  if (!store.openedItem) {
+  if (!ts.openedItem) {
     isOpened.value = false;
     return;
   }
 
-  isOpened.value =
-    store.openedItem.type === 'folder' && store.openedItem.thing === props.content.rawPath;
+  isOpened.value = ts.openedItem.type === 'folder' && ts.openedItem.thing === props.content.rawPath;
 });
 
 const foldable = computed(() => props.content.children.length > 0 && !isRoot);
 
 const makeNewOpenedAndSelect = (params: OpenNewOneParams) => {
-  store.openNewOne(
+  ts.openNewOne(
     {
-      id: store.generateRandomId(),
+      id: ts.generateRandomId(),
       type: 'folder',
       thing: props.content.rawPath,
       scrollPosition: 0,
@@ -154,11 +152,11 @@ const startDrag = (devt: DragEvent, path: string) => {
 
   devt.dataTransfer.setData('itemPath', path);
 
-  if (!store.openedTabs) {
+  if (!ts.openedTabs) {
     return;
   }
 
-  const toUpdateIndexes = store.openedTabs.reduce((acc: number[], opened, index) => {
+  const toUpdateIndexes = ts.openedTabs.reduce((acc: number[], opened, index) => {
     if (opened.type === 'folder' && opened.thing === path) {
       acc.push(index);
     }
@@ -186,10 +184,10 @@ const onDrop = async (e: DragEvent, targetPath: string) => {
     });
 
     indexes.forEach((index) => {
-      if (!store.openedTabs) return;
-      const before = store.openedTabs[index];
+      if (!ts.openedTabs) return;
+      const before = ts.openedTabs[index];
       if (before.type === 'file' || before.type === 'folder') {
-        store.openNewOne({ ...before, thing: newPath }, { place: 'replace', index });
+        ts.openNewOne({ ...before, thing: newPath }, { place: 'replace', index });
       }
     });
   }
@@ -226,15 +224,15 @@ const saveName = async (newName: string) => {
       srcPath: oldPath,
     });
 
-    if (!store.openedTabs) return;
+    if (!ts.openedTabs) return;
 
-    store.openedTabs.forEach((item, index) => {
+    ts.openedTabs.forEach((item, index) => {
       if (item.type === 'folder' && item.thing === oldPath) {
-        store.openNewOne({ ...item, thing: newPath }, { place: 'replace', index });
+        ts.openNewOne({ ...item, thing: newPath }, { place: 'replace', index });
       }
 
       if (item.type === 'file' && item.thing.includes(oldPath)) {
-        store.openNewOne(
+        ts.openNewOne(
           { ...item, thing: item.thing.replace(oldPath, newPath) },
           { place: 'replace', index },
         );

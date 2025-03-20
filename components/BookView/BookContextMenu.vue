@@ -30,14 +30,11 @@
 </template>
 
 <script setup lang="ts">
-import { debounce as _debounce } from 'lodash';
-
-import { useMainStore, type OpenNewOneParams } from '~/composables/stores/useMainStore';
-
 import { remove } from '@tauri-apps/plugin-fs';
+import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
 export type IBookStyle = 'CARDS' | 'LINES';
 
-const store = useMainStore();
+const ts = useTabsStore();
 
 const props = defineProps({
   path: {
@@ -47,9 +44,9 @@ const props = defineProps({
 });
 
 const openFullEditor = (params: OpenNewOneParams) => {
-  store.openNewOne(
+  ts.openNewOne(
     {
-      id: store.generateRandomId(),
+      id: ts.generateRandomId(),
       type: 'file',
       thing: props.path,
       scrollPosition: 0,
@@ -77,8 +74,8 @@ const startDrag = (devt: DragEvent) => {
 
   devt.dataTransfer.setData('itemPath', props.path);
 
-  if (!store.openedTabs) return;
-  const toUpdateIndexes = store.openedTabs.reduce((acc: number[], opened, index) => {
+  if (!ts.openedTabs) return;
+  const toUpdateIndexes = ts.openedTabs.reduce((acc: number[], opened, index) => {
     if (opened.type === 'file' && opened.thing === props.path) {
       acc.push(index);
     }

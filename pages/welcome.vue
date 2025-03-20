@@ -10,26 +10,9 @@
 
 <script lang="ts" setup>
 import { selectAndSetRootPath } from '~/api/rootPath';
-import { useMainStore } from '~/composables/stores/useMainStore';
-
-const store = useMainStore();
-
-watch(
-  () => store.rootPath,
-  async (v) => {
-    if (!v) {
-      return;
-    }
-    await navigateTo('/', { replace: true });
-  },
-  { immediate: true },
-);
 
 const changeRootPathHandler = async () => {
-  const updated = await selectAndSetRootPath();
-  if (updated) {
-    store.fetchRootPath();
-  }
+  await selectAndSetRootPath();
 };
 
 definePageMeta({

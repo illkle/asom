@@ -33,6 +33,10 @@ impl SchemasInMemoryCache {
         }
     }
 
+    pub fn clear_cache(&mut self) {
+        self.map.clear();
+    }
+
     fn insert(&mut self, path: PathBuf, value: Schema) {
         self.map.insert(path, value);
     }

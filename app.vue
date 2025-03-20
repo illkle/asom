@@ -14,16 +14,11 @@
 </template>
 
 <script setup lang="ts">
-import { debounce as _debounce } from 'lodash';
-import { handleErrorsFromRust } from './composables/useRustErrorNotifcation';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import Sonner from '~/components/_shadcn/sonner/Sonner.vue';
+import { useMainStore } from '~/composables/stores/useMainStore';
+import { handleErrorsFromRust } from './composables/useRustErrorNotifcation';
 
 const store = useMainStore();
-
-onBeforeMount(async () => {
-  await store.fetchRootPath();
-});
 
 const colorMode = useColorMode();
 

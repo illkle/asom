@@ -26,7 +26,7 @@
     />
 
     <EditorReadDetails
-      v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DateReadVec'"
+      v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DatePairVec'"
       v-model:model-value="attr.value"
     />
     <div v-else class="flex flex-col gap-2">
@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AttrValue, DateRead, SchemaItem } from '~/types';
+import type { AttrValue, SchemaItem } from '~/types';
 
 const attr = defineModel<AttrValue>();
 

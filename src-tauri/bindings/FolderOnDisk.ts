@@ -2,6 +2,7 @@
 
 export type FolderOnDisk = {
   path: string;
+  path_relative: string;
   name: string;
   has_schema: boolean;
   own_schema: boolean;

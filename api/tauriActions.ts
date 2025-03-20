@@ -1,6 +1,6 @@
-import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { invoke } from '@tauri-apps/api/core';
-import type { ErrFR, Schema, RecordFromDb, ExtractIpcResponcesType } from '~/types';
+import { isOurError } from '~/composables/useRustErrorNotifcation';
+import type { ErrFR, ExtractIpcResponcesType, RecordFromDb, Schema } from '~/types';
 
 export const returnErrorHandler = (e: unknown): ErrFR => {
   if (isOurError(e)) {
@@ -19,24 +19,12 @@ export const returnErrorHandler = (e: unknown): ErrFR => {
   } as ErrFR;
 };
 
-export const c_init_once = async () => {
-  return invoke('c_init_once').then((v) => v as ExtractIpcResponcesType<'c_init_once'>);
+export const c_init = async () => {
+  return invoke('c_init').then((v) => v as ExtractIpcResponcesType<'c_init'>);
 };
 
-export const c_prepare_cache = async () => {
-  return invoke('c_prepare_cache').then((v) => v as ExtractIpcResponcesType<'c_prepare_cache'>);
-};
-
-export const c_watch_path = async () => {
-  const res = await invoke('c_watch_path')
-    .then((v) => v as ExtractIpcResponcesType<'c_watch_path'>)
-    .catch((e) => {
-      console.log('c_watch_path', e);
-    });
-
-  console.log('c_watch_path', res);
-
-  return res;
+export const c_get_root_path = async () => {
+  return invoke('c_get_root_path').then((v) => v as ExtractIpcResponcesType<'c_get_root_path'>);
 };
 
 /**

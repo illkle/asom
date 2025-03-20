@@ -108,6 +108,7 @@ pub struct FolderListGetResult {
 #[ts(export)]
 pub struct FolderOnDisk {
     pub path: String,
+    pub path_relative: String,
     pub name: String,
     pub has_schema: bool,
     pub own_schema: bool,
@@ -115,6 +116,7 @@ pub struct FolderOnDisk {
 }
 
 pub async fn get_all_folders(
+    root_path: String,
     dcm: &DatabaseConnectionMutex,
     scm: &SchemasCacheMutex,
 ) -> Result<FolderListGetResult, ErrFR> {
@@ -136,6 +138,7 @@ pub async fn get_all_folders(
             let sch = scm.get_schema(&Path::new(&pstring));
             FolderOnDisk {
                 path: pstring.clone(),
+                path_relative: pstring.clone().replace(&root_path, ""),
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
@@ -152,6 +155,7 @@ pub async fn get_all_folders(
 }
 
 pub async fn get_all_folders_by_schema(
+    root_path: String,
     dcm: &DatabaseConnectionMutex,
     scm: &SchemasCacheMutex,
     schema_path: String,
@@ -191,6 +195,7 @@ pub async fn get_all_folders_by_schema(
 
             Some(FolderOnDisk {
                 path: pstring.clone(),
+                path_relative: pstring.clone().replace(&root_path, ""),
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
