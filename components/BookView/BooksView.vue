@@ -68,28 +68,23 @@
 
 <script setup lang="ts">
 import { debounce as _debounce } from 'lodash';
-import { cloneDeep as _cloneDeep } from 'lodash';
 
+import { EllipsisVertical } from 'lucide-vue-next';
 import type { PropType } from 'vue';
 import type { IOpenedPath } from '~/api/openedTabs';
-import EmptyBooksPlaceholder from '~/components/Placeholders/EmptyBooksPlaceholder.vue';
-import { useVirtualList } from '@vueuse/core';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '~/components/_shadcn/dropdown-menu';
-import { EllipsisVertical } from 'lucide-vue-next';
+import EmptyBooksPlaceholder from '~/components/Placeholders/EmptyBooksPlaceholder.vue';
 
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
   ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
 } from '~/components/_shadcn/resizable';
-import { useMainStore } from '~/composables/stores/useMainStore';
-
-const store = useMainStore();
 
 const tes = ref();
 onMounted(() => (tes.value = Math.random()));
@@ -124,7 +119,7 @@ watch(
 //
 const { data, loading } = useFilesList({
   opened: props.opened,
-  onLoaded: () => setScrollPositionFromSaved(),
+  //onLoaded: () => setScrollPositionFromSaved(),
   searchQuery: searchQuery,
 });
 
@@ -151,8 +146,7 @@ const visibleSchemaItems = computed(() =>
 // Scroll position
 //
 
-const { list, containerProps, wrapperProps } = useVirtualList(books.value, { itemHeight: 59 });
-
+/*
 const scrollRoot = containerProps.ref;
 
 const setScrollPositionFromSaved = () => {
@@ -160,9 +154,11 @@ const setScrollPositionFromSaved = () => {
   scrollRoot.value.scrollTop = props.opened.scrollPosition;
 };
 
+const tabsStore = useTabsStore();
+
 const saveScrollPos = () => {
   if (!scrollRoot.value) return;
-  store.saveScrollPosition(props.index, scrollRoot.value.scrollTop);
+  tabsStore.saveScrollPosition(props.index, scrollRoot.value.scrollTop);
 };
 
 onMounted(() => {
@@ -174,6 +170,7 @@ onUnmounted(() => {
   if (!scrollRoot.value) return;
   scrollRoot.value.removeEventListener('scroll', saveScrollPos);
 });
+*/
 </script>
 
 <style scoped>

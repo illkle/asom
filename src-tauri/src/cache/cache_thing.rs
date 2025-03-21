@@ -50,9 +50,10 @@ pub async fn cache_file(
     )
     .await
     {
-        Ok(file) => insert_file_into_cache_db(dbm, &file.record)
-            .await
-            .map(|_| file.record),
+        Ok(file) => {
+            insert_file_into_cache_db(dbm, &file.record).await?;
+            Ok(file.record)
+        }
         Err(e) => Err(e),
     }
 }

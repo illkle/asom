@@ -4,8 +4,8 @@ import type { ShallowRef } from 'vue';
 
 import type { IOpenedFile } from '~/api/openedTabs';
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';
-import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
+import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import type { RecordFromDb, Schema } from '~/types';
 
 export const useBookEditor = (
@@ -21,7 +21,7 @@ export const useBookEditor = (
    */
   const { pause: pauseWatcher, resume: resumeWatcher } = watchPausable(
     file,
-    (v) => {
+    () => {
       changes.value++;
     },
     { deep: true },
@@ -68,7 +68,9 @@ export const useBookEditor = (
     createOrUpdateEditor(file.value?.markdown || '');
   });
 
-  const updateHandler = async (update: RecordFromDb) => {
+  const updateHandler = async ({ c: update }: { t: 'FileUpdate'; c: RecordFromDb }) => {
+    console.log('updateHandler', update.modified, file.value?.modified, update);
+
     if (update.modified === file.value?.modified) return;
     await loadFileFromDisk();
   };

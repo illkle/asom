@@ -1,6 +1,6 @@
 <template>
   <ShDialog v-model:open="newFileOpened">
-    <ShDialogTrigger class="w-full">
+    <ShDialogTrigger class="w-full" as-child>
       <slot />
     </ShDialogTrigger>
 

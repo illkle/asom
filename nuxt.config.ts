@@ -19,7 +19,7 @@ export default defineNuxtConfig({
 
   // Everything below is recomended Tauri config for nuxt
   // https://v2.tauri.app/start/frontend/nuxt/
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   ssr: false,
   devServer: { host: '0.0.0.0' },
   vite: {

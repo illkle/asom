@@ -29,9 +29,13 @@
       v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DatePairVec'"
       v-model:model-value="attr.value"
     />
-    <div v-else class="flex flex-col gap-2">
-      Unsupported attribute type or type mismatch
-      <div class="flex flex-col gap-2">
+    <EditorImageInput
+      v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
+      v-model="attr.value"
+    />
+    <div v-else class="flex flex-col gap-1 border border-red-500 rounded-md py-1 px-2 text-sm">
+      Unsupported attribute type or type mismatch:
+      <div class="flex flex-col gap-2 font-mono text-xs">
         Schema: {{ schemaItem.value.type }} Attribute: {{ attr.type }}
       </div>
     </div>

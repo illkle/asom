@@ -32,8 +32,8 @@ export const c_get_root_path = async () => {
  *  1. Book.modified is not null but is not equal to file last modified
  *  2. File does not exist already.
  */
-export const c_save_file = async (book: RecordFromDb, forced = false) => {
-  return invoke('c_save_file', { book, forced }).then(
+export const c_save_file = async (record: RecordFromDb, forced = false) => {
+  return invoke('c_save_file', { record, forced }).then(
     (v) => v as ExtractIpcResponcesType<'c_save_file'>,
   );
 };

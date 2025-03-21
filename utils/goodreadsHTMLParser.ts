@@ -1,8 +1,7 @@
-import { format, parse, isValid } from 'date-fns';
-import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
-import type { DatePair } from '~/types';
+import { format, isValid, parse } from 'date-fns';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
+import type { DatePair } from '~/types';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
   const value = rootElement

@@ -1,12 +1,10 @@
 <template>
   <div class="grid gap-2" :class="$attrs.class">
     <template v-for="item in schema?.items">
-      <div>
-        <EditorAtrributeRouter
-          v-model:model-value="openedFile.attrs[item.name]"
-          :schema-item="item"
-        />
-      </div>
+      <EditorAtrributeRouter
+        v-model:model-value="openedFile.attrs[item.name]"
+        :schema-item="item"
+      />
     </template>
   </div>
 
@@ -18,14 +16,14 @@
 <script setup lang="ts">
 import type { PropType } from 'vue';
 
-import type { BookFromDb, Schema } from '~/types';
-defineProps({
+import type { RecordFromDb, Schema } from '~/types';
+const p = defineProps({
   schema: {
     type: Object as PropType<Schema | null>,
   },
 });
 
-const openedFile = defineModel<BookFromDb>({
+const openedFile = defineModel<RecordFromDb>({
   required: true,
 });
 
