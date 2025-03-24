@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "bkzlogger",
-  "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "productName": "asom",
+  "version": "0.2.1",
+  "identifier": "com.illkle.asom",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:3000",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "bkzlogger",
+        "title": "asom",
         "width": 1200,
         "height": 800,
         "minHeight": 600,
@@ -41,11 +41,9 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
     ]
   }
 }

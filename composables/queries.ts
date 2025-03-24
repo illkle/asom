@@ -7,20 +7,31 @@ export const useRootPath = () => {
     query: c_init,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
   });
 };
 
 export const useUsableSchemas = () => {
   const root = useRootPath();
 
-  return useQuery({
+  const q = useQuery({
     key: () => ['root', root.data.value ?? 'noRoot', 'schemas', 'get'],
     query: c_get_schemas,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    // This is needed for returning from schemas editor
+    refetchOnMount: true,
   });
+
+  useListenToEvent('SchemasUpdated', () => {
+    q.refetch();
+  });
+
+  useListenToEvent('SchemaUpdated', () => {
+    q.refetch();
+  });
+
+  return q;
 };
 
 export const useIsAppUsable = () => {

@@ -23,9 +23,7 @@ impl DatabaseConnection {
         match self.conn {
             Some(ref mut conn) => conn,
             None => {
-                let options = SqliteConnectOptions::new()
-                    .filename("files.db")
-                    .create_if_missing(true);
+                let options = SqliteConnectOptions::new().in_memory(true);
 
                 let conn = SqliteConnection::connect_with(&options).await.unwrap();
                 self.conn = Some(conn);

@@ -15,14 +15,11 @@
 </template>
 
 <script lang="ts" setup>
-import { cloneDeep as _cloneDeep } from 'lodash';
-import { debounce as _debounce } from 'lodash';
-
 import type { PropType } from 'vue';
 
 import type { IOpenedFile } from '~/api/openedTabs';
 
-import { useBookEditor } from '../../composables/useBookEditor';
+import { useFileEditor } from '../../composables/useFileEditor';
 
 const props = defineProps({
   opened: {
@@ -35,7 +32,7 @@ const editorWrapper = useTemplateRef('editorWrapper');
 
 const colorMode = useColorMode();
 
-const { file, schema, error, changes } = useBookEditor(props.opened, editorWrapper);
+const { file, schema, error, changes } = useFileEditor(props.opened, editorWrapper);
 </script>
 
 <style scoped>

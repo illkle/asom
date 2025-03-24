@@ -8,7 +8,7 @@ import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import type { RecordFromDb, Schema } from '~/types';
 
-export const useBookEditor = (
+export const useFileEditor = (
   opened: IOpenedFile,
   editorTemplateRef: Readonly<ShallowRef<HTMLDivElement | null>>,
 ) => {

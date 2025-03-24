@@ -1,31 +1,26 @@
 <template>
-  <div
-    id="app"
-    class="h-full min-h-screen w-full bg-neutral-50 text-neutral-950 dark:bg-neutral-950 dark:text-neutral-50"
-  >
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-    <Sonner :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
-    <ErrorModal />
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>
+  <Sonner :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
+  <ErrorModal />
 
-    <div id="customTeleport" class="absolute top-[-1000px]"></div>
-  </div>
+  <div id="customTeleport" class="absolute top-[-1000px]"></div>
 </template>
 
 <script setup lang="ts">
 import Sonner from '~/components/_shadcn/sonner/Sonner.vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
+import { useTabsStore } from './composables/stores/useTabsStore';
 import { handleErrorsFromRust } from './composables/useRustErrorNotifcation';
 
-const store = useMainStore();
+const store = useTabsStore();
 
 const colorMode = useColorMode();
 
 handleErrorsFromRust();
 
 // Global hook for deleted files
-useListenToEvent('FileRemove', (path) => {
+useListenToEvent('FileRemove', ({ c: path }) => {
   if (store.openedItem?.thing === path) {
     store.closeOpened();
   }
@@ -43,7 +38,7 @@ useHead({
   htmlAttrs: {
     class: computed(() => {
       return [
-        'overscroll-none overflow-hidden select-none',
+        ' select-none',
         colorMode.value === 'dark'
           ? 'dark bg-gradient-to-t from-neutral-900 from-20% to-neutral-950 to-80%'
           : 'bg-gradient-to-t from-neutral-200 from-20% to-neutral-50 to-80%',

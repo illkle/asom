@@ -7,17 +7,15 @@
       <Sidebar class="pt-[2rem]" />
       <main
         :class="[
-          'h-[calc(100svh-2rem)]',
           'relative flex w-36 flex-1 flex-col',
-          'bg-neutral-100 dark:bg-neutral-950',
-          'peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2',
+          //  'peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2',
         ]"
       >
-        <div class="col-span-2 box-border h-10 bg-neutral-200 dark:bg-neutral-900">
+        <div class="col-span-2 py-4 box-border h-10 bg-neutral-200 dark:bg-neutral-900">
           <TabsSelector />
         </div>
 
-        <div class="gutter-stable scrollbarMod h-[calc(100svh_-_2.5rem)] overscroll-none">
+        <div class="gutter-stable scrollbarMod overscroll-none bg-neutral-100 dark:bg-neutral-950">
           <slot />
         </div>
       </main>

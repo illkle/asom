@@ -2,7 +2,7 @@
   <template v-if="tabsStore.openedItem" class="h-full w-full">
     <template v-if="tabsStore.openedItem.type === 'innerPage'"> home page is deprecated </template>
     <template v-else>
-      <BookEditor
+      <RecordEditor
         v-if="tabsStore.openedItem.type === 'file'"
         :opened="tabsStore.openedItem"
         :key="tabsStore.openedItem.id + '_f'"
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import TableView from '~/components/BookView/BooksView.vue';
-import BookEditor from '~/components/Editor/BookEditor.vue';
+import RecordEditor from '~/components/Editor/RecordEditor.vue';
 import { useTabsStore } from '~/composables/stores/useTabsStore';
 
 const tabsStore = useTabsStore();

@@ -163,12 +163,19 @@ impl SchemasInMemoryCache {
 
     pub async fn save_schema(
         &mut self,
-        folder_path: &PathBuf,
+        schema_or_folder_path: &PathBuf,
         mut schema: Schema,
     ) -> Result<Schema, ErrFR> {
         schema.version = SCHEMA_VERSION.to_string();
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
+
+        let schema_path = match schema_or_folder_path.is_dir() {
+            true => schema_or_folder_path.join("schema.yaml"),
+            false => schema_or_folder_path.clone(),
+        };
+
+        let folder_path = schema_path.parent().unwrap();
 
         if !folder_path.exists() {
             create_dir_all(folder_path).map_err(|e| {
@@ -177,8 +184,6 @@ impl SchemasInMemoryCache {
                     .raw(e)
             })?;
         }
-
-        let schema_path = folder_path.join("schema.yaml");
 
         write(schema_path.clone(), serialized).map_err(|e| {
             ErrFR::new("Error writing to disk")
