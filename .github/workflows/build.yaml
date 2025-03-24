@@ -44,10 +44,14 @@ jobs:
       - name: verify certificate (macos only)
         if: matrix.platform == 'macos-latest'
         run: |
-          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Apple Development")
-          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -i "developer")
+          if [ -z "$CERT_INFO" ]; then
+            echo "No certificate found"
+            exit 1
+          fi
+          CERT_ID=$(echo "$CERT_INFO" | head -n 1 | awk -F'"' '{print $2}')
           echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
-          echo "Certificate imported."
+          echo "Certificate found: $CERT_ID"
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
