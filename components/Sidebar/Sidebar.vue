@@ -1,6 +1,6 @@
 <template>
   <ShSidebar :class="$props.class" variant="floating" collapsible="icon">
-    <ShSidebarContent class="py-3">
+    <ShSidebarContent class="">
       <SidebarGroup class="px-2">
         <IconsMenuBookAdder :path-to-save="pathToSave ?? ''" class="">
           <ShButton :disabled="!pathToSave" variant="outline" size="sm" class="w-full text-xs">

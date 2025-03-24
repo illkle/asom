@@ -30,6 +30,7 @@ pub type SchemasCacheMutex = Mutex<SchemasInMemoryCache>;
 pub struct CoreStateManager {
     init_done: Mutex<bool>,
     root_path: Mutex<Option<String>>,
+    cached_root_path: Mutex<Option<String>>,
     watcher: Mutex<GlobalWatcher>,
     pub schemas_cache: SchemasCacheMutex,
 
@@ -41,6 +42,7 @@ impl CoreStateManager {
         Self {
             init_done: Mutex::new(false),
             root_path: Mutex::new(None),
+            cached_root_path: Mutex::new(None),
             watcher: Mutex::new(GlobalWatcher::new().unwrap()),
             schemas_cache: Mutex::new(SchemasInMemoryCache::new()),
             database_conn: Mutex::new(DatabaseConnection::new()),
@@ -85,6 +87,13 @@ impl CoreStateManager {
             .ok_or(ErrFR::new("Root path is not set"))
     }
 
+    pub async fn cached_root_path(&self) -> Option<String> {
+        match self.cached_root_path.lock().await.as_ref() {
+            Some(path) => Some(path.clone()),
+            None => None,
+        }
+    }
+
     pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
         let mut init_done = self.init_done.lock().await;
         if *init_done {
@@ -114,6 +123,34 @@ impl CoreStateManager {
         });
 
         *init_done = true;
+
+        Ok(())
+    }
+
+    pub async fn init_cache_on_root<T: tauri::Runtime>(
+        &self,
+        app: &AppHandle<T>,
+    ) -> Result<(), ErrFR> {
+        let rp = self.load_root_path_from_store(&app).await?;
+
+        if let None = rp {
+            return Ok(());
+        }
+
+        let mut cur_cached_root_path = self.cached_root_path.lock().await;
+
+        if let Some(rp_path) = &rp {
+            if let Some(cached_root_path) = &*cur_cached_root_path {
+                if cached_root_path == rp_path {
+                    return Ok(());
+                }
+            }
+        }
+
+        self.prepare_cache(&app).await?;
+        self.watch_path().await?;
+
+        *cur_cached_root_path = rp;
 
         Ok(())
     }

@@ -64,15 +64,9 @@ struct IPCResponces {
 #[tauri::command]
 async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
     let core = app.state::<CoreStateManager>();
-    let rp = core.load_root_path_from_store(&app).await?;
     core.init(&app).await?;
-
-    if rp.is_some() {
-        core.prepare_cache(&app).await?;
-        core.watch_path().await?;
-    }
-
-    Ok(rp)
+    core.init_cache_on_root(&app).await?;
+    Ok(core.cached_root_path().await)
 }
 
 #[tauri::command]

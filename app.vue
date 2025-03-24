@@ -15,6 +15,10 @@ import { handleErrorsFromRust } from './composables/useRustErrorNotifcation';
 
 const store = useTabsStore();
 
+onMounted(() => {
+  store.fetchOpened();
+});
+
 const colorMode = useColorMode();
 
 handleErrorsFromRust();
@@ -38,15 +42,12 @@ useHead({
   htmlAttrs: {
     class: computed(() => {
       return [
-        ' select-none',
+        'select-none',
         colorMode.value === 'dark'
-          ? 'dark bg-gradient-to-t from-neutral-900 from-20% to-neutral-950 to-80%'
-          : 'bg-gradient-to-t from-neutral-200 from-20% to-neutral-50 to-80%',
+          ? 'dark bg-gradient-to-t from-neutral-900 from-20% to-neutral-950 to-80% text-neutral-50'
+          : 'bg-gradient-to-t from-neutral-200 from-20% to-neutral-50 to-80% text-neutral-950',
       ];
     }),
-  },
-  bodyAttrs: {
-    class: 'min-h-screen text-neutral-950  dark:text-neutral-50',
   },
 });
 </script>

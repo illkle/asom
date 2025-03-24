@@ -1,31 +1,29 @@
 <template>
-  <div data-tauri-drag-region class="h-[2rem] w-full bg-neutral-200 dark:bg-neutral-900"></div>
+  <ShSidebarProvider class="bg-neutral-200 dark:bg-neutral-900">
+    <Sidebar v-if="appState.status === 'ok'" class="pt-[2rem]" />
+    <main
+      :class="[
+        'relative flex w-36 flex-1 flex-col',
+        //'peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2',
+      ]"
+    >
+      <!-- InitQ returned a root path, show app -->
+      <template v-if="appState.status === 'ok'">
+        <TabsSelector />
 
-  <!-- InitQ returned a root path, show app -->
-  <template v-if="appState.status === 'ok'">
-    <ShSidebarProvider class="bg-neutral-200 dark:bg-neutral-900">
-      <Sidebar class="pt-[2rem]" />
-      <main
-        :class="[
-          'relative flex w-36 flex-1 flex-col',
-          //  'peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2',
-        ]"
-      >
-        <div class="col-span-2 py-4 box-border h-10 bg-neutral-200 dark:bg-neutral-900">
-          <TabsSelector />
-        </div>
-
-        <div class="gutter-stable scrollbarMod overscroll-none bg-neutral-100 dark:bg-neutral-950">
+        <div
+          class="overscroll-none scrollbarMod gutter-stable h-full bg-neutral-100 dark:bg-neutral-950"
+        >
           <slot />
         </div>
-      </main>
-    </ShSidebarProvider>
-  </template>
+      </template>
 
-  <main v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
-    <!-- loading\no root\error -->
-    <InitProcess />
-  </main>
+      <div v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
+        <!-- loading\no root\error -->
+        <InitProcess />
+      </div>
+    </main>
+  </ShSidebarProvider>
 </template>
 
 <script setup lang="ts">

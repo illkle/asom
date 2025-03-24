@@ -93,6 +93,8 @@ export const getOpenedTabs = async () => {
       ? JSON.parse(await fs.readTextFile(targetFile))
       : { tabs: [] };
 
+    console.log('getOpenedTabs', f);
+
     return ZOpenedTabs.parse(f);
   } catch (e) {
     return { tabs: [], activeId: '' };
@@ -109,10 +111,10 @@ export const setOpenedTabs = async (tabs: IOpenedTabs) => {
   const targetFolder = await path.join(rootPath, '/.internal/');
   const targetFile = await path.join(targetFolder, JSON_NAME);
 
-  if (!fs.exists(targetFolder)) {
-    fs.mkdir(targetFolder);
+  if (!(await fs.exists(targetFolder))) {
+    await fs.mkdir(targetFolder);
   }
 
-  fs.writeTextFile(targetFile, JSON.stringify(tabs));
+  await fs.writeTextFile(targetFile, JSON.stringify(tabs));
   return;
 };
