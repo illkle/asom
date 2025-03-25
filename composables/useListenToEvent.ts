@@ -10,6 +10,7 @@ export const useListenToEvent = <E extends IPCEmitEvent['type']>(
 
   onMounted(async () => {
     u.value = await listen(name, (event) => {
+      console.log('listenToEvent', event);
       callback(event.payload as { t: E; c: ExtractIPCEmitEventData<E> });
     });
   });

@@ -7,17 +7,39 @@
     </ShButton>
   </div>
 
-  <div v-if="appState.status === 'zeroSchemas'" class="flex h-full flex-col justify-center p-10">
-    <div class="text-3xl font-serif">You do not have any schemas yet</div>
-    <div class="text-regular mt-2">Schema defines what data is tracked on your entries</div>
+  <div
+    v-else-if="appState.status === 'zeroSchemas'"
+    class="flex h-full flex-col justify-center p-10"
+  >
+    <h2 class="text-3xl font-serif">You do not have any schemas yet</h2>
+    <div class="text-sm mt-2">Schema defines what data is tracked on your entries</div>
 
-    <ShButton variant="outline" class="mt-4" @click="">
-      Create default schemas and let me try the app
-    </ShButton>
+    <div class="mt-4">
+      <h2 class="text-xl font-serif">Default schemas</h2>
+      <div v-if="defaultSchemasQ.data.value" class="flex gap-2 justify-between mt-2">
+        <ShButton
+          v-for="schema in defaultSchemasQ.data.value"
+          :key="schema.name"
+          :variant="selectedDefaults[schema.name] ? 'default' : 'outline'"
+          class="w-full"
+          @click="selectedDefaults[schema.name] = !selectedDefaults[schema.name]"
+        >
+          {{ schema.name }}
+        </ShButton>
+      </div>
 
-    <ShButton variant="outline" class="mt-4" @click="navigateTo('/schemas')"
-      >Open schemas editor</ShButton
-    >
+      <ShButton
+        variant=""
+        class="mt-4 w-full"
+        @click="createDefaultSchemas.mutate()"
+        :disabled="!hasSelectedDefaults"
+        >Create</ShButton
+      >
+
+      <ShButton variant="outline" class="mt-8 w-full" @click="navigateTo('/schemas')"
+        >Open schemas editor</ShButton
+      >
+    </div>
   </div>
 
   <div
@@ -68,12 +90,42 @@
 </template>
 
 <script lang="ts" setup>
+import { mkdir } from '@tauri-apps/plugin-fs';
 import { LoaderCircle, XIcon } from 'lucide-vue-next';
+import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
+import { c_save_schema } from '~/api/tauriActions';
+import { useDefaultSchemas } from '~/composables/queries';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { isOurError } from '~/composables/useRustErrorNotifcation';
 
 const store = useMainStore();
 
 const appState = useIsAppUsable();
+const initQ = useRootPath();
+
+const selectedDefaults = ref<Record<string, boolean>>({});
+
+const defaultSchemasQ = useDefaultSchemas();
+
+const hasSelectedDefaults = computed(() => {
+  return Object.values(selectedDefaults.value).some((v) => v);
+});
+
+const createDefaultSchemas = useMutation({
+  mutation: async () => {
+    const schemasToCreate = defaultSchemasQ.data.value?.filter(
+      (v) => selectedDefaults.value[v.name],
+    );
+
+    if (!schemasToCreate) throw new Error('No schemas to create');
+    if (!initQ.data.value) throw new Error('No root path');
+
+    for (const schema of schemasToCreate) {
+      const folder = path.join(initQ.data.value, schema.name);
+      await mkdir(folder, { recursive: true });
+      await c_save_schema(folder, schema);
+    }
+  },
+});
 </script>

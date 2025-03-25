@@ -20,12 +20,12 @@ async fn handle_file_remove(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Option<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, ErrFR> {
     match ext.to_str() {
         Some("md") => match remove_file_from_cache(&core.database_conn, path).await {
-            Ok(_) => Ok(Some(IPCEmitEvent::FileRemove(
+            Ok(_) => Ok(vec![IPCEmitEvent::FileRemove(
                 path.to_string_lossy().to_string(),
-            ))),
+            )]),
             Err(e) => Err(e),
         },
         Some("yaml") => {
@@ -41,11 +41,11 @@ async fn handle_file_remove(
                 Err(e) => return Err(e),
             }
 
-            Ok(Some(IPCEmitEvent::SchemasUpdated(
+            Ok(vec![IPCEmitEvent::SchemasUpdated(
                 schemas_cache.get_schemas_list().await,
-            )))
+            )])
         }
-        _ => Ok(None),
+        _ => Ok(vec![]),
     }
 }
 
@@ -53,10 +53,10 @@ async fn handle_file_add(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Option<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, ErrFR> {
     match ext.to_str() {
         Some("md") => match cache_file(&core.schemas_cache, &core.database_conn, path).await {
-            Ok(v) => Ok(Some(IPCEmitEvent::FileAdd(v))),
+            Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),
             Err(e) => Err(e),
         },
         Some("yaml") => {
@@ -67,11 +67,11 @@ async fn handle_file_add(
                 Err(e) => return Err(e),
             }
 
-            Ok(Some(IPCEmitEvent::SchemasUpdated(
+            Ok(vec![IPCEmitEvent::SchemasUpdated(
                 schemas_cache.get_schemas_list().await,
-            )))
+            )])
         }
-        _ => Ok(None),
+        _ => Ok(vec![]),
     }
 }
 
@@ -79,23 +79,22 @@ async fn handle_file_update(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Option<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, ErrFR> {
     match ext.to_str() {
         Some("md") => match cache_file(&core.schemas_cache, &core.database_conn, path).await {
-            Ok(v) => Ok(Some(IPCEmitEvent::FileUpdate(v))),
+            Ok(v) => Ok(vec![IPCEmitEvent::FileUpdate(v)]),
             Err(e) => Err(e),
         },
-
         Some("yaml") => {
             let mut schemas_cache = core.schemas_cache.lock().await;
 
             match schemas_cache.cache_schema(path.to_path_buf()).await {
-                Ok(Some(v)) => Ok(Some(IPCEmitEvent::SchemaUpdated(v))),
-                Ok(None) => Ok(None),
+                Ok(Some(v)) => Ok(vec![IPCEmitEvent::SchemaUpdated(v)]),
+                Ok(None) => Ok(vec![]),
                 Err(e) => Err(e),
             }
         }
-        _ => Ok(None),
+        _ => Ok(vec![]),
     }
 }
 
@@ -113,7 +112,8 @@ pub struct FolderEventEmit {
 async fn handle_folder_remove(
     core: &CoreStateManager,
     path: &Path,
-) -> Result<Option<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+    println!("handle_folder_remove {:?}", path);
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
 
@@ -127,10 +127,13 @@ async fn handle_folder_remove(
                 .remove_schemas_with_children(path.to_path_buf())
                 .await?;
 
-            return Ok(Some(IPCEmitEvent::FolderRemove(FolderEventEmit {
-                path: path.to_string_lossy().to_string(),
-                schema_path: None,
-            })));
+            Ok(vec![
+                IPCEmitEvent::FolderRemove(FolderEventEmit {
+                    path: path.to_string_lossy().to_string(),
+                    schema_path: None,
+                }),
+                IPCEmitEvent::SchemasUpdated(schemas_cache.get_schemas_list().await),
+            ])
         }
     }
 }
@@ -138,18 +141,22 @@ async fn handle_folder_remove(
 async fn handle_folder_add(
     core: &CoreStateManager,
     path: &Path,
-) -> Result<Option<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+    println!("handle_folder_add {:?}", path);
     match cache_files_folders_schemas(&core.schemas_cache, &core.database_conn, path).await {
         Err(e) => Err(e),
         Ok(_) => {
             let schemas_cache = core.schemas_cache.lock().await;
 
-            Ok(Some(IPCEmitEvent::FolderAdd(FolderEventEmit {
-                path: path.to_string_lossy().to_string(),
-                schema_path: schemas_cache
-                    .get_schema(path)
-                    .map(|v| v.file_path.to_string_lossy().to_string()),
-            })))
+            Ok(vec![
+                IPCEmitEvent::FolderAdd(FolderEventEmit {
+                    path: path.to_string_lossy().to_string(),
+                    schema_path: schemas_cache
+                        .get_schema(path)
+                        .map(|v| v.file_path.to_string_lossy().to_string()),
+                }),
+                IPCEmitEvent::SchemasUpdated(schemas_cache.get_schemas_list().await),
+            ])
         }
     }
 }
@@ -165,7 +172,7 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                 (CreateKind::Folder, _) => handle_folder_add(&core, &path).await,
                 k => {
                     println!("unknown create event {:?}", k);
-                    Ok(None)
+                    Ok(vec![])
                 }
             },
             EventKind::Modify(kind) => match kind {
@@ -177,13 +184,17 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                     path.is_dir(),
                     index,
                 ) {
+                    // rename from file with extension
                     (RenameMode::From, _, Some(ext), _, _, _) => {
                         handle_file_remove(&core, path, ext).await
                     }
+                    // rename from folder
                     (RenameMode::From, _, _, _, _, _) => handle_folder_remove(&core, path).await,
+                    // rename to file with extension
                     (RenameMode::To, _, Some(ext), true, _, _) => {
                         handle_file_add(&core, &path, ext).await
                     }
+                    // rename to folder
                     (RenameMode::To, _, _, _, true, _) => handle_folder_add(&core, &path).await,
                     (RenameMode::Both, _, Some(ext), _, _, 0) => {
                         handle_file_remove(&core, &path, ext).await
@@ -207,32 +218,33 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                             "unknown rename event {:?} {:?} {:?} {} {} {}",
                             a, b, c, d, e, f
                         );
-                        Ok(None)
+                        Ok(vec![])
                     }
                 },
                 // Data is always file
                 ModifyKind::Data(_) => match path.extension() {
                     Some(ext) => handle_file_update(&core, &path, ext).await,
-                    _ => Ok(None),
+                    _ => Ok(vec![]),
                 },
-                _ => Ok(None),
+                _ => Ok(vec![]),
             },
             EventKind::Remove(kind) => match (kind, path.extension()) {
                 (RemoveKind::File, Some(ext)) => handle_file_remove(&core, &path, ext).await,
                 (RemoveKind::Folder, _) => handle_folder_remove(&core, &path).await,
-                _ => Ok(None),
+                _ => Ok(vec![]),
             },
-            _ => Ok(None),
+            _ => Ok(vec![]),
         };
 
         match res {
-            Ok(Some(event)) => {
-                emit_event(app, event);
+            Ok(events) => {
+                for event in events {
+                    emit_event(app, event);
+                }
             }
             Err(e) => {
                 send_err_to_frontend(app, &e);
             }
-            Ok(None) => (),
         }
     }
 }

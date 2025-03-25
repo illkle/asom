@@ -1,7 +1,6 @@
 import path from 'path-browserify';
 import { onMounted, onUnmounted } from 'vue';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
+import { getDefaultViewSettings, useTabsStore } from '~/composables/stores/useTabsStore';
 
 export const setupTabsHotkeys = () => {
   const store = useTabsStore();
@@ -10,7 +9,7 @@ export const setupTabsHotkeys = () => {
 
   const actionKey = navigator.platform.indexOf('Mac') > -1 ? 'metaKey' : 'ctrlKey';
 
-  const usableSchemas = useUsableSchemas();
+  const { query: usableSchemas } = useUsableSchemas();
 
   const hotkeyHandler = (e: KeyboardEvent) => {
     if (e.code === 'KeyT' && e[actionKey]) {

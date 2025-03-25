@@ -56,6 +56,7 @@ export const c_get_all_folders = async () => {
 };
 
 export const c_get_all_folders_by_schema = async (schemaPath: string) => {
+  console.log('c_get_all_folders_by_schema', schemaPath);
   return invoke('c_get_all_folders_by_schema', { schemaPath }).then((v) => {
     return v as ExtractIpcResponcesType<'c_get_all_folders_by_schema'>;
   });

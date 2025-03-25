@@ -17,8 +17,7 @@
 <script lang="ts" setup>
 import type { PropType } from 'vue';
 
-import type { IOpenedFile } from '~/api/openedTabs';
-
+import type { IOpenedFile } from '~/composables/stores/useTabsStore';
 import { useFileEditor } from '../../composables/useFileEditor';
 
 const props = defineProps({

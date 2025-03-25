@@ -9,7 +9,7 @@ let tauriStore: Store | null = null;
 
 const getStore = async () => {
   if (!tauriStore) {
-    tauriStore = await load('appData.bin');
+    tauriStore = await load('root_path.txt');
   }
   return tauriStore;
 };
@@ -36,7 +36,7 @@ export const selectAndSetRootPath = async () => {
   await c_init();
 
   const qc = useQueryCache();
-  await qc.invalidateQueries({ key: ['root'] });
+  await qc.invalidateQueries({ key: ['rooPath'] });
 
   return result;
 };

@@ -32,6 +32,6 @@ export const useRustErrorNotification = (
   });
 };
 
-export const handleErrorsFromRust = () => {
-  useListenToEvent('ErrorHappened', useRustErrorNotification);
+export const useHandleErrorsFromRust = () => {
+  useListenToEvent('ErrorHappened', (v) => useRustErrorNotification(v.c));
 };

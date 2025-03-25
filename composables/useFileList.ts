@@ -1,14 +1,10 @@
-import { debounce as _debounce, throttle } from 'lodash';
-import { cloneDeep as _cloneDeep } from 'lodash';
-
-import type { IOpenedPath } from '~/api/openedTabs';
-
-import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
-import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import path from 'path-browserify';
 import { c_get_files_path, returnErrorHandler } from '~/api/tauriActions';
-import type { RecordFromDb } from '~/types';
+import type { IOpenedPath } from '~/composables/stores/useTabsStore';
 import { useListenToEvent } from '~/composables/useListenToEvent';
+import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
+import { useThrottledEvents } from '~/composables/useTrottledEvents';
+import type { RecordFromDb } from '~/types';
 
 export const useFilesList = ({
   opened,
@@ -98,17 +94,17 @@ export const useFilesList = ({
 
   const { onEvent, processQueue } = useThrottledEvents(processEvents, loadContent, 1000, 15);
 
-  useListenToEvent('FileAdd', (book) => onEvent({ event: 'add', book }));
-  useListenToEvent('FileUpdate', (book) => onEvent({ event: 'update', book }));
-  useListenToEvent('FileRemove', (path) => onEvent({ event: 'remove', path }));
+  useListenToEvent('FileAdd', (v) => onEvent({ event: 'add', book: v.c }));
+  useListenToEvent('FileUpdate', (v) => onEvent({ event: 'update', book: v.c }));
+  useListenToEvent('FileRemove', (v) => onEvent({ event: 'remove', path: v.c }));
 
   // For folder events we just reload everything because it can modify a lot of sub-files\sub-dirs
   useListenToEvent('FolderAdd', (v) => {
-    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.path))
+    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.c.path))
       processQueue(true);
   });
   useListenToEvent('FolderRemove', (v) => {
-    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.path))
+    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.c.path))
       processQueue(true);
   });
 

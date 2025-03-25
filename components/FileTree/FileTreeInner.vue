@@ -65,13 +65,16 @@
 import { computed, onUpdated, ref, watchEffect } from 'vue';
 
 import type { PropType } from 'vue';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 import { once } from '@tauri-apps/api/event';
 import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import { ChevronDown, FolderIcon, LibraryIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
-import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
+import {
+  getDefaultViewSettings,
+  useTabsStore,
+  type OpenNewOneParams,
+} from '~/composables/stores/useTabsStore';
 import TreeCell from './TreeCell.vue';
 import type { FolderNode } from './filePathsToTree';
 

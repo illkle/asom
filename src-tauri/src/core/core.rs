@@ -59,7 +59,7 @@ impl CoreStateManager {
         &self,
         app: &AppHandle<T>,
     ) -> Result<Option<String>, ErrFR> {
-        let store = match app.store("appData.bin") {
+        let store = match app.store("root_path.txt") {
             Ok(store) => store,
             Err(e) => {
                 return Err(ErrFR::new("Error getting store").raw(e.to_string()));

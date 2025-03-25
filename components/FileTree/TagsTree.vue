@@ -15,10 +15,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import TreeCell from '~/components/FileTree/TreeCell.vue';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 
 import { c_get_all_tags } from '~/api/tauriActions';
-import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
+import { getDefaultViewSettings, useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
 
 const ts = useTabsStore();
 const { data, refresh } = useAsyncData(() => {

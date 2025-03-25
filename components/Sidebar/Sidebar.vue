@@ -34,10 +34,9 @@
 import { CogIcon, PlusIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { useTabsStore } from '~/composables/stores/useTabsStore';
-import type { Schema } from '~/types';
 import SidebarGroup from '../_shadcn/sidebar/SidebarGroup.vue';
 
-const { data: schemas, error } = useUsableSchemas();
+const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStore();
 
@@ -48,9 +47,5 @@ const pathToSave = computed(() => {
   if (tabsStore.openedItem.type === 'folder') return tabsStore.openedItem.thing;
 
   return null;
-});
-
-const schemasArray = computed(() => {
-  return Object.entries(schemas.value || {}) as [string, Schema][];
 });
 </script>

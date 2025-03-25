@@ -22,8 +22,8 @@
 import { XIcon } from 'lucide-vue-next';
 
 import { computed, type PropType } from 'vue';
-import type { IOpened } from '~/api/openedTabs';
 import { useMainStore } from '~/composables/stores/useMainStore';
+import type { IOpened } from '~/composables/stores/useTabsStore';
 
 const props = defineProps({
   isNewAndAnimating: {

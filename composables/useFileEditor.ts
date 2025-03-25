@@ -2,9 +2,9 @@ import { watchPausable } from '@vueuse/core';
 import { throttle } from 'lodash';
 import type { ShallowRef } from 'vue';
 
-import type { IOpenedFile } from '~/api/openedTabs';
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';
 import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
+import type { IOpenedFile } from '~/composables/stores/useTabsStore';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import type { RecordFromDb, Schema } from '~/types';
 

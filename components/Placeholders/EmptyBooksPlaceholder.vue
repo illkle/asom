@@ -10,8 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useTabsStore } from '~/composables/stores/useTabsStore';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
+import { getDefaultViewSettings, useTabsStore } from '~/composables/stores/useTabsStore';
 
 const ts = useTabsStore();
 

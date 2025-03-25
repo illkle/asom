@@ -170,6 +170,7 @@ impl SchemasInMemoryCache {
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
+        // When passing folder it MUST exist on disk, otherwise this will not work
         let schema_path = match schema_or_folder_path.is_dir() {
             true => schema_or_folder_path.join("schema.yaml"),
             false => schema_or_folder_path.clone(),
@@ -191,7 +192,7 @@ impl SchemasInMemoryCache {
                 .raw(e)
         })?;
 
-        self.insert(schema_path.clone(), schema.clone());
+        self.insert(folder_path.to_path_buf(), schema.clone());
 
         Ok(schema)
     }

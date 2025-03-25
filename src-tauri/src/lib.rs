@@ -19,7 +19,7 @@ use files::read_save::{
     read_file_by_path, save_file, FileReadMode, RecordReadResult, RecordSaveResult,
 };
 use schema::defaults::get_default_schemas;
-use schema::{defaults::DefaultSchema, types::Schema};
+use schema::types::Schema;
 use tauri::test::{mock_builder, MockRuntime};
 use tauri::{AppHandle, Manager};
 use ts_rs::TS;
@@ -40,7 +40,7 @@ type IPCGetSchemas = Result<HashMap<String, Schema>, ErrFR>;
 type IPCLoadSchema = Result<Schema, ErrFR>;
 type IPCSaveSchema = Result<Schema, ErrFR>;
 type IPCSaveFile = Result<RecordSaveResult, ErrFR>;
-type IPCGetDefaultSchemas = Result<Vec<DefaultSchema>, ErrFR>;
+type IPCGetDefaultSchemas = Result<Vec<Schema>, ErrFR>;
 
 #[derive(TS)]
 #[ts(export)]

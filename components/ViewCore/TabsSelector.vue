@@ -1,7 +1,7 @@
 <template>
   <div
     ref="widgetDiv"
-    class="relative h-10 overflow-hidden pr-24"
+    class="relative h-10 overflow-hidden pr-24 z-30"
     @drop="onDrop($event)"
     @dragenter.prevent="dragEnter"
     @dragleave.prevent="dragLeave"
@@ -72,13 +72,15 @@
 <script lang="ts" setup>
 import { clamp } from 'lodash';
 import { computed, onMounted, ref, watch } from 'vue';
-import { getDefaultViewSettings } from '~/utils/getDefaultViewSettings';
 import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';
 
 import { useElementSize, useMouse } from '@vueuse/core';
-import type { IOpened } from '~/api/openedTabs';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import {
+  getDefaultViewSettings,
+  useTabsStore,
+  type IOpened,
+} from '~/composables/stores/useTabsStore';
 
 const store = useTabsStore();
 

@@ -1,7 +1,7 @@
 <template>
   <div class="relative px-2 pr-4">
     <div>
-      <div class="sticky top-0 bg-neutral-50 dark:bg-neutral-950">
+      <div class="sticky top-0 bg-neutral-100 dark:bg-neutral-950">
         <div class="flex gap-4 py-2">
           <UIBasicInput v-model="props.opened.settings.searchQuery" />
 
@@ -71,7 +71,6 @@ import { debounce as _debounce } from 'lodash';
 
 import { EllipsisVertical } from 'lucide-vue-next';
 import type { PropType } from 'vue';
-import type { IOpenedPath } from '~/api/openedTabs';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -85,6 +84,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '~/components/_shadcn/resizable';
+import type { IOpenedPath } from '~/composables/stores/useTabsStore';
 
 const tes = ref();
 onMounted(() => (tes.value = Math.random()));
