@@ -62,7 +62,7 @@ export type IOpenedFile = z.infer<typeof zOpenedFile>;
 export const zOpenedInnerPage = z.object({
   id: z.string(),
   type: z.literal('innerPage'),
-  thing: z.enum(['home', 'settings']),
+  thing: z.enum(['goodreadsImporter']),
   scrollPosition: z.number(),
 });
 

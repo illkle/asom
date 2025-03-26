@@ -1,6 +1,8 @@
 <template>
   <template v-if="tabsStore.openedItem" class="h-full w-full">
-    <template v-if="tabsStore.openedItem.type === 'innerPage'"> home page is deprecated </template>
+    <template v-if="tabsStore.openedItem.type === 'innerPage'">
+      <ToolsGoodreadsImporter v-if="tabsStore.openedItem.thing === 'goodreadsImporter'" />
+    </template>
     <template v-else>
       <RecordEditor
         v-if="tabsStore.openedItem.type === 'file'"
@@ -8,7 +10,7 @@
         :key="tabsStore.openedItem.id + '_f'"
       />
       <TableView
-        v-else
+        v-else-if="tabsStore.openedItem.type === 'folder'"
         :opened="tabsStore.openedItem"
         :index="tabsStore.openedTabsActiveIndex || 0"
         :key="tabsStore.openedItem.id + '_t'"

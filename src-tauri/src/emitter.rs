@@ -9,7 +9,7 @@ use crate::{
     watcher::event_handlers::FolderEventEmit,
 };
 
-#[derive(Serialize, TS, Clone)]
+#[derive(Serialize, TS, Clone, Debug)]
 #[ts(export)]
 #[ts(tag = "type", content = "data")]
 #[serde(tag = "t", content = "c")]

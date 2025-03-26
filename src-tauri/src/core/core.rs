@@ -19,8 +19,6 @@ use tokio::sync::Mutex;
 
 use std::{path::Path, time::Duration};
 
-use tokio::task;
-
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
 pub type DatabaseConnectionMutex = Mutex<DatabaseConnection>;
@@ -106,12 +104,12 @@ impl CoreStateManager {
         let event_rx = watcher.subscribe_to_events().await;
 
         // TODO: Find a way to actually await run_monitor, because right now it's not started when init returns. This only seem to matter in tests tho.
-        task::spawn(async move {
+        tokio::spawn(async move {
             run_monitor(
                 event_rx,
                 MonitorConfig {
                     app: app_handle,
-                    command_buffer_size: 32,
+                    command_buffer_size: 5000,
                     log_to_stdout: true,
                 },
             )

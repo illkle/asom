@@ -100,7 +100,6 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
 
 #[tauri::command]
 async fn c_get_all_folders<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllFolders {
-    println!("c_get_all_folders");
     let core = app.state::<CoreStateManager>();
     get_all_folders(
         core.root_path_safe().await?,

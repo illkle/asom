@@ -1,6 +1,4 @@
 import { format, isValid, parse } from 'date-fns';
-import { useMainStore } from '~/composables/stores/useMainStore';
-import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 import type { DatePair } from '~/types';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
@@ -24,7 +22,6 @@ const parseDate = (stringToParse: string, possibleFormats: string[]): Date | und
 
   for (const format of possibleFormats) {
     parsed = parse(stringToParse, format, new Date());
-
     if (isValid(parsed)) return parsed;
   }
 };
@@ -69,6 +66,14 @@ const getDates = (rootElement: Element, dateFormat: string): DatePair[] => {
       result.push(date);
     }
   }
+
+  result.sort((a, b) => {
+    if (a.started && b.started) {
+      return new Date(a.started).getTime() - new Date(b.started).getTime();
+    }
+    return 0;
+  });
+
   return result;
 };
 
@@ -80,7 +85,7 @@ const getYear = (rootElement: Element) => {
   if (date) return date.getFullYear();
 };
 
-type GoodreadsParsedBook = {
+export type GoodreadsParsedBook = {
   title: string;
   author: string;
   isbn13: number;
@@ -103,7 +108,7 @@ const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBoo
   return book;
 };
 
-export const importGoodReadsHTML = (event: Event) => {
+export const extractDataFromGoodreadsHTML = async (event: Event, rootPath: string) => {
   if (!event.target) return;
   const target = event.target as HTMLInputElement;
 
@@ -111,27 +116,36 @@ export const importGoodReadsHTML = (event: Event) => {
     return;
   }
 
-  const ss = useSettingsStore();
-  const store = useMainStore();
-
-  const fr = new FileReader();
   const parser = new DOMParser();
-  fr.readAsText(target.files[0]);
-  fr.onload = async function () {
-    if (typeof fr.result === 'string') {
-      const html = parser.parseFromString(fr.result, 'text/html');
-      const books = html.getElementById('booksBody')?.children;
-      if (!books) return;
 
-      const result: GoodreadsParsedBook[] = [];
+  const file = target.files[0];
 
-      if (!ss.settings || !store.rootPath) return;
+  const fileContent = await readFileContent(file);
 
-      for (const book of books) {
-        result.push(parseBook(book, ss.settings.dateFormat));
-      }
+  console.log('aaa', typeof fileContent);
+  if (typeof fileContent !== 'string') throw new Error('File content is not a string');
 
-      // write result somewhere
-    }
-  };
+  const html = parser.parseFromString(fileContent, 'text/html');
+  const booksBody = html.getElementById('booksBody');
+
+  if (!booksBody) throw new Error('No books found');
+
+  const result: GoodreadsParsedBook[] = [];
+
+  for (const book of booksBody.children) {
+    const b = parseBook(book, 'yyyy-MM-dd');
+    console.log(b);
+    result.push(b);
+  }
+
+  return result;
 };
+
+async function readFileContent(file: File) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(event.target?.result);
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
+  });
+}

@@ -24,10 +24,9 @@
 <script lang="ts" setup>
 import { format } from 'date-fns';
 import { MoveRightIcon, XIcon } from 'lucide-vue-next';
+import type { DatePair } from '~/types';
 
-import type { DateRead } from '~/types';
-
-const datePairs = defineModel<DateRead[] | null>();
+const datePairs = defineModel<DatePair[] | null>();
 
 const addNewDate = () => {
   if (!datePairs.value) {

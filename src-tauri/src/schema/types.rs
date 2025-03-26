@@ -33,7 +33,7 @@ pub enum AttrValue {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
     DatePairVec(Option<Vec<DatePair>>),
-    Integer(Option<i32>),
+    Integer(Option<i64>),
     Float(Option<f64>),
 }
 
@@ -46,7 +46,7 @@ pub enum AttrValueOnDisk {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
     DatePairVec(Option<Vec<DatePair>>),
-    Integer(Option<i32>),
+    Integer(Option<i64>),
     Float(Option<f64>),
 }
 

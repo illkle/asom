@@ -113,7 +113,6 @@ async fn handle_folder_remove(
     core: &CoreStateManager,
     path: &Path,
 ) -> Result<Vec<IPCEmitEvent>, ErrFR> {
-    println!("handle_folder_remove {:?}", path);
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
 
@@ -142,12 +141,10 @@ async fn handle_folder_add(
     core: &CoreStateManager,
     path: &Path,
 ) -> Result<Vec<IPCEmitEvent>, ErrFR> {
-    println!("handle_folder_add {:?}", path);
     match cache_files_folders_schemas(&core.schemas_cache, &core.database_conn, path).await {
         Err(e) => Err(e),
         Ok(_) => {
             let schemas_cache = core.schemas_cache.lock().await;
-
             Ok(vec![
                 IPCEmitEvent::FolderAdd(FolderEventEmit {
                     path: path.to_string_lossy().to_string(),
@@ -166,6 +163,7 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
 
     for (index, path) in event.paths.iter().enumerate() {
         println!("{:?}", event);
+
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {
                 (CreateKind::File, Some(ext)) => handle_file_add(&core, &path, ext).await,

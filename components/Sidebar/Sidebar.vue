@@ -18,6 +18,9 @@
     </ShSidebarContent>
 
     <ShSidebarFooter>
+      <ShSidebarMenuButton @click="openGoodreadsImporter">
+        <WrenchIcon /> Tools
+      </ShSidebarMenuButton>
       <ShDialog>
         <ShDialogContent>
           <SettingsPage />
@@ -31,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { CogIcon, PlusIcon } from 'lucide-vue-next';
+import { CogIcon, PlusIcon, WrenchIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { useTabsStore } from '~/composables/stores/useTabsStore';
 import SidebarGroup from '../_shadcn/sidebar/SidebarGroup.vue';
@@ -48,4 +51,19 @@ const pathToSave = computed(() => {
 
   return null;
 });
+
+const openGoodreadsImporter = () => {
+  tabsStore.openNewOne(
+    {
+      id: generateUniqId(),
+      type: 'innerPage',
+      thing: 'goodreadsImporter',
+      scrollPosition: 0,
+    },
+    {
+      place: 'last',
+      focus: true,
+    },
+  );
+};
 </script>
