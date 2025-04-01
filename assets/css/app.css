@@ -1,0 +1,41 @@
+@reference '~/assets/css/tailwind.css';
+
+@layer utilities {
+  #app {
+    --font:
+      ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter',
+      'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Microsoft YaHei Light', sans-serif;
+
+    font-family: var(--font);
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input {
+    outline: none;
+  }
+
+  .editor {
+    outline: none;
+  }
+
+  .dragApp {
+    user-select: none;
+    -webkit-app-region: drag;
+    -webkit-user-select: none;
+  }
+
+  .scrollbarMod::-webkit-scrollbar {
+    @apply w-2 bg-transparent;
+  }
+  .scrollbarMod::-webkit-scrollbar-thumb {
+    @apply rounded-md bg-neutral-600;
+  }
+}

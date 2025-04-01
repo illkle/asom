@@ -30,14 +30,14 @@
     <div class="mt-2">
       Select one of your schemas to import into
       <div class="mt-2 flex gap-2">
-        <ShButton
+        <Button
           v-for="([schemaPath, schema], index) in schemasArray"
           :key="schemaPath"
           :variant="selectedSchemaIndex === index ? 'default' : 'outline'"
           @click="selectedSchemaIndex = index"
         >
           {{ schema.name }}
-        </ShButton>
+        </Button>
       </div>
     </div>
 
@@ -48,69 +48,69 @@
       <div>Title</div>
 
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.title" :options="awailableTextFields">
-        <ShSelectTrigger>{{ mappings.title || 'Select field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableTextFields" :key="field" :value="field">
+      <Select v-model="mappings.title" :options="awailableTextFields">
+        <SelectTrigger>{{ mappings.title || 'Select field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <div>Author</div>
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.author" :options="awailableTextFields">
-        <ShSelectTrigger>{{ mappings.author || 'Select field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableTextFields" :key="field" :value="field">
+      <Select v-model="mappings.author" :options="awailableTextFields">
+        <SelectTrigger>{{ mappings.author || 'Select field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <div>ISBN13</div>
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.isbn13" :options="awailableNumberFields">
-        <ShSelectTrigger>{{ mappings.isbn13 || 'Select field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+      <Select v-model="mappings.isbn13" :options="awailableNumberFields">
+        <SelectTrigger>{{ mappings.isbn13 || 'Select field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
       <div>Year</div>
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.year" :options="awailableNumberFields">
-        <ShSelectTrigger>{{ mappings.year || 'Select field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+      <Select v-model="mappings.year" :options="awailableNumberFields">
+        <SelectTrigger>{{ mappings.year || 'Select field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
       <div>Rating</div>
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.rating" :options="awailableNumberFields">
-        <ShSelectTrigger>{{ mappings.rating || 'Select field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+      <Select v-model="mappings.rating" :options="awailableNumberFields">
+        <SelectTrigger>{{ mappings.rating || 'Select field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
       <div>Read</div>
       <ArrowRightIcon />
-      <ShSelect v-model="mappings.read" :options="awailableDatePairFields">
-        <ShSelectTrigger>{{ mappings.read || 'Select DatesPairCollection field' }}</ShSelectTrigger>
-        <ShSelectContent>
-          <ShSelectItem v-for="field in awailableDatePairFields" :key="field" :value="field">
+      <Select v-model="mappings.read" :options="awailableDatePairFields">
+        <SelectTrigger>{{ mappings.read || 'Select DatesPairCollection field' }}</SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="field in awailableDatePairFields" :key="field" :value="field">
             {{ field }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
-    <ShButton @click="importBooks" class="mt-2 w-full">Import books</ShButton>
+    <Button @click="importBooks" class="mt-2 w-full">Import books</Button>
 
     <div>Found {{ books.length }} books</div>
     <div>

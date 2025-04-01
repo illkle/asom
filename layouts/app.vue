@@ -1,6 +1,6 @@
 <template>
-  <ShSidebarProvider>
-    <Sidebar v-if="appState.status === 'ok'" class="pt-[2rem] box-border" />
+  <SidebarProvider>
+    <AppSidebar v-if="appState.status === 'ok'" class="pt-[2rem] box-border" />
 
     <main class="relative flex w-36 flex-1 flex-col h-screen box-border pt-[1rem]">
       <!-- InitQ returned a root path, show app -->
@@ -18,10 +18,11 @@
         <InitProcess />
       </div>
     </main>
-  </ShSidebarProvider>
+  </SidebarProvider>
 </template>
 
 <script setup lang="ts">
+import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
 

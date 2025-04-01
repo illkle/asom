@@ -7,7 +7,7 @@
 
           <DropdownMenu>
             <DropdownMenuTrigger>
-              <ShButton variant="outline"><EllipsisVertical :size="16" /></ShButton>
+              <Button variant="outline"><EllipsisVertical :size="16" /></Button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent>
@@ -71,19 +71,9 @@ import { debounce as _debounce } from 'lodash';
 
 import { EllipsisVertical } from 'lucide-vue-next';
 import type { PropType } from 'vue';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '~/components/_shadcn/dropdown-menu';
+
 import EmptyBooksPlaceholder from '~/components/Placeholders/EmptyBooksPlaceholder.vue';
 
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '~/components/_shadcn/resizable';
 import type { IOpenedPath } from '~/composables/stores/useTabsStore';
 
 const tes = ref();

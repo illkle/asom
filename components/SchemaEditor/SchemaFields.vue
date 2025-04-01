@@ -1,17 +1,17 @@
 <template>
   <div v-if="schema" class="flex flex-col gap-4">
     <div class="flex items-center gap-4">
-      <ShButton variant="ghost" size="icon" @click="goBack">
+      <Button variant="ghost" size="icon" @click="goBack">
         <ArrowLeftIcon class="w-4" />
-      </ShButton>
+      </Button>
       <h1 class="font-serif text-3xl">{{ schema.name }}</h1>
 
-      <ShButton variant="outline" @click="save">Save</ShButton>
+      <Button variant="outline" @click="save">Save</Button>
     </div>
 
     <div class="max-w-[600px]">
       <div>
-        <ShInput v-model="schema.name" />
+        <Input v-model="schema.name" />
       </div>
 
       <div class="mt-4">
@@ -19,7 +19,7 @@
           <template v-for="(_, i) in schema.items" class="flex gap-2">
             <SchemaEditorShemaItem v-model:model-value="schema.items[i]" @delete="deleteItem(i)" />
           </template>
-          <ShButton @click="addNew" variant="outline" class="col-span-4 mt-2 w-full">Add</ShButton>
+          <Button @click="addNew" variant="outline" class="col-span-4 mt-2 w-full">Add</Button>
         </div>
         <div></div>
       </div>

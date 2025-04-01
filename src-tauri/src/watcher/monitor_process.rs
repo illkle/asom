@@ -62,7 +62,7 @@ pub async fn run_monitor<T: tauri::Runtime>(
                 }
 
                 // Print metrics every 1 seconds
-                if last_metrics.elapsed() > Duration::from_secs(1) {
+                if config.log_to_stdout && last_metrics.elapsed() > Duration::from_secs(1) {
                     let total_processed = processed_events.load(Ordering::SeqCst);
                     let avg_processing_time =
                         processing_time.load(Ordering::SeqCst) / total_processed.max(1);

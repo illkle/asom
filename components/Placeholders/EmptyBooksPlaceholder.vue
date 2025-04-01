@@ -2,9 +2,9 @@
   <div class="flex flex-col items-center justify-center pt-40">
     <div class="text-center">You don't have any files {{ isRootOpened ? 'yet' : 'here' }}.</div>
     <div class="mt-4 flex gap-4">
-      <ShButton variant="outline" @click="openAllBooks">View All Books</ShButton>
+      <Button variant="outline" @click="openAllBooks">View All Books</Button>
 
-      <ShButton variant="outline">Add New Book</ShButton>
+      <Button variant="outline">Add New Book</Button>
     </div>
   </div>
 </template>

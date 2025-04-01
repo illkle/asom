@@ -3,18 +3,16 @@
     :class="[
       'flex h-10 items-center justify-between border-transparent py-1 transition-all',
       widthAwailable > 100 ? 'px-2 text-sm' : 'px-1 text-xs',
-      isActive
-        ? 'rounded-tl-md rounded-tr-md bg-neutral-50 dark:bg-neutral-950'
-        : 'bg-neutral-200 text-neutral-600 hover:bg-neutral-300 dark:bg-neutral-900 dark:text-neutral-600 dark:hover:bg-neutral-800',
+      isActive ? 'rounded-tl-md rounded-tr-md bg-primary-foreground' : 'hover:bg-accent',
     ]"
   >
     <div class="truncate" :class="isNewAndAnimating && 'animate-new'">
       {{ text }}
     </div>
 
-    <ShButton variant="ghost" size="iconSm" @mousedown.stop @click.stop="emit('close')">
+    <Button variant="ghost" size="icon" class="w-6 h-6" @mousedown.stop @click.stop="emit('close')">
       <XIcon class="text-neutral-300 duration-[0] dark:text-neutral-600" />
-    </ShButton>
+    </Button>
   </div>
 </template>
 

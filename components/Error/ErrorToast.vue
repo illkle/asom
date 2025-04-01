@@ -1,13 +1,13 @@
 <template>
   <div>{{ err.info }}</div>
-  <ShButton v-if="err.rawError" size="xs" variant="outline" class="mt-2" @click="readFullError">
+  <Button v-if="err.rawError" size="xs" variant="outline" class="mt-2" @click="readFullError">
     Show raw error message
-  </ShButton>
+  </Button>
 </template>
 
 <script setup lang="ts">
-import type { ErrFR } from '~/types';
 import { useMainStore } from '~/composables/stores/useMainStore';
+import type { ErrFR } from '~/types';
 
 const store = useMainStore();
 

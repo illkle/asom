@@ -1,13 +1,13 @@
 <template>
-  <ShDialog :open="err ? true : false" @update:open="() => (store.errorModal = null)">
-    <ShDialogContent>
-      <ShDialogTitle>
+  <Dialog :open="err ? true : false" @update:open="() => (store.errorModal = null)">
+    <DialogContent>
+      <DialogTitle>
         {{ err?.title }}
-      </ShDialogTitle>
-      <ShDialogDescription>
+      </DialogTitle>
+      <DialogDescription>
         {{ err?.info }}
-      </ShDialogDescription>
-      <ShDialogDescription>
+      </DialogDescription>
+      <DialogDescription>
         <div v-if="err?.rawError">
           {{ err?.rawError }}
         </div>
@@ -21,9 +21,9 @@
             </div>
           </div>
         </div>
-      </ShDialogDescription>
-    </ShDialogContent>
-  </ShDialog>
+      </DialogDescription>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">

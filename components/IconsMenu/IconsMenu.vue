@@ -1,23 +1,22 @@
 <template>
-  <ShDialog v-model:open="settingsOpened">
-    <ShDialogContent>
+  <Dialog v-model:open="settingsOpened">
+    <DialogContent>
       <Settings />
-    </ShDialogContent>
-  </ShDialog>
+    </DialogContent>
+  </Dialog>
   <div class="flex items-center justify-start py-2">
-    <ShButton variant="ghost" size="icon" @click="() => (settingsOpened = !settingsOpened)">
+    <Button variant="ghost" size="icon" @click="() => (settingsOpened = !settingsOpened)">
       <Settings2Icon stroke-width="1" />
-    </ShButton>
+    </Button>
 
-    <IconsMenuBookAdder>
-      <ShButton variant="ghost" size="icon">
-        <PlusIcon stroke-width="1" />
-      </ShButton>
-    </IconsMenuBookAdder>
+    <Button variant="ghost" size="icon">
+      <PlusIcon stroke-width="1" />
+    </Button>
   </div>
 </template>
 
 <script lang="ts" setup>
+// TODO: DELETE
 import Settings from '../Settings/SettingsPage.vue';
 
 import { PlusIcon, Settings2Icon } from 'lucide-vue-next';

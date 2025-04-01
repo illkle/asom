@@ -30,10 +30,10 @@ watchEffect(() => {
 
 <template>
   <TreeItem v-bind="item.bind" v-slot="{ isExpanded }" @click="isCreatingFolder = true">
-    <ShContextMenu :modal="false">
-      <ShContextMenuTrigger class="w-full">
+    <ContextMenu :modal="false">
+      <ContextMenuTrigger class="w-full">
         <div :style="`padding-left: ${item.level - 1}rem`" class="flex items-center gap-2">
-          <ShButton
+          <Button
             variant="outline"
             size="xs"
             class="flex w-full justify-start gap-2"
@@ -56,32 +56,32 @@ watchEffect(() => {
 
               Schema owner
             </div>
-          </ShButton>
+          </Button>
           <div v-if="item.value.ownSchema" class="ml-auto flex items-center gap-2 text-xs">
-            <ShButton
+            <Button
               v-if="item.value.schemaFilePath"
               variant="outline"
               size="xs"
               @click.stop="openSchemaEditor(item.value.schemaFilePath)"
-              >Edit</ShButton
+              >Edit</Button
             >
           </div>
         </div>
-      </ShContextMenuTrigger>
-      <ShContextMenuContent>
-        <ShContextMenuItem
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem
           v-if="item.value.hasSchema && item.value.schemaFilePath"
           @click="openSchemaEditor(item.value.schemaFilePath)"
         >
           Edit schema
-        </ShContextMenuItem>
-        <ShContextMenuItem
+        </ContextMenuItem>
+        <ContextMenuItem
           v-if="!item.value.ownSchema"
           @click="$emit('addNewSchema', item.value.name, item.value.rawPath)"
         >
           Create schema
-        </ShContextMenuItem>
-        <ShContextMenuItem
+        </ContextMenuItem>
+        <ContextMenuItem
           v-if="item.value.ownSchema"
           @click="
             async () =>
@@ -89,20 +89,18 @@ watchEffect(() => {
           "
         >
           Delete schema
-        </ShContextMenuItem>
+        </ContextMenuItem>
 
-        <ShContextMenuSeparator />
+        <ContextMenuSeparator />
 
-        <ShContextMenuItem @click="() => $emit('createFolder', item.value.rawPath)">
+        <ContextMenuItem @click="() => $emit('createFolder', item.value.rawPath)">
           Create Folder
-        </ShContextMenuItem>
+        </ContextMenuItem>
 
-        <ShContextMenuItem
-          @click="async () => await remove(item.value.rawPath, { recursive: true })"
-        >
+        <ContextMenuItem @click="async () => await remove(item.value.rawPath, { recursive: true })">
           Delete Folder
-        </ShContextMenuItem>
-      </ShContextMenuContent>
-    </ShContextMenu>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   </TreeItem>
 </template>

@@ -2,9 +2,9 @@
   <div v-if="appState.status === 'noRootPath'" class="flex h-full flex-col justify-center p-10">
     <div class="text-3xl font-serif">To begin please set working directory</div>
     <div class="text-regular mt-2">Your files & settings will be saved there.</div>
-    <ShButton variant="outline" class="mt-4" @click="selectAndSetRootPath">
+    <Button variant="outline" class="mt-4" @click="selectAndSetRootPath">
       Set Working Directory
-    </ShButton>
+    </Button>
   </div>
 
   <div
@@ -17,7 +17,7 @@
     <div class="mt-4">
       <h2 class="text-xl font-serif">Default schemas</h2>
       <div v-if="defaultSchemasQ.data.value" class="flex gap-2 justify-between mt-2">
-        <ShButton
+        <Button
           v-for="schema in defaultSchemasQ.data.value"
           :key="schema.name"
           :variant="selectedDefaults[schema.name] ? 'default' : 'outline'"
@@ -25,20 +25,20 @@
           @click="selectedDefaults[schema.name] = !selectedDefaults[schema.name]"
         >
           {{ schema.name }}
-        </ShButton>
+        </Button>
       </div>
 
-      <ShButton
+      <Button
         variant=""
         class="mt-4 w-full"
         @click="createDefaultSchemas.mutate()"
         :disabled="!hasSelectedDefaults"
-        >Create</ShButton
+        >Create</Button
       >
 
-      <ShButton variant="outline" class="mt-8 w-full" @click="navigateTo('/schemas')"
-        >Open schemas editor</ShButton
-      >
+      <Button variant="outline" class="mt-8 w-full" @click="navigateTo('/schemas')">
+        Open schemas editor
+      </Button>
     </div>
   </div>
 
@@ -67,14 +67,14 @@
               {{ appState.error.info }}
             </div>
             <div class="mt-4 flex gap-2">
-              <ShButton
+              <Button
                 v-if="'rawError' in appState.error"
                 variant="outline"
                 @click="store.setError(appState.error)"
                 class="w-full"
               >
                 Show full error
-              </ShButton>
+              </Button>
             </div>
           </template>
           <template v-else>

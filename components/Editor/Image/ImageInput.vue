@@ -1,17 +1,17 @@
 <template>
-  <ShContextMenu v-if="imagePath">
-    <ShContextMenuTrigger>
+  <ContextMenu v-if="imagePath">
+    <ContextMenuTrigger>
       <div class="max-h-[200px] max-w-[200px] rounded-md overflow-hidden">
         <img :src="imagePath" draggable="false" />
       </div>
-    </ShContextMenuTrigger>
+    </ContextMenuTrigger>
 
-    <ShContextMenuContent>
-      <ShContextMenuItem @click="changeImageHandler"> Change Image </ShContextMenuItem>
-      <ShContextMenuItem @click="removeImageHandler"> Remove </ShContextMenuItem>
-      <ShContextMenuItem> Show file in folder </ShContextMenuItem>
-    </ShContextMenuContent>
-  </ShContextMenu>
+    <ContextMenuContent>
+      <ContextMenuItem @click="changeImageHandler"> Change Image </ContextMenuItem>
+      <ContextMenuItem @click="removeImageHandler"> Remove </ContextMenuItem>
+      <ContextMenuItem> Show file in folder </ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
   <div
     v-else-if="imageName"
     class="flex h-full w-full items-center justify-center"

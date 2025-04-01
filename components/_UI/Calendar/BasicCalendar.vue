@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { addMonths, format, startOfMonth, clamp, parse } from 'date-fns';
 import type { Interval } from 'date-fns';
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { addMonths, clamp, format, parse, startOfMonth } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-vue-next';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import DaysRenderer from './DaysRenderer.vue';
 
 import BasicInput from '~/components/_UI/BasicInput.vue';
@@ -169,19 +169,16 @@ watch(cursor, () => {
 <template>
   <div class="">
     <div class="flex items-center justify-between gap-2">
-      <ShButton variant="outline" size="icon" @click="moveCursorMonths(-1)">
+      <Button variant="outline" size="icon" @click="moveCursorMonths(-1)">
         <ChevronLeftIcon class="w-5" />
-      </ShButton>
+      </Button>
 
-      <ShSelect :model-value="allMonths[cursor.getMonth()]" @update:model-value="setMonth">
-        <ShSelectTrigger
-          class="h-6 w-24 justify-center border-none px-0 py-0 text-center"
-          hide-icon
-        >
+      <Select :model-value="allMonths[cursor.getMonth()]" @update:model-value="setMonth">
+        <SelectTrigger class="h-6 w-24 justify-center border-none px-0 py-0 text-center" hide-icon>
           {{ currentMonthString }}
-        </ShSelectTrigger>
-        <ShSelectContent class="max-h-[200px]">
-          <ShSelectItem
+        </SelectTrigger>
+        <SelectContent class="max-h-[200px]">
+          <SelectItem
             v-for="(month, i) in allMonths"
             size="xs"
             variant="outline"
@@ -189,9 +186,9 @@ watch(cursor, () => {
             :value="month"
           >
             {{ month }}
-          </ShSelectItem>
-        </ShSelectContent>
-      </ShSelect>
+          </SelectItem>
+        </SelectContent>
+      </Select>
 
       <BasicInput
         v-model:number="currentYearInputValue"
@@ -201,9 +198,9 @@ watch(cursor, () => {
         @blur="currentYearInputBlurHandler"
       />
 
-      <ShButton variant="outline" size="icon" @click="moveCursorMonths(1)">
+      <Button variant="outline" size="icon" @click="moveCursorMonths(1)">
         <ChevronRightIcon class="w-5" />
-      </ShButton>
+      </Button>
     </div>
     <div
       class="heightTransition relative mt-2 w-64 overflow-hidden"

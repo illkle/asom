@@ -12,10 +12,12 @@ export default defineNuxtConfig({
   experimental: { watcher: 'parcel' },
 
   shadcn: {
-    prefix: 'Sh',
-    componentDir: './components/_shadcn',
+    prefix: '',
+
+    componentDir: '~/components/ui',
   },
-  css: ['~/assets/css/main.css'],
+
+  css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
 
   // Everything below is recomended Tauri config for nuxt
   // https://v2.tauri.app/start/frontend/nuxt/

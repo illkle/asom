@@ -4,7 +4,7 @@
   <div class="mx-auto max-w-[600px]">
     <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-      <ShButton @click="navigateTo('/')" variant="outline">Save </ShButton>
+      <Button @click="navigateTo('/')" variant="outline">Save </Button>
 
       <Link href="/"> </Link>
     </div>
@@ -16,10 +16,10 @@
           {{ rootPath.data.value }}
         </div>
       </div>
-      <ShButton variant="ghost" @click="changeRootPathHandler">Change root path</ShButton>
+      <Button variant="ghost" @click="changeRootPathHandler">Change root path</Button>
     </div>
 
-    <ShButton
+    <Button
       variant="outline"
       size="xs"
       class="mt-6 ml-auto w-fit border-neutral-200 px-2 rounded-t-lg dark:border-neutral-900 border border-b-0"
@@ -32,7 +32,7 @@
     >
       <PlusIcon :size="12" class="mr-2" />
       Create folder
-    </ShButton>
+    </Button>
     <div
       :class="
         cn(
@@ -59,10 +59,10 @@
       </TreeRoot>
     </div>
 
-    <ShDialog v-model:open="isNewFolderDialogOpen">
-      <ShDialogContent>
-        <ShDialogTitle>Create new folder</ShDialogTitle>
-        <ShButton
+    <Dialog v-model:open="isNewFolderDialogOpen">
+      <DialogContent>
+        <DialogTitle>Create new folder</DialogTitle>
+        <Button
           variant="outline"
           :disabled="true"
           size="sm"
@@ -70,11 +70,11 @@
         >
           <FolderIcon :size="12" />
           {{ folderWhereToCreateName }}
-        </ShButton>
-        <ShInput v-model="newFolderName" @keydown.enter="createNewFolder" />
-        <ShButton :disabled="!newFolderName" @click="createNewFolder"> Create </ShButton>
-      </ShDialogContent>
-    </ShDialog>
+        </Button>
+        <Input v-model="newFolderName" @keydown.enter="createNewFolder" />
+        <Button :disabled="!newFolderName" @click="createNewFolder"> Create </Button>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 

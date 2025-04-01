@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { format, parse } from 'date-fns';
-import { ChevronDown, CalendarDays } from 'lucide-vue-next';
+import { CalendarDays, ChevronDown } from 'lucide-vue-next';
+import { computed } from 'vue';
 import BasicCalendar from './BasicCalendar.vue';
 
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
@@ -34,17 +34,17 @@ const isOpened = ref(false);
 </script>
 
 <template>
-  <ShPopover>
-    <ShPopoverTrigger>
-      <ShButton class="flex w-60 justify-between gap-6" variant="outline">
+  <Popover>
+    <PopoverTrigger>
+      <Button class="flex w-60 justify-between gap-6" variant="outline">
         <div class="flex items-center gap-3">
           <CalendarDays class="w-4" />
           {{ formattedDate }}
         </div>
         <ChevronDown class="w-4 opacity-50" />
-      </ShButton>
-    </ShPopoverTrigger>
-    <ShPopoverContent>
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent>
       <BasicCalendar
         v-model:model-value="modelValue"
         :limits="limits"
@@ -55,6 +55,6 @@ const isOpened = ref(false);
         "
       >
       </BasicCalendar>
-    </ShPopoverContent>
-  </ShPopover>
+    </PopoverContent>
+  </Popover>
 </template>

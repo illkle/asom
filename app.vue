@@ -16,7 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import Sonner from '~/components/_shadcn/sonner/Sonner.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStore';
 
 const colorMode = useColorMode();
@@ -24,11 +23,7 @@ const colorMode = useColorMode();
 useHead({
   htmlAttrs: {
     class: computed(() => {
-      return [
-        colorMode.value === 'dark'
-          ? 'dark bg-neutral-900 text-neutral-50'
-          : 'bg-neutral-200 text-neutral-950',
-      ];
+      return [colorMode.value === 'dark' ? 'dark' : ''];
     }),
   },
 });
@@ -39,6 +34,4 @@ useGlobalInvalidators();
 useGlobalTabHooks();
 </script>
 
-<style>
-@reference '~/assets/css/main.css';
-</style>
+<style></style>

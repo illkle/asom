@@ -10,13 +10,11 @@
         <MoveRightIcon class="w-4" />
         <UICalendarDateInput v-model="date.finished" />
 
-        <ShButton variant="ghost" size="icon" @click="removeDate(index)">
+        <Button variant="ghost" size="icon" @click="removeDate(index)">
           <XIcon class="w-4 opacity-50" />
-        </ShButton>
+        </Button>
       </div>
-      <ShButton variant="ghost" size="xs" class="mt-2" @click="addNewDate">
-        Log new reading
-      </ShButton>
+      <Button variant="ghost" size="xs" class="mt-2" @click="addNewDate"> Log new reading </Button>
     </div>
   </div>
 </template>

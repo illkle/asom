@@ -59,7 +59,7 @@
     </div>
     <div
       data-tauri-drag-region
-      class="dragApp absolute top-0 left-0 h-10 bg-neutral-200 select-none dark:bg-neutral-900"
+      class="dragApp absolute top-0 left-0 h-10 bg-muted select-none"
       :style="{
         width: `calc(100% - ${TAB_WIDTH_PX * store.openedTabs.length}px)`,
         transform: `translateX(${TAB_WIDTH_PX * store.openedTabs.length}px)`,

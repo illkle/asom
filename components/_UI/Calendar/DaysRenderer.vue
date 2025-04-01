@@ -1,18 +1,7 @@
 <script setup lang="ts">
-import {
-  addMonths,
-  format,
-  getDaysInMonth,
-  getISODay,
-  isSameMonth,
-  startOfMonth,
-  clamp,
-  isBefore,
-  isAfter,
-  parse,
-} from 'date-fns';
 import type { Interval } from 'date-fns';
-import { computed, ref, watch } from 'vue';
+import { getDaysInMonth, getISODay, isAfter, isBefore, isSameMonth } from 'date-fns';
+import { computed } from 'vue';
 
 const props = defineProps<{
   cursor: Date;
@@ -59,7 +48,7 @@ const higlight = computed(() =>
 <template>
   <div v-for="(_, i) in prepend" :key="i"></div>
 
-  <ShButton
+  <Button
     v-for="day in dates"
     :key="day"
     class="h-8 w-8"
@@ -70,5 +59,5 @@ const higlight = computed(() =>
     @click="recordDate(day)"
   >
     {{ day }}
-  </ShButton>
+  </Button>
 </template>

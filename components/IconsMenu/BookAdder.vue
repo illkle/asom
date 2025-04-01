@@ -1,11 +1,11 @@
 <template>
-  <ShDialog v-model:open="newFileOpened">
-    <ShDialogTrigger class="w-full" as-child>
+  <Dialog v-model:open="newFileOpened">
+    <DialogTrigger class="w-full" as-child>
       <slot />
-    </ShDialogTrigger>
+    </DialogTrigger>
 
-    <ShDialogContent>
-      <ShDialogTitle> Create new file </ShDialogTitle>
+    <DialogContent>
+      <DialogTitle> Create new file </DialogTitle>
       <UIBasicInput
         @keyup.enter="addBook"
         autofocus
@@ -14,9 +14,9 @@
       />
 
       <div class="max-w-96 text-xs opacity-50">Saving to: {{ folderToSaveDisplay }}</div>
-      <ShButton variant="outline" size="default" @click="addBook"> Create </ShButton>
-    </ShDialogContent>
-  </ShDialog>
+      <Button variant="outline" size="default" @click="addBook"> Create </Button>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script lang="ts" setup>

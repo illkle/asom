@@ -1,6 +1,6 @@
 <template>
-  <ShContextMenu>
-    <ShContextMenuTrigger
+  <ContextMenu>
+    <ContextMenuTrigger
       v-bind="$attrs"
       class="cursor-pointer"
       :draggable="true"
@@ -12,16 +12,16 @@
       @dragend="() => (isDragging = false)"
     >
       <slot />
-    </ShContextMenuTrigger>
+    </ContextMenuTrigger>
 
-    <ShContextMenuContent>
-      <ShContextMenuItem @click="openFullEditor({ place: 'last', focus: true })">
+    <ContextMenuContent>
+      <ContextMenuItem @click="openFullEditor({ place: 'last', focus: true })">
         Open in a new tab
-      </ShContextMenuItem>
+      </ContextMenuItem>
 
-      <ShContextMenuItem @click="deleteBook"> Delete </ShContextMenuItem>
-    </ShContextMenuContent>
-  </ShContextMenu>
+      <ContextMenuItem @click="deleteBook"> Delete </ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
   <Teleport to="#customTeleport" v-if="isDragging">
     <div ref="forDrag" class="">
       <UIDragDisplay>Dragging file</UIDragDisplay>

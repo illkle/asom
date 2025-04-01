@@ -110,7 +110,7 @@ impl CoreStateManager {
                 MonitorConfig {
                     app: app_handle,
                     command_buffer_size: 5000,
-                    log_to_stdout: true,
+                    log_to_stdout: false,
                 },
             )
             .await;

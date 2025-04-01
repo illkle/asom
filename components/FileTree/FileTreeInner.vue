@@ -1,6 +1,6 @@
 <template>
-  <ShContextMenu v-if="!isRoot">
-    <ShContextMenuTrigger>
+  <ContextMenu v-if="!isRoot">
+    <ContextMenuTrigger>
       <TreeCell
         :draggable="!isRoot"
         :is-root="isRoot"
@@ -39,16 +39,16 @@
           <LibraryIcon v-else />
         </template>
       </TreeCell>
-    </ShContextMenuTrigger>
-    <ShContextMenuContent>
-      <ShContextMenuItem @click="startCreating"> Create folder </ShContextMenuItem>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      <ContextMenuItem @click="startCreating"> Create folder </ContextMenuItem>
       <template v-if="!isRoot">
-        <ShContextMenuItem @click="startRenaming"> Rename folder </ShContextMenuItem>
+        <ContextMenuItem @click="startRenaming"> Rename folder </ContextMenuItem>
 
-        <ShContextMenuItem @click="deleteFolder"> Delete folder </ShContextMenuItem>
+        <ContextMenuItem @click="deleteFolder"> Delete folder </ContextMenuItem>
       </template>
-    </ShContextMenuContent>
-  </ShContextMenu>
+    </ContextMenuContent>
+  </ContextMenu>
 
   <div v-if="!isFolded || isCreating" :class="(foldable || isCreating) && 'pl-5'">
     <FileTreeInner

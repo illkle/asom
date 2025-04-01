@@ -37,12 +37,10 @@
 </template>
 
 <script setup lang="ts">
-import { cloneDeep as _cloneDeep } from 'lodash';
-import { ChevronDown, FolderIcon, LibraryIcon, HashIcon } from 'lucide-vue-next';
 import { useMainStore } from '~/composables/stores/useMainStore';
 
-import { buttonVariants } from '~/components/_shadcn/button';
 import { ref, watch, watchEffect } from 'vue';
+import { buttonVariants } from '~/components/ui/button';
 
 const store = useMainStore();
 
