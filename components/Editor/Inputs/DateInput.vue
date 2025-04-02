@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { CalendarDays, ChevronDown } from 'lucide-vue-next';
 import { computed } from 'vue';
-import BasicCalendar from './BasicCalendar.vue';
 
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
@@ -15,19 +14,20 @@ const props = defineProps<{
   };
 }>();
 
-const modelValue = defineModel<string>({
+const modelValue = defineModel<string | undefined>({
   required: false,
   default: undefined,
 });
 
-const formattedDate = computed(() => {
-  if (!s.settings) {
-    throw new Error('No settings loaded');
-  }
-  if (!modelValue.value) return 'Select Date';
+const { stringToDate } = useDateHooks();
+const { dateModel } = useDateAdapterModel(modelValue);
 
-  const parsed = parse(modelValue.value, s.settings.dateFormat, new Date());
-  return format(parsed, 'dd MMMM yyyy');
+const start = computed(() => stringToDate(props.limits?.start));
+const end = computed(() => stringToDate(props.limits?.end));
+
+const formattedDate = computed(() => {
+  if (!dateModel.value) return 'Select Date';
+  return format(new Date(dateModel.value.toString()), 'dd MMMM yyyy');
 });
 
 const isOpened = ref(false);
@@ -44,17 +44,8 @@ const isOpened = ref(false);
         <ChevronDown class="w-4 opacity-50" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent>
-      <BasicCalendar
-        v-model:model-value="modelValue"
-        :limits="limits"
-        @update:model-value="
-          (v) => {
-            isOpened = false;
-          }
-        "
-      >
-      </BasicCalendar>
+    <PopoverContent class="">
+      <Calendar v-model="dateModel" :min-value="start" :max-value="end"> </Calendar>
     </PopoverContent>
   </Popover>
 </template>

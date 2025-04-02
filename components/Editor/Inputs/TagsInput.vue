@@ -14,24 +14,22 @@
         @returned="createNewTag"
       />
     </template>
-    <div class="cursor-pointer" :class="classes" @click="createNewTag">
-      <PlusIcon
-        class="w-3 fill-neutral-200 pr-0.5 opacity-50 transition-colors group-hover:fill-neutral-400"
-      />
+    <div class="" :class="classes" @click="createNewTag">
+      <PlusIcon class="w-3 fill-foreground pr-0.5 opacity-50 transition-colors" />
       <div>tag</div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref } from 'vue';
 import { PlusIcon } from 'lucide-vue-next';
-import ContentEditable from '~/components/_UI/ContentEditable.vue';
+import { nextTick, ref } from 'vue';
+import ContentEditable from '~/components/uiExtra/ContentEditable.vue';
 
 const classes = [
   'text-foreground inline-flex h-6 items-center rounded-md px-2.5 py-0.5 text-xs font-semibold transition-all',
-  'border border-neutral-200 dark:border-neutral-800',
-  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 dark:focus-visible:ring-neutral-300',
+  'border ',
+  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ',
 ];
 
 const tags = defineModel<string[] | null>();

@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import { clamp } from 'lodash';
+import { clamp } from 'lodash-es';
 import { computed, onMounted, ref, watch } from 'vue';
 import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';

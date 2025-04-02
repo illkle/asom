@@ -24,7 +24,7 @@
   </ContextMenu>
   <Teleport to="#customTeleport" v-if="isDragging">
     <div ref="forDrag" class="">
-      <UIDragDisplay>Dragging file</UIDragDisplay>
+      <UiExtraDragDisplay>Dragging file</UiExtraDragDisplay>
     </div>
   </Teleport>
 </template>

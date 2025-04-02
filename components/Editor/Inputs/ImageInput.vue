@@ -20,11 +20,11 @@
     File not found: {{ imageName }}
   </div>
   <div
-    class="h-46 w-46 rounded-md border border-neutral-200 dark:border-neutral-900 flex items-center flex-col justify-center"
+    class="h-46 w-46 rounded-md border flex items-center flex-col justify-center"
     v-else
     @click="changeImageHandler"
   >
-    <span class="text-xs text-neutral-500 dark:text-neutral-400">Select Image</span>
+    <span class="text-xs text-muted-foreground">Select Image</span>
   </div>
 </template>
 

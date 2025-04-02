@@ -7,7 +7,8 @@
       <template v-if="appState.status === 'ok'">
         <TabsSelector />
         <div
-          class="overscroll-none scrollbarMod gutter-stable h-full bg-neutral-100 dark:bg-neutral-950"
+          class="overscroll-none scrollbarMod gutter-stable h-full bg-background transition-all duration-100"
+          :class="isFirstTab ? '' : 'rounded-tl-md'"
         >
           <slot />
         </div>
@@ -25,8 +26,15 @@
 import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 
 const appState = useIsAppUsable();
+
+const tabsStore = useTabsStore();
+
+const isFirstTab = computed(() => {
+  return tabsStore.openedTabs.length >= 1 && tabsStore.openedTabsActiveIndex === 0;
+});
 </script>
 
 <style>

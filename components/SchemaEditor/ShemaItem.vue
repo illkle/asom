@@ -5,7 +5,7 @@
       <ChevronDown v-else class="w-5" />
     </div>
   </Button>
-  <UIBasicInput v-model="item.name" placeholder="Name" class="basis-36" />
+  <Input v-model="item.name" placeholder="Name" class="basis-36" />
 
   <Select v-model:model-value="item.value.type">
     <SelectTrigger>
@@ -24,12 +24,12 @@
 
   <div v-if="isOpened" class="col-span-4 flex items-stretch gap-2">
     <div class="flex w-11 items-center justify-center">
-      <div class="h-full w-[1px] bg-neutral-400 dark:bg-neutral-600"></div>
+      <div class="h-full w-[1px] bg-muted"></div>
     </div>
     <div class="flex w-full flex-col gap-2">
       <template v-if="item.value.type === 'Text'">
         <h5>Display Name</h5>
-        <UIBasicInput v-model="item.value.settings.displayName" />
+        <Input v-model="item.value.settings.displayName" />
 
         <h5>Font</h5>
         <Select v-model:model-value="item.value.settings.font" class="w-full">
@@ -74,12 +74,45 @@
 
       <template v-else-if="item.value.type === 'Number'">
         <h5>Display Name</h5>
-        <UIBasicInput v-model="item.value.settings.displayName" />
+        <Input v-model="item.value.settings.displayName" />
 
         <h5>Min value</h5>
-        <UIBasicInput v-model:number="item.value.settings.min" isNumber />
+        <NumberField
+          :max="item.value.settings.max"
+          :model-value="item.value.settings.min"
+          @update:model-value="
+            (v) => {
+              if (item.value.type !== 'Number') return;
+              item.value.settings.min = typeof v === 'number' && !isNaN(v) ? v : undefined;
+            }
+          "
+          class="w-fit"
+        >
+          <NumberFieldContent>
+            <NumberFieldDecrement />
+            <NumberFieldInput v-model:number="item.value.settings.min" />
+            <NumberFieldIncrement />
+          </NumberFieldContent>
+        </NumberField>
+        {{ item.value.settings.min }}
         <h5>Max value</h5>
-        <UIBasicInput v-model:number="item.value.settings.max" isNumber />
+        <NumberField
+          :min="item.value.settings.min"
+          :model-value="item.value.settings.max"
+          @update:model-value="
+            (v) => {
+              if (item.value.type !== 'Number') return;
+              item.value.settings.max = typeof v === 'number' && !isNaN(v) ? v : undefined;
+            }
+          "
+          class="w-fit"
+        >
+          <NumberFieldContent>
+            <NumberFieldDecrement />
+            <NumberFieldInput v-model:number="item.value.settings.min" />
+            <NumberFieldIncrement />
+          </NumberFieldContent>
+        </NumberField>
 
         <h5>Style</h5>
         <Select v-model:model-value="item.value.settings.style" class="w-full">
@@ -94,12 +127,28 @@
         </Select>
 
         <h5>Decimal places</h5>
-        <UIBasicInput v-model:number="item.value.settings.decimalPlaces" isNumber min="0" />
+        <NumberField
+          :min="0"
+          :model-value="item.value.settings.decimalPlaces"
+          @update:model-value="
+            (v) => {
+              if (item.value.type !== 'Number') return;
+              item.value.settings.min = typeof v === 'number' && !isNaN(v) ? v : undefined;
+            }
+          "
+          class="w-fit"
+        >
+          <NumberFieldContent>
+            <NumberFieldDecrement />
+            <NumberFieldInput v-model:number="item.value.settings.min" />
+            <NumberFieldIncrement />
+          </NumberFieldContent>
+        </NumberField>
       </template>
 
       <template v-else-if="item.value.type === 'TextCollection'">
         <h5>Display Name</h5>
-        <UIBasicInput v-model="item.value.settings.displayName" />
+        <Input v-model="item.value.settings.displayName" />
 
         <h5>Size</h5>
         <Select v-model:model-value="item.value.settings.size" class="w-full">
@@ -137,7 +186,7 @@
         </Select>
 
         <h5>Prefix</h5>
-        <UIBasicInput v-model="item.value.settings.prefix" />
+        <Input v-model="item.value.settings.prefix" />
       </template>
     </div>
   </div>

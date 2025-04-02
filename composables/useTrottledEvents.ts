@@ -1,4 +1,4 @@
-import { throttle } from 'lodash';
+import { throttle } from 'lodash-es';
 
 /*
  *  When listening for events on a folder it's sometimes impractical to apply all events in place.

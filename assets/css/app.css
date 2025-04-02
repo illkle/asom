@@ -36,6 +36,6 @@
     @apply w-2 bg-transparent;
   }
   .scrollbarMod::-webkit-scrollbar-thumb {
-    @apply rounded-md bg-neutral-600;
+    @apply bg-primary/25 rounded-md;
   }
 }

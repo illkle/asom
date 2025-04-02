@@ -1,5 +1,5 @@
 import { watchPausable } from '@vueuse/core';
-import { throttle } from 'lodash';
+import { throttle } from 'lodash-es';
 import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';

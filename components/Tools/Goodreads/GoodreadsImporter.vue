@@ -43,7 +43,7 @@
 
     <div
       v-if="currentSchema"
-      class="grid grid-cols-6 mt-2 items-center gap-2 border border-neutral-200 dark:border-neutral-800 rounded-md p-2"
+      class="grid grid-cols-6 mt-2 items-center gap-2 border rounded-md p-2"
     >
       <div>Title</div>
 

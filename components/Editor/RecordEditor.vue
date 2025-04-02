@@ -1,9 +1,9 @@
 <template>
-  <div class="flex w-full flex-col overflow-x-hidden overscroll-none">
+  <div class="flex w-full flex-col overflow-x-hidden overscroll-none px-4">
     <div class="mx-auto h-fit w-full max-w-2xl">
       <EditorMetaEditor v-if="file" v-model="file" :schema="schema" class="py-2" />
 
-      <div class="h-full min-h-[200px] border-t border-neutral-300 py-4 dark:border-neutral-800">
+      <div class="h-full min-h-[200px] border-t py-4">
         <div
           ref="editorWrapper"
           class="editorRoot editorStyling h-full"

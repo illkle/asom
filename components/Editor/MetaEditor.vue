@@ -9,7 +9,7 @@
   </div>
 
   <div ref="forDrag" class="absolute top-[-500px]">
-    <UIDragDisplay> dragging </UIDragDisplay>
+    <UiExtraDragDisplay> dragging </UiExtraDragDisplay>
   </div>
 </template>
 

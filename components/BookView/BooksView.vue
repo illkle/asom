@@ -1,9 +1,9 @@
 <template>
-  <div class="relative px-2 pr-4">
+  <div class="relative">
     <div>
-      <div class="sticky top-0 bg-neutral-100 dark:bg-neutral-950">
+      <div class="sticky top-0 bg-background pr-4 pl-2">
         <div class="flex gap-4 py-2">
-          <UIBasicInput v-model="props.opened.settings.searchQuery" />
+          <Input v-model="props.opened.settings.searchQuery" />
 
           <DropdownMenu>
             <DropdownMenuTrigger>
@@ -44,7 +44,7 @@
       <div
         v-for="file in books"
         :key="file.path || 'a'"
-        class="gap-4 border-b border-neutral-200 transition-colors hover:bg-neutral-100/50 data-[state=selected]:bg-neutral-100 dark:border-neutral-800 dark:hover:bg-neutral-800/50 dark:data-[state=selected]:bg-neutral-800"
+        class="gap-4 border-b hover:bg-accent transition-colors"
       >
         <BookViewBookContextMenu :path="file.path || 'a'">
           <template v-if="file.path">
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { debounce as _debounce } from 'lodash';
+import { debounce as _debounce } from 'lodash-es';
 
 import { EllipsisVertical } from 'lucide-vue-next';
 import type { PropType } from 'vue';

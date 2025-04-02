@@ -6,7 +6,7 @@
 
     <DialogContent>
       <DialogTitle> Create new file </DialogTitle>
-      <UIBasicInput
+      <Input
         @keyup.enter="addBook"
         autofocus
         v-model:model-value="newFileName"

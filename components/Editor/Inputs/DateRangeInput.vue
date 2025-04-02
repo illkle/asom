@@ -6,15 +6,15 @@
         :key="index"
         class="flex w-fit items-center justify-between gap-2"
       >
-        <UICalendarDateInput v-model="date.started" />
+        <DateInput v-model="date.started" :limits="{ end: date.finished }" />
         <MoveRightIcon class="w-4" />
-        <UICalendarDateInput v-model="date.finished" />
+        <DateInput v-model="date.finished" :limits="{ start: date.started }" />
 
         <Button variant="ghost" size="icon" @click="removeDate(index)">
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="ghost" size="xs" class="mt-2" @click="addNewDate"> Log new reading </Button>
+      <Button variant="ghost" size="sm" class="mt-2" @click="addNewDate"> Log new reading </Button>
     </div>
   </div>
 </template>
@@ -23,6 +23,7 @@
 import { format } from 'date-fns';
 import { MoveRightIcon, XIcon } from 'lucide-vue-next';
 import type { DatePair } from '~/types';
+import DateInput from './DateInput.vue';
 
 const datePairs = defineModel<DatePair[] | null>();
 

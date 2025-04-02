@@ -1,35 +1,31 @@
 <template>
   <template v-if="attr">
-    <UIBasicInput
+    <TextInput
       v-if="schemaItem.value.type === 'Text' && attr.type === 'String'"
-      v-model:model-value="attr.value"
-      :placeholder="schemaItem.value.settings.displayName || schemaItem.name"
-      :theme="schemaItem.value.settings.theme"
-      :multi-line="schemaItem.value.settings.isMultiline"
-      :size="schemaItem.value.settings.size"
-      :font="schemaItem.value.settings.font"
-      :weight="schemaItem.value.settings.weight"
+      v-model="attr.value"
+      :settings="schemaItem.value.settings"
+      :name="schemaItem.name"
     />
 
-    <UIBasicInput
+    <NumberInput
       v-else-if="
         schemaItem.value.type === 'Number' && (attr.type === 'Float' || attr.type === 'Integer')
       "
-      :placeholder="schemaItem.value.settings.displayName || schemaItem.name"
-      is-number
-      v-model:number="attr.value"
+      v-model="attr.value"
+      :settings="schemaItem.value.settings"
+      :name="schemaItem.name"
     />
 
-    <EditorTagsEditor
+    <TagsInput
       v-else-if="schemaItem.value.type === 'TextCollection' && attr.type === 'StringVec'"
       v-model:model-value="attr.value"
     />
 
-    <EditorReadDetails
+    <DateRangeInput
       v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DatePairVec'"
       v-model:model-value="attr.value"
     />
-    <EditorImageInput
+    <ImageInput
       v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
       v-model="attr.value"
     />
@@ -44,6 +40,11 @@
 
 <script setup lang="ts">
 import type { AttrValue, SchemaItem } from '~/types';
+import DateRangeInput from './Inputs/DateRangeInput.vue';
+import ImageInput from './Inputs/ImageInput.vue';
+import NumberInput from './Inputs/NumberInput.vue';
+import TagsInput from './Inputs/TagsInput.vue';
+import TextInput from './Inputs/TextInput.vue';
 
 const attr = defineModel<AttrValue>();
 

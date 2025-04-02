@@ -1,4 +1,4 @@
-import { throttle } from 'lodash';
+import { throttle } from 'lodash-es';
 import {
   c_get_all_folders,
   c_get_all_folders_by_schema,

@@ -23,7 +23,7 @@ const colorMode = useColorMode();
 useHead({
   htmlAttrs: {
     class: computed(() => {
-      return [colorMode.value === 'dark' ? 'dark' : ''];
+      return ['overscroll-none', colorMode.value === 'dark' ? 'dark' : ''];
     }),
   },
 });

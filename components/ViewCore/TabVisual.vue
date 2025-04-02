@@ -3,7 +3,7 @@
     :class="[
       'flex h-10 items-center justify-between border-transparent py-1 transition-all',
       widthAwailable > 100 ? 'px-2 text-sm' : 'px-1 text-xs',
-      isActive ? 'rounded-tl-md rounded-tr-md bg-primary-foreground' : 'hover:bg-accent',
+      isActive ? 'rounded-tl-md rounded-tr-md bg-background' : 'hover:bg-accent',
     ]"
   >
     <div class="truncate" :class="isNewAndAnimating && 'animate-new'">
@@ -11,7 +11,7 @@
     </div>
 
     <Button variant="ghost" size="icon" class="w-6 h-6" @mousedown.stop @click.stop="emit('close')">
-      <XIcon class="text-neutral-300 duration-[0] dark:text-neutral-600" />
+      <XIcon class="duration-[0] text-muted-foreground" />
     </Button>
   </div>
 </template>

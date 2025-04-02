@@ -21,8 +21,8 @@
 
     <Button
       variant="outline"
-      size="xs"
-      class="mt-6 ml-auto w-fit border-neutral-200 px-2 rounded-t-lg dark:border-neutral-900 border border-b-0"
+      size="sm"
+      class="mt-6 ml-auto w-fit bg-transparent dark:bg-transparent border-b-0 rounded-b-none"
       @click="
         () => {
           folderCreationPath = rootPath.data.value ?? '';
@@ -33,13 +33,7 @@
       <PlusIcon :size="12" class="mr-2" />
       Create folder
     </Button>
-    <div
-      :class="
-        cn(
-          'rounded-lg border px-4 py-6  rounded-tl-none border-neutral-200 dark:border-neutral-900',
-        )
-      "
-    >
+    <div :class="cn('rounded-lg border px-4 py-6 rounded-tl-none ')">
       <TreeRoot
         v-if="!isPending"
         v-slot="{ flattenItems }"

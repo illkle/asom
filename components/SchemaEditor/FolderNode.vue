@@ -32,12 +32,17 @@ watchEffect(() => {
   <TreeItem v-bind="item.bind" v-slot="{ isExpanded }" @click="isCreatingFolder = true">
     <ContextMenu :modal="false">
       <ContextMenuTrigger class="w-full">
-        <div :style="`padding-left: ${item.level - 1}rem`" class="flex items-center gap-2">
+        <div :style="`padding-left: ${item.level - 1}rem`" class="flex items-center">
           <Button
             variant="outline"
-            size="xs"
-            class="flex w-full justify-start gap-2"
-            :class="cn(!item.value.hasSchema && 'opacity-50')"
+            size="sm"
+            class="flex flex-1 justify-start gap-2"
+            :class="
+              cn(
+                !item.value.hasSchema && 'opacity-50',
+                item.value.ownSchema && 'rounded-r-none border-r-0',
+              )
+            "
           >
             <ChevronDown
               v-if="item.value.children.length > 0"
@@ -61,7 +66,8 @@ watchEffect(() => {
             <Button
               v-if="item.value.schemaFilePath"
               variant="outline"
-              size="xs"
+              size="sm"
+              class="rounded-l-none"
               @click.stop="openSchemaEditor(item.value.schemaFilePath)"
               >Edit</Button
             >

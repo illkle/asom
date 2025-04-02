@@ -29,7 +29,6 @@
       </div>
 
       <Button
-        variant=""
         class="mt-4 w-full"
         @click="createDefaultSchemas.mutate()"
         :disabled="!hasSelectedDefaults"
@@ -44,12 +43,12 @@
 
   <div
     v-else
-    class="bg-card text-card-foreground w-full max-w-[400px] rounded-lg border-neutral-300 px-6 py-4 shadow-sm dark:border-neutral-600"
+    class="bg-card text-card-foreground w-full max-w-[400px] rounded-lg px-6 py-4 shadow-sm"
   >
     <div class="mt-4 flex flex-col gap-3 font-light">
       <div>
         <div
-          class="flex justify-between items-center border border-neutral-200 p-2 px-4 dark:border-neutral-800"
+          class="flex justify-between items-center border p-2 px-4"
           :class="appState.error && 'border-b-0'"
         >
           <div class="font-serif text-xl">Initializing...</div>
@@ -58,7 +57,7 @@
             <XIcon v-else-if="appState.status === 'error'" class="" />
           </div>
         </div>
-        <div v-if="appState.error" class="border border-neutral-300 p-4 dark:border-neutral-800">
+        <div v-if="appState.error" class="border p-4">
           <template v-if="isOurError(appState.error)">
             <div class="text-regular font-bold">
               {{ appState.error.title }}
