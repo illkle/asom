@@ -39,13 +39,13 @@
           <LibraryIcon v-else />
         </template>
       </TreeCell>
-    </ContextMenuTrigger>
-    <ContextMenuContent>
-      <ContextMenuItem @click="startCreating"> Create folder </ContextMenuItem>
+    </ShContextMenuTrigger>
+    <ShContextMenuContent>
+      <ShContextMenuItem @click="startCreating"> Create folder </ShContextMenuItem>
       <template v-if="!isRoot">
-        <ContextMenuItem @click="startRenaming"> Rename folder </ContextMenuItem>
+        <ShContextMenuItem @click="startRenaming"> Rename folder </ShContextMenuItem>
 
-        <ContextMenuItem @click="deleteFolder"> Delete folder </ContextMenuItem>
+        <ShContextMenuItem @click="deleteFolder"> Delete folder </ShContextMenuItem>
       </template>
     </ContextMenuContent>
   </ContextMenu>
@@ -75,7 +75,7 @@ import {
   useTabsStore,
   type OpenNewOneParams,
 } from '~/composables/stores/useTabsStore';
-import TreeCell from './TreeCell.vue';
+import TreeCell from './_old_TreeCell.vue';
 import type { FolderNode } from './filePathsToTree';
 
 const ts = useTabsStore();

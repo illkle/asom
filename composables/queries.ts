@@ -123,11 +123,11 @@ export const useFoldersBySchema = (schemaPath: string) => {
     refetchOnMount: true,
   });
 
-  const transformedFolders = computed(() =>
+  const foldersAsTree = computed(() =>
     !q.data.value || 'isError' in q.data.value ? [] : filePathsToTree(q.data.value),
   );
 
-  return { transformedFolders, query: q };
+  return { foldersAsTree, query: q };
 };
 
 /**

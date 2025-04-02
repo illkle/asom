@@ -44,7 +44,7 @@
         class="flex flex-col gap-2"
       >
         <template v-for="item in flattenItems">
-          <FolderNode
+          <FolderNodeSchema
             :item="item"
             @add-new-schema="addNewSchema"
             @create-folder="(v) => ((isNewFolderDialogOpen = true), (folderCreationPath = v))"
@@ -81,7 +81,7 @@ import { mkdir } from '@tauri-apps/plugin-fs';
 import { FolderIcon, PlusIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
-import FolderNode from './FolderNode.vue';
+import FolderNodeSchema from '~/components/SchemaEditor/FolderNodeSchema.vue';
 
 const rootPath = useRootPath();
 

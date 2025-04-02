@@ -18,14 +18,6 @@ const openSchemaEditor = (path: string) => {
 
 const isCreatingFolder = ref(false);
 const newFolderName = ref('');
-
-const inputRef = useTemplateRef<{ inputRef?: HTMLInputElement }>('inputRef');
-
-watchEffect(() => {
-  if (inputRef.value && inputRef.value.inputRef) {
-    inputRef.value.inputRef.focus();
-  }
-});
 </script>
 
 <template>

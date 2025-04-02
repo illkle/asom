@@ -17,10 +17,17 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 });
+
+const inputRef = useTemplateRef<HTMLInputElement>('inputRef');
+
+defineExpose({
+  inputRef,
+});
 </script>
 
 <template>
   <input
+    ref="inputRef"
     v-model="modelValue"
     data-slot="input"
     :class="

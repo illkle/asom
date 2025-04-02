@@ -1,4 +1,4 @@
-import { defineNuxtModule, addComponent, addComponentsDir, tryResolveModule } from 'nuxt/kit';
+import { addComponent, addComponentsDir, defineNuxtModule, tryResolveModule } from 'nuxt/kit';
 
 export interface ShadcnVueOptions {
   /**
@@ -71,21 +71,21 @@ export default defineNuxtModule<ShadcnVueOptions>({
     }
 
     addComponent({
-      filePath: 'radix-vue',
+      filePath: 'reka-ui',
       export: 'PaginationRoot',
       name: `${prefix}Pagination`,
       priority: 999,
     });
 
     addComponent({
-      filePath: 'radix-vue',
+      filePath: 'reka-ui',
       export: 'PaginationList',
       name: `${prefix}PaginationList`,
       priority: 999,
     });
 
     addComponent({
-      filePath: 'radix-vue',
+      filePath: 'reka-ui',
       export: 'PaginationListItem',
       name: `${prefix}PaginationListItem`,
       priority: 999,

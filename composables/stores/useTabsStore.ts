@@ -197,6 +197,26 @@ export const useTabsStore = defineStore('tabs', {
     updateOpened(data: IOpenedTabs['tabs']) {
       this.openedTabs = data;
     },
+
+    handleFolderRename(oldPath: string, newPath: string) {
+      console.log('handleFolderRename', oldPath, newPath);
+      this.openedTabs.forEach((tab) => {
+        if (tab.type === 'folder') {
+          if (tab.thing === oldPath) {
+            tab.thing = newPath;
+            tab.id = generateUniqId();
+          } else if (tab.thing.startsWith(oldPath)) {
+            tab.thing = tab.thing.replace(oldPath, newPath);
+            tab.id = generateUniqId();
+          }
+        }
+
+        if (tab.type === 'file' && tab.thing.includes(oldPath)) {
+          tab.thing = tab.thing.replace(oldPath, newPath);
+          tab.id = generateUniqId();
+        }
+      });
+    },
   },
   getters: {
     openedTabsActiveIndex: (state) => {
