@@ -19,6 +19,16 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
 
+  $env: {
+    preview: {
+      runtimeConfig: {
+        public: {
+          previewMode: true,
+        },
+      },
+    },
+  },
+
   // Everything below is recomended Tauri config for nuxt
   // https://v2.tauri.app/start/frontend/nuxt/
   devtools: { enabled: false },

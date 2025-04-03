@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "nuxt dev",
+    "dev:preview": "nuxt dev --envName preview",
     "generate": "nuxt generate",
     "tauri": "tauri",
     "test": "npm run generate && npx playwright test --workers=1",

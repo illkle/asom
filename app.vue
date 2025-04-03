@@ -20,6 +20,10 @@ import { useGlobalTabHooks } from './composables/stores/useTabsStore';
 
 const colorMode = useColorMode();
 
+const runtimeConfig = useRuntimeConfig();
+
+const previewMode = runtimeConfig.public.previewMode;
+
 useHead({
   htmlAttrs: {
     class: computed(() => {
@@ -28,10 +32,16 @@ useHead({
   },
 });
 
-// App-wide logic
-useHandleErrorsFromRust();
-useGlobalInvalidators();
-useGlobalTabHooks();
+if (!previewMode) {
+  // App-wide logic
+  useHandleErrorsFromRust();
+  useGlobalInvalidators();
+  useGlobalTabHooks();
+} else {
+  onMounted(() => {
+    navigateTo('/preview');
+  });
+}
 </script>
 
 <style></style>
