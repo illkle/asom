@@ -100,6 +100,7 @@ pub fn parse_metadata(
                         );
                     }
 
+                    // Empty
                     (
                         _,
                         SchemaAttrType::Text(_)

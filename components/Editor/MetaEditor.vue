@@ -1,7 +1,7 @@
 <template>
   <div class="grid gap-2" :class="$attrs.class">
     <template v-for="item in schema?.items">
-      <EditorAtrributeRouter
+      <EditorAttributesRouter
         v-model:model-value="openedFile.attrs[item.name]"
         :schema-item="item"
       />

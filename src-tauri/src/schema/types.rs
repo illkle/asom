@@ -168,9 +168,11 @@ pub struct NumberSettings {
     #[ts(optional)]
     pub max: Option<f64>,
     #[ts(optional)]
+    pub decimal_places: Option<u8>,
+    #[ts(optional)]
     pub style: Option<NumberStyle>,
     #[ts(optional)]
-    pub decimal_places: Option<u8>,
+    pub stars_count: Option<u8>,
 }
 
 impl Default for NumberSettings {
@@ -183,6 +185,7 @@ impl Default for NumberSettings {
             max: None,
             style: None,
             decimal_places: None,
+            stars_count: None,
         }
     }
 }

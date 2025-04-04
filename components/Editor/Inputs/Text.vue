@@ -1,9 +1,9 @@
 <template>
   <!-- prettier-ignore-attribute v-bind:model-value -->
   <Input
-    v-bind:model-value="(modelValue as string)"
+    v-if="!settings.isMultiline"
+    :model-value="modelValue"
     :placeholder="settings.displayName"
-    :theme="settings.theme"
     :multi-line="settings.isMultiline"
     :class="[
       extraVariants({
@@ -13,6 +13,25 @@
         weight: settings.weight,
       }),
     ]"
+    @update:model-value="(v) => $emit('update:modelValue', String(v))"
+  />
+
+  <!-- prettier-ignore-attribute v-bind:model-value -->
+  <Textarea
+    v-else
+    :model-value="modelValue ?? ''"
+    :placeholder="settings.displayName"
+    :multi-line="settings.isMultiline"
+    :rows="1"
+    :class="[
+      extraVariants({
+        theme: settings.theme,
+        size: settings.size,
+        font: settings.font,
+        weight: settings.weight,
+      }),
+    ]"
+    @update:model-value="(v) => $emit('update:modelValue', String(v))"
   />
 </template>
 
@@ -32,12 +51,12 @@ const extraVariants = cva({
   variants: {
     theme: {
       Default: '',
-      Hidden: 'bg-transparent border-transparent dark:bg-transparent dark:border-transparent',
+      Hidden: 'bg-transparent border-transparent dark:bg-transparent dark:border-transparent ',
     },
     size: {
       L: 'text-4xl md:text-4xl h-auto',
       M: 'text-xl md:text-xl h-auto',
-      S: '',
+      S: 'text-xs h-fit',
     },
     font: {
       Serif: 'font-serif',

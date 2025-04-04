@@ -5,7 +5,7 @@ import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 export const useDateHooks = () => {
   const s = useSettingsStore();
 
-  const stringToDate = (dateString: string | undefined) => {
+  const stringToDate = (dateString: string | undefined | null) => {
     if (!dateString) return undefined;
 
     if (!s.settings) {
@@ -33,13 +33,13 @@ export const useDateHooks = () => {
  * Exposes date value as string but returns mutable date value
  * @returns
  */
-export const useDateAdapterModel = (modelValue: Ref<string | undefined>) => {
+export const useDateAdapterModel = (modelValue: Ref<string | null>) => {
   const { stringToDate, dateToString } = useDateHooks();
 
   const dateModel = computed({
-    get: () => stringToDate(modelValue.value),
+    get: () => stringToDate(modelValue.value ?? undefined),
     set: (v) => {
-      modelValue.value = v ? dateToString(v) : undefined;
+      modelValue.value = v ? dateToString(v) : null;
     },
   });
 

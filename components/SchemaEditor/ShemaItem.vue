@@ -133,7 +133,8 @@
           @update:model-value="
             (v) => {
               if (item.value.type !== 'Number') return;
-              item.value.settings.min = typeof v === 'number' && !isNaN(v) ? v : undefined;
+              item.value.settings.decimalPlaces =
+                typeof v === 'number' && !isNaN(v) ? v : undefined;
             }
           "
           class="w-fit"
@@ -144,6 +145,10 @@
             <NumberFieldIncrement />
           </NumberFieldContent>
         </NumberField>
+        <span v-if="item.value.settings.style === 'Stars'" class="text-sm text-muted-foreground">
+          In Stars mode decimal places act as subdivisions instead. So setting this to 1 will allow
+          for "2 and a half star", value of 2 will allow for "2 and three quaters" etc.
+        </span>
       </template>
 
       <template v-else-if="item.value.type === 'TextCollection'">

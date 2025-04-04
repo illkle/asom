@@ -9,6 +9,7 @@ export type NumberSettings = {
   size?: InputSize;
   min?: number;
   max?: number;
-  style?: NumberStyle;
   decimalPlaces?: number;
+  style?: NumberStyle;
+  starsCount?: number;
 };

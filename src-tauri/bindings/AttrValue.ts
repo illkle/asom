@@ -5,5 +5,5 @@ export type AttrValue =
   | { type: 'String'; value: string | null }
   | { type: 'StringVec'; value: Array<string> | null }
   | { type: 'DatePairVec'; value: Array<DatePair> | null }
-  | { type: 'Integer'; value: number | null }
+  | { type: 'Integer'; value: bigint | null }
   | { type: 'Float'; value: number | null };

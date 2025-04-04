@@ -4,7 +4,7 @@
     <div class="grid grid-cols-3 gap-4">
       <div v-for="value in possibleValues[key as keyof SettingsOptions<TextSettings>]">
         <h5 class="text-sm opacity-20">{{ value }}</h5>
-        <EditorInputsTextInput
+        <EditorInputsText
           v-model="inputValue"
           :settings="{ ...defaultTextSettings, [key]: value }"
           name="test"
@@ -12,6 +12,13 @@
       </div>
     </div>
   </template>
+  <div class="grid grid-cols-3 gap-4">
+    <h3 class="text-lg font-bold">Extras</h3>
+    <div v-for="extra in extras">
+      <h5 class="text-sm opacity-20">{{ extra.label }}</h5>
+      <EditorInputsText v-model="inputValue" :settings="extra.settings" name="test" />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -36,4 +43,17 @@ const possibleValues: SettingsOptions<TextSettings> = {
   weight: ['Light', 'Normal', 'Bold', 'Black'],
   isMultiline: [false, true],
 };
+
+const extras: { label: string; settings: TextSettings }[] = [
+  {
+    label: 'Mutiline variation',
+    settings: {
+      ...defaultTextSettings,
+      isMultiline: true,
+      size: 'L',
+      font: 'Serif',
+      theme: 'Hidden',
+    },
+  },
+];
 </script>

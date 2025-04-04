@@ -37,10 +37,6 @@ if (!previewMode) {
   useHandleErrorsFromRust();
   useGlobalInvalidators();
   useGlobalTabHooks();
-} else {
-  onMounted(() => {
-    navigateTo('/preview');
-  });
 }
 </script>
 

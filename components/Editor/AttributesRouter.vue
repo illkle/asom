@@ -7,17 +7,29 @@
       :name="schemaItem.name"
     />
 
+    <!-- prettier-ignore-attribute  v-model -->
     <NumberInput
       v-else-if="
         schemaItem.value.type === 'Number' && (attr.type === 'Float' || attr.type === 'Integer')
       "
-      v-model="attr.value"
+      v-model="(attr.value as number | null)"
       :settings="schemaItem.value.settings"
       :name="schemaItem.name"
     />
 
     <TagsInput
       v-else-if="schemaItem.value.type === 'TextCollection' && attr.type === 'StringVec'"
+      :settings="schemaItem.value.settings"
+      v-model:model-value="attr.value"
+    />
+
+    <DateInput
+      v-else-if="schemaItem.value.type === 'Date' && attr.type === 'String'"
+      v-model:model-value="attr.value"
+    />
+
+    <DateCollection
+      v-else-if="schemaItem.value.type === 'DateCollection' && attr.type === 'StringVec'"
       v-model:model-value="attr.value"
     />
 
@@ -40,12 +52,13 @@
 
 <script setup lang="ts">
 import type { AttrValue, SchemaItem } from '~/types';
-import DateRangeInput from './Inputs/DateRangeInput.vue';
-import ImageInput from './Inputs/ImageInput.vue';
-import NumberInput from './Inputs/NumberInput.vue';
-import TagsInput from './Inputs/TagsInput.vue';
-import TextInput from './Inputs/TextInput.vue';
-
+import DateInput from './Inputs/Date.vue';
+import DateCollection from './Inputs/DateCollection.vue';
+import DateRangeInput from './Inputs/DatesPairCollection.vue';
+import ImageInput from './Inputs/Image.vue';
+import NumberInput from './Inputs/Number.vue';
+import TextInput from './Inputs/Text.vue';
+import TagsInput from './Inputs/TextCollection.vue';
 const attr = defineModel<AttrValue>();
 
 const props = defineProps<{

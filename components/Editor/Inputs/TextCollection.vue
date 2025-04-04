@@ -7,17 +7,15 @@
         tag="div"
         spellcheck="false"
         :no-n-l="true"
-        class="before:pr-0.5 before:opacity-50 before:content-['#']"
-        :class="classes"
+        :class="[classes, prefix ? 'prefix before:pr-0.5 before:opacity-50' : '']"
         @keydown="(e: KeyboardEvent) => keyDownHandler(e, index)"
         @update:model-value="(val: string | Number) => saveTag(index, String(val))"
         @returned="createNewTag"
       />
     </template>
-    <div class="" :class="classes" @click="createNewTag">
-      <PlusIcon class="w-3 fill-foreground pr-0.5 opacity-50 transition-colors" />
-      <div>tag</div>
-    </div>
+    <button :class="classes" @click="createNewTag">
+      <PlusIcon class="w-4 fill-foreground pr-0.5 opacity-50 transition-colors" />
+    </button>
   </div>
 </template>
 
@@ -25,14 +23,21 @@
 import { PlusIcon } from 'lucide-vue-next';
 import { nextTick, ref } from 'vue';
 import ContentEditable from '~/components/uiExtra/ContentEditable.vue';
+import type { TextCollectionSettings } from '~/src-tauri/bindings/TextCollectionSettings';
 
 const classes = [
   'text-foreground inline-flex h-6 items-center rounded-md px-2.5 py-0.5 text-xs font-semibold transition-all',
-  'border ',
-  'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ',
+  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex rounded-sm border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none   ',
+  'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
 ];
 
 const tags = defineModel<string[] | null>();
+
+const props = defineProps<{
+  settings: TextCollectionSettings | null;
+}>();
+
+const prefix = computed(() => (props.settings?.prefix ? `'${props.settings?.prefix}'` : undefined));
 
 const saveTag = (index: number, tag: string) => {
   if (!tags.value) {
@@ -60,6 +65,7 @@ const saveTag = (index: number, tag: string) => {
 const tagRefs = ref<{ element: HTMLElement }[]>([]);
 
 const selectElement = (element: HTMLElement, place?: 'end' | 'start') => {
+  console.log('selectElement', element);
   element.focus();
   const sel = window.getSelection();
   if (sel) {
@@ -70,6 +76,7 @@ const selectElement = (element: HTMLElement, place?: 'end' | 'start') => {
       // Otherwise selection.focusOffset(and anchorOfsset) will be 1 and we won't be able to jump to next tag immediatelly.
       // We have ::before on div, but it's not considered a child node therefore [0]
       const text = element.childNodes[0];
+      console.log('text', text);
       if (!text) {
         // Shouldn't happen, but just in case
         console.error('Somethings is wrong when moving selection between tags');
@@ -125,10 +132,15 @@ const keyDownHandler = (e: KeyboardEvent, index: number) => {
     e.preventDefault();
     if (index === tags.value.length - 1) return;
     const tag = tagRefs.value[index + 1].element;
+
     selectElement(tag, 'start');
     return;
   }
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.prefix::before {
+  content: v-bind(prefix);
+}
+</style>

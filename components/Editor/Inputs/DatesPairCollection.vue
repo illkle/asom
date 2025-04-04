@@ -14,7 +14,7 @@
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="ghost" size="sm" class="mt-2" @click="addNewDate"> Log new reading </Button>
+      <Button variant="ghost" size="sm" class="mt-2" @click="addNewDate"> Log new </Button>
     </div>
   </div>
 </template>
@@ -23,7 +23,7 @@
 import { format } from 'date-fns';
 import { MoveRightIcon, XIcon } from 'lucide-vue-next';
 import type { DatePair } from '~/types';
-import DateInput from './DateInput.vue';
+import DateInput from './Date.vue';
 
 const datePairs = defineModel<DatePair[] | null>();
 

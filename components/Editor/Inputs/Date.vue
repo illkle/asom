@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { format } from 'date-fns';
-import { CalendarDays, ChevronDown } from 'lucide-vue-next';
+import { CalendarIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
+import Calendar from '~/components/ui/calendar/Calendar.vue';
 
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
@@ -14,10 +15,7 @@ const props = defineProps<{
   };
 }>();
 
-const modelValue = defineModel<string | undefined>({
-  required: false,
-  default: undefined,
-});
+const modelValue = defineModel<string | null>({ default: null });
 
 const { stringToDate } = useDateHooks();
 const { dateModel } = useDateAdapterModel(modelValue);
@@ -35,17 +33,19 @@ const isOpened = ref(false);
 
 <template>
   <Popover>
-    <PopoverTrigger>
-      <Button class="flex w-60 justify-between gap-6" variant="outline">
-        <div class="flex items-center gap-3">
-          <CalendarDays class="w-4" />
-          {{ formattedDate }}
-        </div>
-        <ChevronDown class="w-4 opacity-50" />
+    <PopoverTrigger as-child>
+      <Button
+        variant="outline"
+        :class="
+          cn('w-60 justify-start text-left font-normal', !dateModel && 'text-muted-foreground')
+        "
+      >
+        <CalendarIcon class="mr-2 h-4 w-4" />
+        {{ formattedDate }}
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="">
-      <Calendar v-model="dateModel" :min-value="start" :max-value="end"> </Calendar>
+    <PopoverContent class="w-auto p-0">
+      <Calendar v-model="dateModel" initial-focus />
     </PopoverContent>
   </Popover>
 </template>
