@@ -7,6 +7,7 @@
       <template v-if="appState.status === 'ok'">
         <TabsSelector />
         <div
+          ref="scrollElementRef"
           class="overscroll-none scrollbarMod gutter-stable h-full bg-background transition-all duration-100"
           :class="isFirstTab ? '' : 'rounded-tl-md'"
         >
@@ -35,6 +36,9 @@ const tabsStore = useTabsStore();
 const isFirstTab = computed(() => {
   return tabsStore.openedTabs.length >= 1 && tabsStore.openedTabsActiveIndex === 0;
 });
+
+const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
+provide('scrollElementRef', scrollElementRef);
 </script>
 
 <style>

@@ -274,7 +274,7 @@ async fn test_basic_file_ops() {
         return res.len() == 3
             && res.iter().any(|f| {
                 f.attrs["author"] == AttrValue::String(Some("KKKKKKKKK".to_string()))
-                    && f.attrs["year"] == AttrValue::Integer(Some(2025))
+                    && f.attrs["year"] == AttrValue::Integer(Some(2025.0))
             });
     };
 

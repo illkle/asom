@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none};
+use serde_with::skip_serializing_none;
 use ts_rs::TS;
 
 /*
@@ -22,9 +22,6 @@ pub struct DatePair {
 
 /*
     AttrValue represents types that can be found in frontmatter.
-    They MUST be uniquely identifiable by type inside.
-
-    It would be better to have them tagged in typerscript. However not saving them as tagged to frontmatter is a must.
 */
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, TS)]
 #[ts(export)]
@@ -33,7 +30,12 @@ pub enum AttrValue {
     String(Option<String>),
     StringVec(Option<Vec<String>>),
     DatePairVec(Option<Vec<DatePair>>),
-    Integer(Option<i64>),
+    /**
+     * 1. Integer and float are split for better readability of frontmatter. Year: 2025.0 looks stupid
+     * 2. Integer is stored as f64 becuase i64 can theoretically convert to bigint after getting to js, which is incovenitent for any logic.
+     * Both those issues might be solved in a more optimal way in the future.
+     */
+    Integer(Option<f64>),
     Float(Option<f64>),
 }
 
@@ -56,7 +58,7 @@ impl From<AttrValue> for AttrValueOnDisk {
             AttrValue::String(v) => AttrValueOnDisk::String(v),
             AttrValue::StringVec(v) => AttrValueOnDisk::StringVec(v),
             AttrValue::DatePairVec(v) => AttrValueOnDisk::DatePairVec(v),
-            AttrValue::Integer(v) => AttrValueOnDisk::Integer(v),
+            AttrValue::Integer(v) => AttrValueOnDisk::Integer(v.map(|x| x.round() as i64)),
             AttrValue::Float(v) => AttrValueOnDisk::Float(v),
         }
     }

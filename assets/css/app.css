@@ -33,9 +33,14 @@
   }
 
   .scrollbarMod::-webkit-scrollbar {
-    @apply w-2 bg-transparent;
+    @apply h-2 w-2 bg-transparent;
   }
   .scrollbarMod::-webkit-scrollbar-thumb {
     @apply bg-primary/25 rounded-md;
+  }
+  .scrollbarMod::-webkit-scrollbar-corner {
+    background: transparent;
+    width: 0;
+    height: 0;
   }
 }

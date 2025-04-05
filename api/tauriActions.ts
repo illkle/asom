@@ -99,3 +99,9 @@ export const c_get_default_schemas = () => {
     (v) => v as ExtractIpcResponcesType<'c_get_default_schemas'>,
   );
 };
+
+export const c_resolve_schema_path = async (path: string) => {
+  return invoke('c_resolve_schema_path', { path }).then(
+    (v) => v as ExtractIpcResponcesType<'c_resolve_schema_path'>,
+  );
+};

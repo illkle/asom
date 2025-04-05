@@ -19,7 +19,9 @@ pub struct SchemasInMemoryCache {
     map: BTreeMap<PathBuf, Schema>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, TS, Serialize, Deserialize)]
+#[ts(export)]
+
 pub struct SchemaResult {
     pub file_path: PathBuf,
     pub owner_folder: PathBuf,

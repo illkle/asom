@@ -5,6 +5,7 @@ import type { RecordListGetResult } from './RecordListGetResult';
 import type { RecordReadResult } from './RecordReadResult';
 import type { RecordSaveResult } from './RecordSaveResult';
 import type { Schema } from './Schema';
+import type { SchemaResult } from './SchemaResult';
 
 export type IPCResponces = {
   c_init: { Ok: string | null } | { Err: ErrFR };
@@ -19,4 +20,5 @@ export type IPCResponces = {
   c_save_schema: { Ok: Schema } | { Err: ErrFR };
   c_save_file: { Ok: RecordSaveResult } | { Err: ErrFR };
   c_get_default_schemas: { Ok: Array<Schema> } | { Err: ErrFR };
+  c_resolve_schema_path: { Ok: SchemaResult | null } | { Err: ErrFR };
 };

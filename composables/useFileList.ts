@@ -18,6 +18,7 @@ export const useFilesList = ({
   const data = ref<Awaited<ReturnType<typeof c_get_files_path>> | null>(null);
 
   const loading = ref(true);
+  const pending = ref(true);
 
   const loadContent = async () => {
     loading.value = true;
@@ -29,7 +30,7 @@ export const useFilesList = ({
       }
       data.value = res;
     }
-
+    pending.value = false;
     nextTick(() => {
       loading.value = false;
       if (onLoaded) {
@@ -38,13 +39,13 @@ export const useFilesList = ({
     });
   };
 
-  onMounted(() => {
-    loadContent();
-  });
-
-  watch(searchQuery, () => {
-    loadContent();
-  });
+  watch(
+    [opened, searchQuery],
+    () => {
+      loadContent();
+    },
+    { immediate: true },
+  );
 
   //
   // Update event handling
@@ -108,7 +109,7 @@ export const useFilesList = ({
       processQueue(true);
   });
 
-  return { data, loading };
+  return { data, loading, pending };
 };
 
 const isChangedFolderRelevant = (myPath: string, eventPath: string) => {

@@ -38,7 +38,7 @@ pub fn parse_metadata(
                         {
                             file_meta.insert(name, AttrValue::Float(n.as_f64()));
                         } else {
-                            file_meta.insert(name, AttrValue::Integer(n.as_i64()));
+                            file_meta.insert(name, AttrValue::Integer(n.as_f64()));
                         }
                     }
 
@@ -223,7 +223,7 @@ tags: 555
 
         let all_correct_expected: HashMap<String, AttrValue> = HashMap::from([
             ("title".into(), AttrValue::String(Some("some guy".into()))),
-            ("year".into(), AttrValue::Integer(Some(2024))),
+            ("year".into(), AttrValue::Integer(Some(2024.0))),
             ("myRating".into(), AttrValue::Float(Some(2.5))),
             (
                 "read".into(),

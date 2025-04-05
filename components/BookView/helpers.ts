@@ -1,4 +1,4 @@
-import type { SortingFn } from '@tanstack/vue-table';
+import type { SortingFn, SortingFnOption } from '@tanstack/vue-table';
 import { parse } from 'date-fns';
 import type { AttrValue, SchemaItem } from '~/types';
 export type TableRowType = {
@@ -7,7 +7,9 @@ export type TableRowType = {
   [key: string]: AttrValue;
 };
 
-const getSortFunction = (type: SchemaItem['value']['type']): SortingFn<TableRowType> => {
+export const getSortFunction = (
+  type: SchemaItem['value']['type'],
+): SortingFn<TableRowType> | SortingFnOption<TableRowType> => {
   switch (type) {
     case 'Text':
       return (a, b, columnId) => {
@@ -35,15 +37,56 @@ const getSortFunction = (type: SchemaItem['value']['type']): SortingFn<TableRowT
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original[columnId], b.original[columnId]];
         if (
-          !['Float', 'Integer'].includes(aValue.type) ||
-          !['Float', 'Integer'].includes(bValue.type)
+          (aValue.type !== 'Float' && aValue.type !== 'Integer') ||
+          (bValue.type !== 'Float' && bValue.type !== 'Integer')
         ) {
           return 0;
         }
 
         return (aValue.value ?? 0) - (bValue.value ?? 0);
       };
+    case 'TextCollection':
+      return (a, b, columnId) => {
+        const [aValue, bValue] = [a.original[columnId], b.original[columnId]];
+        if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
+          return 0;
+        }
+
+        return (aValue.value?.[0] ?? '').localeCompare(bValue.value?.[0] ?? '');
+      };
+    case 'DateCollection':
+      return (a, b, columnId) => {
+        const [aValue, bValue] = [a.original[columnId], b.original[columnId]];
+        if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
+          return 0;
+        }
+
+        const [av, bv] = [aValue.value?.[0], bValue.value?.[0]];
+
+        const [d1, d2] = [
+          av ? parse(av, 'yyyy-MM-dd', new Date()).getTime() : 0,
+          bv ? parse(bv, 'yyyy-MM-dd', new Date()).getTime() : 0,
+        ];
+
+        return d1 - d2;
+      };
+    case 'DatesPairCollection':
+      return (a, b, columnId) => {
+        const [aValue, bValue] = [a.original[columnId], b.original[columnId]];
+        if (aValue.type !== 'DatePairVec' || bValue.type !== 'DatePairVec') {
+          return 0;
+        }
+
+        const [av, bv] = [aValue.value?.[0].started, bValue.value?.[0].started];
+
+        const [d1, d2] = [
+          av ? parse(av, 'yyyy-MM-dd', new Date()).getTime() : 0,
+          bv ? parse(bv, 'yyyy-MM-dd', new Date()).getTime() : 0,
+        ];
+
+        return d1 - d2;
+      };
   }
 
-  return (a, b) => 0;
+  return () => 0;
 };
