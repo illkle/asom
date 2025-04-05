@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_with::skip_serializing_none;
+use serde_with::{serde_as, skip_serializing_none};
 use ts_rs::TS;
 
 /*

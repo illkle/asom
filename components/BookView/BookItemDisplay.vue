@@ -1,28 +1,26 @@
 <template>
-  {{ displayValue }}
+  <div class="text-ellipsis w-full overflow-hidden whitespace-nowrap">
+    {{ displayValue }}
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { PropType } from 'vue';
-import type { BookFromDb, SchemaItem } from '~/types';
+import type { AttrValue } from '~/types';
 
 const props = defineProps({
-  schemaItem: {
-    type: Object as PropType<SchemaItem>,
-    required: true,
-  },
-  book: {
-    type: Object as PropType<BookFromDb>,
+  value: {
+    type: Object as PropType<AttrValue>,
     required: true,
   },
 });
 
 const displayValue = computed(() => {
-  const i = props.book.attrs[props.schemaItem.name];
+  const i = props.value;
   if (!i) return '';
 
   switch (i.type) {
-    case 'DateReadVec':
+    case 'DatePairVec':
       return i.value?.map((v) => v.started).join(', ') ?? '';
     case 'StringVec':
       return i.value?.join(', ') ?? '';
