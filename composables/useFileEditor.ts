@@ -108,7 +108,6 @@ export const useFileEditor = (
   const throttledSaveFile = throttle(saveFile, 2000, {});
 
   watch(changes, (newValue) => {
-    console.log('changes watcher', newValue);
     if (newValue > 0) {
       throttledSaveFile();
     }

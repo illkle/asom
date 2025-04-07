@@ -5,7 +5,9 @@
     <main class="relative flex w-36 flex-1 flex-col h-screen box-border pt-[1rem]">
       <!-- InitQ returned a root path, show app -->
       <template v-if="appState.status === 'ok'">
-        <TabsSelector />
+        <div class="">
+          <TabsSelector />
+        </div>
         <div
           ref="scrollElementRef"
           class="overscroll-none scrollbarMod gutter-stable h-full bg-background transition-all duration-100"

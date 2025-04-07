@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <div class="p-4 max-w-2xl mx-auto">
     <h2 class="text-3xl font-serif">Goodreads importer</h2>
 
     <div class="text-sm opacity-50">
@@ -43,7 +43,7 @@
 
     <div
       v-if="currentSchema"
-      class="grid grid-cols-6 mt-2 items-center gap-2 border rounded-md p-2"
+      class="grid grid-cols-3 mt-2 items-center gap-2 border rounded-md p-2"
     >
       <div>Title</div>
 

@@ -9,7 +9,10 @@ import {
 import { filePathsToTree } from '~/components/FileTree/filePathsToTree';
 import type { ErrFR, Schema } from '~/types';
 
-const KEY_DEPENDENT_ON_ROOT = (root: string | null | undefined) => ['root', root ?? 'noRoot'];
+export const KEY_DEPENDENT_ON_ROOT = (root: string | null | undefined) => [
+  'root',
+  root ?? 'noRoot',
+];
 
 const ROOT_PATH_KEY = ['rooPath'];
 const USEABLE_SCHEMAS_KEY = (root: string | null | undefined) => [
@@ -171,8 +174,6 @@ export const useGlobalInvalidators = () => {
 
   useListenToEvent('SchemasUpdated', async () => {
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas'] });
-    // Schema updates affect which folders have schemas
-    console.log('invalidating folders');
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'folders'] });
   });
 };

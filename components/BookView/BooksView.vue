@@ -1,11 +1,6 @@
 <script setup lang="ts">
-import type {
-  ColumnDef,
-  ColumnOrderState,
-  ColumnSizingState,
-  SortingState,
-  VisibilityState,
-} from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
+import { remove } from '@tauri-apps/plugin-fs';
 import { valueUpdater } from '~/lib/utils';
 
 import {
@@ -22,9 +17,11 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDownIcon,
+  CornerUpRightIcon,
   ListOrdered,
   MoveHorizontal,
   SquareDashedMousePointer,
+  TrashIcon,
 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { getSortFunction, type TableRowType } from '~/components/BookView/helpers';
@@ -33,10 +30,9 @@ import {
   type IOpenedPath,
   type OpenNewOneParams,
 } from '~/composables/stores/useTabsStore';
-import { useViewSettingsStore } from '~/composables/stores/useViewSettingsStore';
 import type { AttrValue, SchemaItem } from '~/types';
 import BookItemDisplay from './BookItemDisplay.vue';
-import TestDND from './TestDND.vue';
+import SimpleDNDList from './SimpleDNDList.vue';
 
 const props = defineProps({
   opened: {
@@ -57,22 +53,20 @@ watch(
   }, 200),
 );
 
-const { data: fileListData, pending: fileListPending } = useFilesList({
+const q = useFlesListV2({
   opened: props.opened,
   //onLoaded: () => setScrollPositionFromSaved(),
   searchQuery: searchQuery,
 });
 
 const books = computed(
-  () =>
-    (fileListData.value?.records.map((v) => ({ ...v.attrs, path: v.path })) ||
-      []) as TableRowType[],
+  () => (q.data.value?.records.map((v) => ({ ...v.attrs, path: v.path })) || []) as TableRowType[],
 );
 
 type IVisibleNames = Record<string, boolean>;
 const visibleNames = ref<IVisibleNames>({});
 
-watch(fileListData, (flData) => {
+watch(q.data, (flData) => {
   if (!flData) return;
   visibleNames.value = flData.schema.items.reduce((acc, val) => {
     if (Object.keys(acc).length < 5) {
@@ -83,8 +77,16 @@ watch(fileListData, (flData) => {
 });
 
 const visibleSchemaItems = computed(
-  () => fileListData.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
+  () => q.data.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
 );
+
+const mapIdToDisplayName = computed(() => {
+  return new Map(q.data.value?.schema.items.map((v) => [v.name, v.value.settings.displayName]));
+});
+
+const getDisplayName = (id: string) => {
+  return mapIdToDisplayName.value.get(id) ?? id;
+};
 
 const baseSizeByType = (type: SchemaItem['value']['type']) => {
   switch (type) {
@@ -107,7 +109,7 @@ const cols = computed<ColumnDef<TableRowType>[]>(() =>
   visibleSchemaItems.value.map((v) => ({
     enableResizing: true,
     accessorKey: v.name,
-    header: v.name,
+    header: getDisplayName(v.name),
     size: baseSizeByType(v.value.type), //starting column size
     sortingFn: getSortFunction(v.value.type),
     cell: ({ row }) => {
@@ -118,44 +120,13 @@ const cols = computed<ColumnDef<TableRowType>[]>(() =>
   })),
 );
 
-const vs = useViewSettingsStore();
+const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(props.opened.thing);
 
-const viewSettings = ref<{
-  sorting?: SortingState;
-  columnVisibility?: VisibilityState;
-  columnSizing?: ColumnSizingState;
-  columnOrder?: ColumnOrderState;
-}>({
-  sorting: [],
-  columnVisibility: {},
-  columnSizing: {},
-  columnOrder: [],
-});
+const viewSettings = computed<IViewSettings>(() => viewSettingsQ.data.value ?? {});
 
 const rowSelection = ref({});
 
 const isSelecting = ref(false);
-
-watch(
-  props.opened,
-  async () => {
-    const s = await vs.loadSettings(props.opened.thing);
-    viewSettings.value = s;
-  },
-  { immediate: true },
-);
-
-const debouncedSaveSettings = debounce(async () => {
-  await vs.updateSettings(props.opened.thing, viewSettings.value);
-}, 100);
-
-watch(
-  [viewSettings],
-  async () => {
-    debouncedSaveSettings();
-  },
-  { deep: true },
-);
 
 const table = useVueTable({
   data: books,
@@ -165,13 +136,12 @@ const table = useVueTable({
   getCoreRowModel: getCoreRowModel(),
   getSortedRowModel: getSortedRowModel(),
   getExpandedRowModel: getExpandedRowModel(),
-  onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, viewSettings, 'sorting'),
+  // View Settings
+  onSortingChange: (updaterOrValue) => viewSettingsUpdater(updaterOrValue, 'sorting'),
   onColumnVisibilityChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, viewSettings, 'columnVisibility'),
-  onColumnSizingChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, viewSettings, 'columnSizing'),
-  onColumnOrderChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, viewSettings, 'columnOrder'),
+    viewSettingsUpdater(updaterOrValue, 'columnVisibility'),
+  onColumnSizingChange: (updaterOrValue) => viewSettingsUpdater(updaterOrValue, 'columnSizing'),
+  onColumnOrderChange: (updaterOrValue) => viewSettingsUpdater(updaterOrValue, 'columnOrder'),
 
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   columnResizeMode: 'onChange',
@@ -180,19 +150,15 @@ const table = useVueTable({
     get sorting() {
       return viewSettings.value.sorting;
     },
-
     get columnVisibility() {
       return viewSettings.value.columnVisibility;
     },
-
     get columnSizing() {
       return viewSettings.value.columnSizing;
     },
-
     get columnOrder() {
       return viewSettings.value.columnOrder;
     },
-
     get rowSelection() {
       return rowSelection.value;
     },
@@ -246,13 +212,34 @@ function measureElement(el?: Element) {
 
 const listForSorting = computed({
   get() {
-    const column = visibleSchemaItems.value.map((v) => v.name);
-    const order = viewSettings.value.columnOrder?.filter((v) => v in column) ?? [];
+    const visibility = viewSettings.value.columnVisibility ?? {};
 
-    return [...order, ...column.filter((v) => !order.includes(v))];
+    const co = viewSettings.value.columnOrder ?? [];
+
+    const inResult = new Set(co);
+    const result = co.map((v) => ({
+      id: v,
+      label: getDisplayName(v) as string | undefined,
+      isVisible: visibility[v] ?? true,
+    }));
+
+    for (const item of visibleSchemaItems.value) {
+      if (!inResult.has(item.name)) {
+        result.push({
+          id: item.name,
+          label: getDisplayName(item.name),
+          isVisible: visibility[item.name] ?? true,
+        });
+      }
+    }
+
+    return result;
   },
   set(newVal) {
-    viewSettings.value.columnOrder = [...newVal];
+    viewSettingsUpdater(
+      newVal.map((v) => v.id),
+      'columnOrder',
+    );
   },
 });
 
@@ -269,6 +256,18 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
     },
     params,
   );
+};
+
+const sortingDialogOpened = ref(false);
+
+const hoveringRowIndex = ref<number | null>(null);
+
+const dropdownRowLock = ref<number | null>(null);
+
+const dropdownOpened = ref(false);
+
+const openItemNewTab = (index: number) => {
+  openFullEditor({ place: 'last' }, rows.value[index].original.path);
 };
 </script>
 
@@ -296,25 +295,19 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
                 <SquareDashedMousePointer :size="16" />
               </Toggle>
 
-              <Dialog>
-                <DialogTrigger as-child>
-                  <Button variant="outline" size="icon">
-                    <ListOrdered :size="16" />
-                  </Button>
-                </DialogTrigger>
+              <Dialog v-model:open="sortingDialogOpened">
                 <DialogContent>
-                  <TestDND />
-                  <div v-if="false" ref="parent" class="relative">
-                    <div
-                      class="block"
-                      v-for="(item, index) in listForSorting"
-                      :key="item"
-                      :index="index"
-                      variant="outline"
-                    >
-                      {{ item }}
-                    </div>
-                  </div>
+                  <DialogTitle>Sort Columns</DialogTitle>
+                  <DialogDescription> </DialogDescription>
+                  <SimpleDNDList
+                    :initial-items="listForSorting"
+                    @update="
+                      (v) => {
+                        listForSorting = v;
+                        sortingDialogOpened = false;
+                      }
+                    "
+                  />
                 </DialogContent>
               </Dialog>
               <DropdownMenu>
@@ -324,6 +317,13 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem @click="sortingDialogOpened = true">
+                    <ListOrdered :size="16" /> Reorder
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel>Toggle Visibility</DropdownMenuLabel>
+
                   <DropdownMenuCheckboxItem
                     v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
                     :key="column.id"
@@ -335,7 +335,7 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
                       }
                     "
                   >
-                    {{ column.id }}
+                    {{ getDisplayName(column.id) }}
                   </DropdownMenuCheckboxItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -351,7 +351,7 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
                 v-for="header in headerGroup.headers"
                 :key="header.id"
                 :colspan="header.colSpan"
-                class="flex items-center gap-2 justify-start relative px-2 hover:bg-muted/10 py-2"
+                class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2"
                 :class="{
                   'cursor-pointer select-none': header.column.getCanSort(),
                 }"
@@ -380,57 +380,127 @@ const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
                       header.getResizeHandler()(e);
                     }
                   "
-                  class="flex items-center opacity-20 group-hover:opacity-100 transition-all justify-center w-5 shrink-0 h-5 cursor-col-resize ml-3 border border-transparent hover:border-border rounded-sm"
+                  class="flex items-center opacity-20 group-hover:opacity-100 transition-all justify-center shrink-0 p-0.5 cursor-col-resize border border-transparent hover:border-border rounded-sm"
                 >
                   <MoveHorizontal :size="12" />
                 </span>
               </TableHeader>
             </tr>
           </TableHead>
-          <TableBody
-            :style="{
-              display: 'grid',
-              height: `${totalSize}px`, //tells scrollbar how big the table is
-              position: 'relative', //needed for absolute positioning of rows
-            }"
+          <ContextMenu
+            v-model:open="dropdownOpened"
+            @update:open="
+              (v) => {
+                if (v) {
+                  dropdownRowLock = hoveringRowIndex;
+                }
+              }
+            "
           >
-            <tr
-              v-for="vRow in virtualRows"
-              :data-index="vRow.index /* needed for dynamic row height measurement*/"
-              :ref="measureElement /*measure dynamic row height*/"
-              :key="rows[vRow.index].id"
-              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
-              :class="{ 'bg-muted hover:bg-muted/80': rows[vRow.index].getIsSelected() }"
-              :style="{
-                display: 'flex',
-                position: 'absolute',
-                transform: `translateY(${vRow.start}px)`, //this should always be a `style` as it changes on scroll
-                width: '100%',
-              }"
-              @click="isSelecting && rows[vRow.index].toggleSelected()"
-              @click.exact="
-                !isSelecting &&
-                openFullEditor({ place: 'current', focus: true }, rows[vRow.index].original.path)
-              "
-              @click.alt="
-                !isSelecting && openFullEditor({ place: 'last' }, rows[vRow.index].original.path)
-              "
-              @click.middle.exact="
-                !isSelecting && openFullEditor({ place: 'last' }, rows[vRow.index].original.path)
-              "
-            >
-              <TableCell
-                v-for="cell in rows[vRow.index].getVisibleCells()"
-                :key="cell.id"
+            <ContextMenuTrigger>
+              <tbody
+                data-slot="table-body"
+                class="[&_tr:last-child]:border-0"
                 :style="{
-                  display: 'flex',
-                  width: `${calculatedColumSizes[cell.column.id]}px`,
+                  display: 'grid',
+                  height: `${totalSize}px`, //tells scrollbar how big the table is
+                  position: 'relative', //needed for absolute positioning of rows
                 }"
+                @mouseleave="hoveringRowIndex = null"
               >
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-              </TableCell>
-            </tr>
-          </TableBody>
+                <tr
+                  v-for="vRow in virtualRows"
+                  :data-index="vRow.index /* needed for dynamic row height measurement*/"
+                  :ref="measureElement /*measure dynamic row height*/"
+                  :key="rows[vRow.index].id"
+                  class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
+                  :class="{
+                    'bg-muted hover:bg-muted/80': rows[vRow.index].getIsSelected(),
+                    'cursor-pointer': !isSelecting,
+                    'cursor-copy': isSelecting,
+                  }"
+                  :style="{
+                    display: 'flex',
+                    position: 'absolute',
+                    transform: `translateY(${vRow.start}px)`, //this should always be a `style` as it changes on scroll
+                    width: '100%',
+                  }"
+                  @pointerdown="
+                    (e) => {
+                      if (dropdownOpened || e.button !== 0) return;
+
+                      if (isSelecting) {
+                        rows[vRow.index].toggleSelected();
+                      } else {
+                        openFullEditor(
+                          { place: 'current', focus: true },
+                          rows[vRow.index].original.path,
+                        );
+                      }
+                    }
+                  "
+                  @pointerdown.alt="
+                    () => {
+                      if (dropdownOpened || isSelecting) return;
+                      openItemNewTab(vRow.index);
+                    }
+                  "
+                  @pointerdown.middle.exact="
+                    () => {
+                      if (dropdownOpened || isSelecting) return;
+                      openItemNewTab(vRow.index);
+                    }
+                  "
+                  @mouseover="hoveringRowIndex = vRow.index"
+                >
+                  <TableCell
+                    v-for="cell in rows[vRow.index].getVisibleCells()"
+                    :key="cell.id"
+                    :style="{
+                      display: 'flex',
+                      width: `${calculatedColumSizes[cell.column.id]}px`,
+                    }"
+                  >
+                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                  </TableCell>
+                </tr>
+              </tbody>
+            </ContextMenuTrigger>
+            <ContextMenuContent v-if="dropdownRowLock !== null">
+              <ContextMenuItem @click="dropdownRowLock && openItemNewTab(dropdownRowLock)">
+                <CornerUpRightIcon :size="16" /> Open In New Tab
+              </ContextMenuItem>
+              <ContextMenuItem
+                v-if="!isSelecting"
+                @click="
+                  () => {
+                    if (!dropdownRowLock) return;
+                    isSelecting = true;
+                    table.setRowSelection({ [rows[dropdownRowLock].id]: true });
+                  }
+                "
+              >
+                <SquareDashedMousePointer :size="16" /> Select
+              </ContextMenuItem>
+              <ContextMenuItem
+                v-else
+                @click="
+                  () => {
+                    isSelecting = false;
+                    table.setRowSelection({});
+                  }
+                "
+              >
+                Clear selection
+              </ContextMenuItem>
+              <ContextMenuItem
+                @click="dropdownRowLock && remove(rows[dropdownRowLock].original.path ?? '')"
+              >
+                <TrashIcon :size="16" />
+                Delete
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </table>
       </div>
     </div>

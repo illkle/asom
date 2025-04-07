@@ -1,58 +1,50 @@
 import path from 'path-browserify';
-import { c_get_files_path, returnErrorHandler } from '~/api/tauriActions';
+import { c_get_files_path } from '~/api/tauriActions';
 import type { IOpenedPath } from '~/composables/stores/useTabsStore';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import type { RecordFromDb } from '~/types';
 
-export const useFilesList = ({
+const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string) => [
+  'files',
+  opened.type,
+  opened.thing,
+  searchQuery,
+];
+
+export const useFlesListV2 = ({
   opened,
-  onLoaded,
   searchQuery,
 }: {
   opened: IOpenedPath;
-  onLoaded?: () => void | Promise<void>;
   searchQuery: Ref<string>;
 }) => {
-  const data = ref<Awaited<ReturnType<typeof c_get_files_path>> | null>(null);
+  const files = useQuery({
+    key: () => FILES_LIST_KEY(opened, searchQuery.value),
+    query: () => c_get_files_path(opened.thing, searchQuery.value),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
 
-  const loading = ref(true);
-  const pending = ref(true);
-
-  const loadContent = async () => {
-    loading.value = true;
-    if (opened.type === 'folder') {
-      const res = await c_get_files_path(opened.thing, searchQuery.value).catch(returnErrorHandler);
-      if ('isError' in res) {
-        useRustErrorNotification(res, {});
-        return;
-      }
-      data.value = res;
+  watch(files.error, (e) => {
+    if (e && isOurError(e)) {
+      useRustErrorNotification(e, {});
     }
-    pending.value = false;
-    nextTick(() => {
-      loading.value = false;
-      if (onLoaded) {
-        onLoaded();
-      }
-    });
-  };
+  });
 
-  watch(
-    [opened, searchQuery],
-    () => {
-      loadContent();
-    },
-    { immediate: true },
-  );
+  const qc = useQueryCache();
 
   //
   // Update event handling
   //
   const updateOrAddToFiles = (book: RecordFromDb) => {
-    if (!data.value) return;
-    const books = data.value.records;
+    const data = qc.getQueryData<Awaited<ReturnType<typeof c_get_files_path>> | null>(
+      FILES_LIST_KEY(opened, searchQuery.value),
+    );
+    if (!data) return;
+
+    const books = data.records;
     // Do not assume that add event will be called once
     // I encountered watcher on mac emitting duplicate events when copying files
     const index = books.findIndex((v) => v.path === book.path);
@@ -61,17 +53,27 @@ export const useFilesList = ({
     } else {
       books.push(book);
     }
-    triggerRef(data);
+    qc.setQueryData(FILES_LIST_KEY(opened, searchQuery.value), {
+      ...data,
+      records: books,
+    });
   };
 
   const removeFromFiles = (path: string) => {
-    if (!data.value) return;
-    const books = data.value.records;
-    const index = books.findIndex((v) => v.path === path);
+    const data = qc.getQueryData<Awaited<ReturnType<typeof c_get_files_path>> | null>(
+      FILES_LIST_KEY(opened, searchQuery.value),
+    );
+    if (!data) return;
+
+    const books = data.records;
+    const index = data.records.findIndex((v) => v.path === path);
 
     if (index >= 0) {
       books.splice(index, 1);
-      triggerRef(data);
+      qc.setQueryData(FILES_LIST_KEY(opened, searchQuery.value), {
+        ...data,
+        records: books,
+      });
     }
   };
 
@@ -90,10 +92,16 @@ export const useFilesList = ({
   };
 
   const processEvents = (e: FileListEvent[]) => {
+    console.log('processEvents', e);
     e.forEach(processEvent);
   };
 
-  const { onEvent, processQueue } = useThrottledEvents(processEvents, loadContent, 1000, 15);
+  const { onEvent, processQueue } = useThrottledEvents(
+    processEvents,
+    () => void files.refetch(),
+    1000,
+    15,
+  );
 
   useListenToEvent('FileAdd', (v) => onEvent({ event: 'add', book: v.c }));
   useListenToEvent('FileUpdate', (v) => onEvent({ event: 'update', book: v.c }));
@@ -109,7 +117,7 @@ export const useFilesList = ({
       processQueue(true);
   });
 
-  return { data, loading, pending };
+  return files;
 };
 
 const isChangedFolderRelevant = (myPath: string, eventPath: string) => {

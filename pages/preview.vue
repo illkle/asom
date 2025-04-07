@@ -3,6 +3,8 @@
     <h1>Area for testing components.</h1>
     <div class="text-sm">Can be launched without tauri via <code>npm run dev:preview</code>.</div>
 
+    <BookViewTestDND :initial-items="['1', '2', '3', '4', '5']" />
+
     <div class="flex gap-2">
       <Button
         :variant="r.query.tab === tab ? 'default' : 'outline'"

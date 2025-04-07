@@ -5,7 +5,7 @@ export default defineNuxtConfig({
     components: './components',
     '@types': './types',
   },
-  modules: ['@pinia/nuxt', '@nuxtjs/color-mode', '@pinia/colada-nuxt'],
+  modules: ['@pinia/nuxt', '@nuxtjs/color-mode', '@pinia/colada-nuxt', 'motion-v/nuxt'],
 
   compatibilityDate: '2024-09-29',
 
