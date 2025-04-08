@@ -1,8 +1,14 @@
+import type {
+  ColumnOrderState,
+  ColumnSizingState,
+  SortingState,
+  Updater,
+  VisibilityState,
+} from '@tanstack/vue-table';
 import * as fs from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
 
 import { z } from 'zod';
-import { c_resolve_schema_path } from '~/api/tauriActions';
 
 const zSorting = z.array(
   z.object({
@@ -17,40 +23,44 @@ const zSizingState = z.record(z.number());
 const zOrderState = z.array(z.string());
 
 const zViewSettings = z.object({
-  sorting: zSorting.optional(),
-  columnVisibility: zVisibilityState.optional(),
-  columnSizing: zSizingState.optional(),
-  columnOrder: zOrderState.optional(),
+  sorting: zSorting,
+  columnVisibility: zVisibilityState,
+  columnSizing: zSizingState,
+  columnOrder: zOrderState,
 });
 
-export type IViewSettings = z.infer<typeof zViewSettings>;
+export type IViewSettings = {
+  sorting: SortingState;
+  columnVisibility: VisibilityState;
+  columnSizing: ColumnSizingState;
+  columnOrder: ColumnOrderState;
+};
+
+export const DEFAULT_VIEW_SETTINGS = () => ({
+  sorting: [],
+  columnVisibility: {},
+  columnSizing: {},
+  columnOrder: [],
+});
 
 const JSON_NAME = 'viewSettings.json';
 
-export const getSettings = async (folderPath: string): Promise<IViewSettings> => {
-  const schemaPath = await c_resolve_schema_path(folderPath);
+export const getSettings = async (schemaOwnerFolder: string): Promise<IViewSettings> => {
+  const targetFile = path.join(schemaOwnerFolder, JSON_NAME);
 
-  if (!schemaPath?.file_path) {
-    return {};
-  }
-
-  const folder = await path.dirname(schemaPath.owner_folder);
-  const targetFile = await path.join(folder, JSON_NAME);
-
-  const def = zViewSettings.parse({});
+  const def = zViewSettings.parse(DEFAULT_VIEW_SETTINGS());
 
   try {
-    const f = JSON.parse(await fs.readTextFile(targetFile));
+    const text = await fs.readTextFile(targetFile);
+    const f = JSON.parse(text);
     return zViewSettings.parse(f);
   } catch (e) {}
   return def;
 };
 
-export const saveSettings = async (schemaPath: string, settings: IViewSettings) => {
-  const folder = await path.dirname(schemaPath);
-  const targetFile = await path.join(folder, JSON_NAME);
+export const saveViewSettings = async (schemaOwnerFolder: string, settings: IViewSettings) => {
+  const targetFile = path.join(schemaOwnerFolder, JSON_NAME);
   await fs.writeTextFile(targetFile, JSON.stringify(settings));
-  console.log('saved settings', settings);
 };
 
 const VIEW_SETTINGS_KEY = (root: string | null | undefined, folderPath: string) => [
@@ -60,33 +70,35 @@ const VIEW_SETTINGS_KEY = (root: string | null | undefined, folderPath: string) 
   folderPath,
 ];
 
-export const useViewSettings = (folderPath: string) => {
+export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
   const root = useRootPath();
 
   const q = useQuery({
-    key: () => VIEW_SETTINGS_KEY(root.data.value, folderPath),
-    query: () => getSettings(folderPath),
-    refetchOnWindowFocus: false,
+    key: () => VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value),
+    query: () => getSettings(schemaOwnerFolder.value),
+    refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchOnReconnect: false,
+    refetchOnReconnect: true,
   });
 
   const qc = useQueryCache();
 
-  const viewSettingsUpdater = async (
-    updaterOrValue: (prev: any) => any,
-    key: keyof IViewSettings,
+  const viewSettingsUpdater = async <T extends keyof IViewSettings>(
+    updaterOrValue: Updater<IViewSettings[T]>,
+    key: T,
   ) => {
     const before =
-      qc.getQueryData<IViewSettings>(VIEW_SETTINGS_KEY(root.data.value, folderPath)) ?? {};
+      qc.getQueryData<IViewSettings>(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value)) ??
+      DEFAULT_VIEW_SETTINGS();
 
     const beforeKey = before[key];
     const v = typeof updaterOrValue === 'function' ? updaterOrValue(beforeKey) : updaterOrValue;
 
     const after = { ...before, [key]: v };
 
-    qc.setQueryData(VIEW_SETTINGS_KEY(root.data.value, folderPath), after);
-    await saveSettings(folderPath, after);
+    qc.setQueryData(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value), after);
+    console.log('call saveViewSettings', schemaOwnerFolder.value, after);
+    void saveViewSettings(schemaOwnerFolder.value, after);
   };
 
   return {

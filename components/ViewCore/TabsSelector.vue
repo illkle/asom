@@ -76,11 +76,7 @@ import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';
 
 import { useElementSize, useMouse } from '@vueuse/core';
-import {
-  getDefaultViewSettings,
-  useTabsStore,
-  type IOpened,
-} from '~/composables/stores/useTabsStore';
+import { useTabsStore, type IOpened } from '~/composables/stores/useTabsStore';
 
 const store = useTabsStore();
 
@@ -231,7 +227,7 @@ const onDrop = (e: DragEvent) => {
       type,
       thing: draggedPath,
       scrollPosition: 0,
-      settings: getDefaultViewSettings(),
+      searchQuery: '',
     },
     typeof newIndex.value === 'number'
       ? {

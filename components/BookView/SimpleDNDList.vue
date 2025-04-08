@@ -3,14 +3,14 @@ import { Reorder } from 'motion-v';
 import { ref } from 'vue';
 
 const props = defineProps<{
-  initialItems: { id: string; label: string | undefined; isVisible: boolean }[];
+  initialItems: { id: string; label: string; isVisible: boolean }[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'update', items: { id: string; label: string | undefined; isVisible: boolean }[]): void;
+  (e: 'update', items: { id: string; label: string; isVisible: boolean }[]): void;
 }>();
 
-const internalList = ref<{ id: string; label: string | undefined; isVisible: boolean }[]>([]);
+const internalList = ref<{ id: string; label: string; isVisible: boolean }[]>([]);
 
 watch(
   props,

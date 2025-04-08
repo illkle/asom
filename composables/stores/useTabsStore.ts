@@ -7,44 +7,14 @@ import { z } from 'zod';
  * TYPES
  */
 
-export const zSortByOption = z.enum([
-  'Title',
-  'Author',
-  'Year',
-  'Last Read',
-  'First Read',
-  'Rating',
-  'Filename',
-]);
-
-export type ISortByOption = z.infer<typeof zSortByOption>;
-
-export const zSortDirection = z.literal<-1>(-1).or(z.literal<1>(1));
-
-export type ISortDirection = z.infer<typeof zSortDirection>;
-
-export const zViewStyle = z.enum(['Covers', 'Lines']);
-
-export type IViewStyle = z.infer<typeof zViewStyle>;
-
-export const zViewSettings = z.object({
-  grouped: z.boolean(),
-  sortBy: zSortByOption,
-  sortDirection: zSortDirection,
-  viewStyle: zViewStyle,
-  searchQuery: z.string(),
-});
-
-export type IViewSettings = z.infer<typeof zViewSettings>;
-
 export const zOpenedPath = z.object({
   id: z.string(),
   type: z.literal('folder'),
   // Path
   thing: z.string(),
-  settings: zViewSettings,
   recursive: z.boolean().optional(),
   scrollPosition: z.number(),
+  searchQuery: z.string(),
 });
 
 export type IOpenedPath = z.infer<typeof zOpenedPath>;
@@ -230,28 +200,12 @@ export const useTabsStore = defineStore('tabs', {
         return this.openedTabs[this.openedTabsActiveIndex];
       }
     },
-    currentViewSettings(): IViewSettings | undefined {
-      if (!this.openedItem) return;
-      if (this.openedItem.type !== 'folder') return undefined;
-
-      return this.openedItem.settings;
-    },
   },
 });
 
 /**
  * Helpers
  */
-
-export const getDefaultViewSettings = (): IViewSettings => {
-  return {
-    grouped: false,
-    viewStyle: 'Covers',
-    sortBy: 'Title',
-    sortDirection: 1,
-    searchQuery: '',
-  };
-};
 
 const useFetchTabsOnRootPathChange = () => {
   const store = useTabsStore();

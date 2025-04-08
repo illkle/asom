@@ -1,6 +1,6 @@
 import path from 'path-browserify';
 import { onMounted, onUnmounted } from 'vue';
-import { getDefaultViewSettings, useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 
 export const setupTabsHotkeys = () => {
   const store = useTabsStore();
@@ -24,7 +24,7 @@ export const setupTabsHotkeys = () => {
               ? path.dirname(store.openedItem.thing)
               : store.openedItem.thing
             : Object.keys(usableSchemas.data.value ?? {})[0],
-          settings: getDefaultViewSettings(),
+          searchQuery: '',
           scrollPosition: 0,
           recursive: true,
         },

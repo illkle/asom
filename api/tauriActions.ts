@@ -38,6 +38,8 @@ export const c_save_file = async (record: RecordFromDb, forced = false) => {
   );
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const c_get_files_path = async (path: string, searchQuery: string) => {
   return invoke('c_get_files_path', { path, searchQuery }).then(
     (v) => v as ExtractIpcResponcesType<'c_get_files_path'>,

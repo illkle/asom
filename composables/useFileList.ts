@@ -20,6 +20,13 @@ export const useFlesListV2 = ({
   opened: IOpenedPath;
   searchQuery: Ref<string>;
 }) => {
+  /**
+   * Schema is included in files query below, however since files query depends on searchQuery
+   * it's better to keep stable schema separately to avoid visual flickering on search change.
+   */
+  const schemaPath = computed(() => opened.thing);
+  const schema = useSchemaByPath(schemaPath);
+
   const files = useQuery({
     key: () => FILES_LIST_KEY(opened, searchQuery.value),
     query: () => c_get_files_path(opened.thing, searchQuery.value),
@@ -103,26 +110,51 @@ export const useFlesListV2 = ({
     15,
   );
 
-  useListenToEvent('FileAdd', (v) => onEvent({ event: 'add', book: v.c }));
-  useListenToEvent('FileUpdate', (v) => onEvent({ event: 'update', book: v.c }));
-  useListenToEvent('FileRemove', (v) => onEvent({ event: 'remove', path: v.c }));
+  useListenToEvent(
+    'FileAdd',
+    (v) => onEvent({ event: 'add', book: v.c }),
+    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+  );
+  useListenToEvent(
+    'FileUpdate',
+    (v) => onEvent({ event: 'update', book: v.c }),
+    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+  );
+  useListenToEvent(
+    'FileRemove',
+    (v) => onEvent({ event: 'remove', path: v.c }),
+    (v) => isChangeRelevant(opened.thing, v.c),
+  );
 
   // For folder events we just reload everything because it can modify a lot of sub-files\sub-dirs
-  useListenToEvent('FolderAdd', (v) => {
-    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.c.path))
-      processQueue(true);
-  });
-  useListenToEvent('FolderRemove', (v) => {
-    if (opened.type !== 'folder' || isChangedFolderRelevant(opened.thing, v.c.path))
-      processQueue(true);
-  });
+  useListenToEvent(
+    'FolderAdd',
+    (v) => processQueue(true),
+    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+  );
+  useListenToEvent(
+    'FolderRemove',
+    (v) => processQueue(true),
+    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+  );
 
-  return files;
+  return { files, schema };
 };
 
-const isChangedFolderRelevant = (myPath: string, eventPath: string) => {
-  const relative = path.relative(myPath, eventPath);
-  return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
+/**
+ * Returns true if the event is relevant to the target path.
+ * Event is relevat if it's path is inside of target path.
+ * NOTE: This is made for current logic where opening folder means getting files inside it recursively.
+ */
+const isChangeRelevant = (targetPath: string, eventPath: string) => {
+  console.log('isChangeRelevant', targetPath, eventPath);
+  const normalizedCurrent = path.normalize(targetPath);
+  const normalizedEvent = path.normalize(eventPath);
+
+  if (normalizedCurrent === normalizedEvent) return true;
+
+  const relative = path.relative(normalizedCurrent, normalizedEvent);
+  return !relative.startsWith('..') && relative !== '';
 };
 
 type FileListEvent =

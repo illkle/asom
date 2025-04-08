@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
 import { remove } from '@tauri-apps/plugin-fs';
+import { platform } from '@tauri-apps/plugin-os';
 import { valueUpdater } from '~/lib/utils';
 
 import {
@@ -11,7 +12,7 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { useElementSize } from '@vueuse/core';
+import { onKeyStroke, useElementSize } from '@vueuse/core';
 import { debounce } from 'lodash-es';
 import {
   ArrowDown,
@@ -22,6 +23,7 @@ import {
   MoveHorizontal,
   SquareDashedMousePointer,
   TrashIcon,
+  XIcon,
 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { getSortFunction, type TableRowType } from '~/components/BookView/helpers';
@@ -47,41 +49,31 @@ const props = defineProps({
 
 const searchQuery = ref('');
 watch(
-  () => props.opened.settings.searchQuery,
+  () => props.opened.searchQuery,
   debounce(() => {
-    searchQuery.value = props.opened.settings.searchQuery;
+    searchQuery.value = props.opened.searchQuery;
   }, 200),
 );
 
-const q = useFlesListV2({
+const { files: q, schema: schemaQ } = useFlesListV2({
   opened: props.opened,
-  //onLoaded: () => setScrollPositionFromSaved(),
   searchQuery: searchQuery,
 });
+
+const schemaPath = computed(() => schemaQ.data.value?.owner_folder ?? '');
+
+const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(schemaPath);
 
 const books = computed(
   () => (q.data.value?.records.map((v) => ({ ...v.attrs, path: v.path })) || []) as TableRowType[],
 );
 
-type IVisibleNames = Record<string, boolean>;
-const visibleNames = ref<IVisibleNames>({});
-
-watch(q.data, (flData) => {
-  if (!flData) return;
-  visibleNames.value = flData.schema.items.reduce((acc, val) => {
-    if (Object.keys(acc).length < 5) {
-      acc[val.name] = true;
-    }
-    return acc;
-  }, {} as IVisibleNames);
-});
-
 const visibleSchemaItems = computed(
-  () => q.data.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
+  () => schemaQ.data.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
 );
 
 const mapIdToDisplayName = computed(() => {
-  return new Map(q.data.value?.schema.items.map((v) => [v.name, v.value.settings.displayName]));
+  return new Map(visibleSchemaItems.value.map((v) => [v.name, v.value.settings.displayName]));
 });
 
 const getDisplayName = (id: string) => {
@@ -115,21 +107,24 @@ const cols = computed<ColumnDef<TableRowType>[]>(() =>
     cell: ({ row }) => {
       return h(BookItemDisplay, {
         value: row.getValue(v.name) as AttrValue,
+        type: v.value,
       });
     },
   })),
 );
 
-const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(props.opened.thing);
-
-const viewSettings = computed<IViewSettings>(() => viewSettingsQ.data.value ?? {});
+const viewSettings = computed<IViewSettings>(
+  () => viewSettingsQ.data.value ?? DEFAULT_VIEW_SETTINGS(),
+);
 
 const rowSelection = ref({});
 
-const isSelecting = ref(false);
+const isSelecting = ref<{ lastSelectedIndex: number | null } | null>(null);
 
 const table = useVueTable({
-  data: books,
+  get data() {
+    return books.value;
+  },
   get columns() {
     return cols.value;
   },
@@ -189,9 +184,9 @@ const tableContainerRef = ref<HTMLDivElement | null>(null);
 const rowVirtualizerOptions = computed(() => {
   return {
     count: rows.value.length,
-    estimateSize: () => 20, //estimate row height for accurate scrollbar dragging
+    estimateSize: () => 36, //estimate row height for accurate scrollbar dragging
     getScrollElement: () => injectScrollElementRef?.value as HTMLDivElement,
-    overscan: 5,
+    overscan: 10,
   };
 });
 
@@ -209,39 +204,6 @@ function measureElement(el?: Element) {
 
   return undefined;
 }
-
-const listForSorting = computed({
-  get() {
-    const visibility = viewSettings.value.columnVisibility ?? {};
-
-    const co = viewSettings.value.columnOrder ?? [];
-
-    const inResult = new Set(co);
-    const result = co.map((v) => ({
-      id: v,
-      label: getDisplayName(v) as string | undefined,
-      isVisible: visibility[v] ?? true,
-    }));
-
-    for (const item of visibleSchemaItems.value) {
-      if (!inResult.has(item.name)) {
-        result.push({
-          id: item.name,
-          label: getDisplayName(item.name),
-          isVisible: visibility[item.name] ?? true,
-        });
-      }
-    }
-
-    return result;
-  },
-  set(newVal) {
-    viewSettingsUpdater(
-      newVal.map((v) => v.id),
-      'columnOrder',
-    );
-  },
-});
 
 const ts = useTabsStore();
 
@@ -266,15 +228,110 @@ const dropdownRowLock = ref<number | null>(null);
 
 const dropdownOpened = ref(false);
 
+const sortedColumnsForToggles = computed(() => {
+  return table
+    .getAllColumns()
+    .filter((column) => column.getCanHide())
+    .sort((a, b) => {
+      const av = viewSettings.value.columnOrder.findIndex((v) => v === a.id) ?? -1;
+      const bv = viewSettings.value.columnOrder.findIndex((v) => v === b.id) ?? -1;
+      return av - bv;
+    });
+});
+
+const listForSorting2 = computed({
+  get() {
+    return sortedColumnsForToggles.value.map((v) => {
+      return { id: v.id, label: getDisplayName(v.id), isVisible: v.getIsVisible() };
+    });
+  },
+  set(newVal) {
+    viewSettingsUpdater(
+      newVal.map((v) => v.id),
+      'columnOrder',
+    );
+  },
+});
+
+const lastSelectedIndex = ref<number | null>(null);
+
+const currentPlatform = platform();
+const isMacOS = currentPlatform === 'macos';
+
 const openItemNewTab = (index: number) => {
   openFullEditor({ place: 'last' }, rows.value[index].original.path);
+};
+
+onKeyStroke('Escape', () => {
+  if (isSelecting.value) {
+    isSelecting.value = null;
+    table.setRowSelection({});
+  }
+});
+
+const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
+  e.preventDefault();
+
+  if (dropdownOpened.value) return;
+
+  const LMB = e.button === 0;
+
+  const targetRow = rows.value[index];
+  if (!targetRow) return;
+
+  const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
+
+  if (!isSelecting.value && !wantSelection) {
+    // Open in new tab
+    const openNewTabKeyborad = ((isMacOS && e.metaKey) || (!isMacOS && e.altKey)) && LMB;
+    const middleClick = e.button === 1;
+
+    if (openNewTabKeyborad || middleClick) {
+      openFullEditor({ place: 'last', focus: e.shiftKey }, rows.value[index].original.path);
+    } else if (LMB) {
+      openFullEditor({ place: 'current', focus: true }, targetRow.original.path);
+    }
+    return;
+  }
+
+  if (!LMB) return;
+
+  if (!isSelecting.value) {
+    isSelecting.value = { lastSelectedIndex: null };
+  }
+
+  if (e.shiftKey && lastSelectedIndex.value) {
+    const ls = clamp(lastSelectedIndex.value, 0, rows.value.length - 1);
+
+    if (ls > index) {
+      for (let i = ls - 1; i >= index; i--) {
+        rows.value[i].toggleSelected();
+      }
+    } else {
+      for (let i = ls + 1; i <= index; i++) {
+        rows.value[i].toggleSelected();
+      }
+    }
+  } else {
+    targetRow.toggleSelected();
+  }
+  lastSelectedIndex.value = index;
+};
+
+const deleteSelected = async () => {
+  await Promise.allSettled(
+    Object.keys(rowSelection.value).map((v) => {
+      remove(rows.value[Number(v)].original.path ?? '');
+    }),
+  );
+  table.setRowSelection({});
 };
 </script>
 
 <template>
   <div class="w-full px-2 relative">
     <div class="mx-auto">
-      <div :style="{ height: `${totalSize}px` }" class="transition-opacity duration-100">
+      <div :style="{ height: `${totalSize}px` }" class="">
         <!-- Even though we're still using sematic table tags, we must use CSS grid and flexbox for dynamic row heights -->
         <table class="w-full caption-bottom text-sm grid">
           <TableHead class="grid sticky top-0 z-10 bg-background h-fit p-0" :style="{}">
@@ -282,12 +339,15 @@ const openItemNewTab = (index: number) => {
               <Input v-model="searchQuery" />
 
               <Toggle
-                v-model="isSelecting"
+                :model-value="isSelecting !== null"
                 variant="outline"
                 @update:model-value="
                   (v) => {
                     if (!v) {
+                      isSelecting = null;
                       table.setRowSelection({});
+                    } else {
+                      isSelecting = { lastSelectedIndex: null };
                     }
                   }
                 "
@@ -300,10 +360,10 @@ const openItemNewTab = (index: number) => {
                   <DialogTitle>Sort Columns</DialogTitle>
                   <DialogDescription> </DialogDescription>
                   <SimpleDNDList
-                    :initial-items="listForSorting"
+                    :initial-items="listForSorting2"
                     @update="
                       (v) => {
-                        listForSorting = v;
+                        listForSorting2 = v;
                         sortingDialogOpened = false;
                       }
                     "
@@ -325,7 +385,7 @@ const openItemNewTab = (index: number) => {
                   <DropdownMenuLabel>Toggle Visibility</DropdownMenuLabel>
 
                   <DropdownMenuCheckboxItem
-                    v-for="column in table.getAllColumns().filter((column) => column.getCanHide())"
+                    v-for="column in sortedColumnsForToggles"
                     :key="column.id"
                     class="capitalize"
                     :model-value="column.getIsVisible()"
@@ -425,44 +485,21 @@ const openItemNewTab = (index: number) => {
                     transform: `translateY(${vRow.start}px)`, //this should always be a `style` as it changes on scroll
                     width: '100%',
                   }"
-                  @pointerdown="
-                    (e) => {
-                      if (dropdownOpened || e.button !== 0) return;
-
-                      if (isSelecting) {
-                        rows[vRow.index].toggleSelected();
-                      } else {
-                        openFullEditor(
-                          { place: 'current', focus: true },
-                          rows[vRow.index].original.path,
-                        );
-                      }
-                    }
-                  "
-                  @pointerdown.alt="
-                    () => {
-                      if (dropdownOpened || isSelecting) return;
-                      openItemNewTab(vRow.index);
-                    }
-                  "
-                  @pointerdown.middle.exact="
-                    () => {
-                      if (dropdownOpened || isSelecting) return;
-                      openItemNewTab(vRow.index);
-                    }
-                  "
+                  @pointerdown="(e) => handlePointerDownOnRow(vRow.index, e)"
                   @mouseover="hoveringRowIndex = vRow.index"
                 >
-                  <TableCell
+                  <td
+                    data-slot="table-cell"
                     v-for="cell in rows[vRow.index].getVisibleCells()"
                     :key="cell.id"
+                    class="h-9 px-2 whitespace-nowrap"
                     :style="{
                       display: 'flex',
                       width: `${calculatedColumSizes[cell.column.id]}px`,
                     }"
                   >
                     <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                  </TableCell>
+                  </td>
                 </tr>
               </tbody>
             </ContextMenuTrigger>
@@ -470,35 +507,47 @@ const openItemNewTab = (index: number) => {
               <ContextMenuItem @click="dropdownRowLock && openItemNewTab(dropdownRowLock)">
                 <CornerUpRightIcon :size="16" /> Open In New Tab
               </ContextMenuItem>
-              <ContextMenuItem
-                v-if="!isSelecting"
-                @click="
-                  () => {
-                    if (!dropdownRowLock) return;
-                    isSelecting = true;
-                    table.setRowSelection({ [rows[dropdownRowLock].id]: true });
-                  }
-                "
-              >
-                <SquareDashedMousePointer :size="16" /> Select
-              </ContextMenuItem>
-              <ContextMenuItem
-                v-else
-                @click="
-                  () => {
-                    isSelecting = false;
-                    table.setRowSelection({});
-                  }
-                "
-              >
-                Clear selection
-              </ContextMenuItem>
-              <ContextMenuItem
-                @click="dropdownRowLock && remove(rows[dropdownRowLock].original.path ?? '')"
-              >
-                <TrashIcon :size="16" />
-                Delete
-              </ContextMenuItem>
+
+              <template v-if="!isSelecting">
+                <ContextMenuItem
+                  @click="
+                    () => {
+                      if (!dropdownRowLock) return;
+                      isSelecting = { lastSelectedIndex: dropdownRowLock };
+                      rows[dropdownRowLock].toggleSelected();
+                    }
+                  "
+                >
+                  <SquareDashedMousePointer :size="16" /> Select
+                </ContextMenuItem>
+                <ContextMenuItem
+                  @click="dropdownRowLock && remove(rows[dropdownRowLock].original.path ?? '')"
+                >
+                  <TrashIcon :size="16" />
+                  Delete
+                </ContextMenuItem>
+              </template>
+
+              <template v-else>
+                <ContextMenuSeparator />
+                <ContextMenuLabel>
+                  {{ Object.values(rowSelection).filter((v) => v).length }} selected
+                </ContextMenuLabel>
+                <ContextMenuItem
+                  @click="
+                    () => {
+                      isSelecting = null;
+                      table.setRowSelection({});
+                    }
+                  "
+                >
+                  <XIcon :size="16" /> Clear selection
+                </ContextMenuItem>
+                <ContextMenuItem @click="deleteSelected">
+                  <TrashIcon :size="16" />
+                  Delete
+                </ContextMenuItem>
+              </template>
             </ContextMenuContent>
           </ContextMenu>
         </table>

@@ -13,6 +13,7 @@ const props = defineProps<{
     start?: string;
     end?: string;
   };
+  name?: string;
 }>();
 
 const modelValue = defineModel<string | null>({ default: null });
@@ -41,6 +42,7 @@ const isOpened = ref(false);
         "
       >
         <CalendarIcon class="mr-2 h-4 w-4" />
+
         {{ formattedDate }}
       </Button>
     </PopoverTrigger>

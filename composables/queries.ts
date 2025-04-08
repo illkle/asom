@@ -5,6 +5,7 @@ import {
   c_get_default_schemas,
   c_get_schemas,
   c_init,
+  c_resolve_schema_path,
 } from '~/api/tauriActions';
 import { filePathsToTree } from '~/components/FileTree/filePathsToTree';
 import type { ErrFR, Schema } from '~/types';
@@ -117,6 +118,9 @@ export const useDefaultSchemas = () => {
   });
 };
 
+/**
+ * Passing string here is not reactive, but it's okay because component it's used in is keyed on schemaPath
+ */
 export const useFoldersBySchema = (schemaPath: string) => {
   const root = useRootPath();
 
@@ -157,6 +161,15 @@ export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {
   );
 
   return { folders: foldersRaw, isPending, refetch, throttledRefetch, foldersAsTree };
+};
+
+export const useSchemaByPath = (path: Ref<string>) => {
+  const root = useRootPath();
+
+  return useQuery({
+    key: () => [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas', 'byPath', path.value],
+    query: async () => await c_resolve_schema_path(path.value),
+  });
 };
 
 export const useGlobalInvalidators = () => {

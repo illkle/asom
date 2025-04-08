@@ -4,7 +4,7 @@
       v-if="schemaItem.value.type === 'Text' && attr.type === 'String'"
       v-model="attr.value"
       :settings="schemaItem.value.settings"
-      :name="schemaItem.name"
+      :name="name"
     />
 
     <!-- prettier-ignore-attribute  v-model -->
@@ -14,18 +14,20 @@
       "
       v-model="(attr.value as number | null)"
       :settings="schemaItem.value.settings"
-      :name="schemaItem.name"
+      :name="name"
     />
 
     <TagsInput
       v-else-if="schemaItem.value.type === 'TextCollection' && attr.type === 'StringVec'"
       :settings="schemaItem.value.settings"
       v-model:model-value="attr.value"
+      :name="name"
     />
 
     <DateInput
       v-else-if="schemaItem.value.type === 'Date' && attr.type === 'String'"
       v-model:model-value="attr.value"
+      :name="name"
     />
 
     <DateCollection
@@ -64,4 +66,8 @@ const attr = defineModel<AttrValue>();
 const props = defineProps<{
   schemaItem: SchemaItem;
 }>();
+
+const name = computed(() => {
+  return props.schemaItem.value.settings.displayName ?? props.schemaItem.name;
+});
 </script>

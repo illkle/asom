@@ -14,11 +14,7 @@ import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 
 import path from 'path-browserify';
 import type { FolderNode } from '~/components/FileTree/filePathsToTree';
-import {
-  getDefaultViewSettings,
-  useTabsStore,
-  type OpenNewOneParams,
-} from '~/composables/stores/useTabsStore';
+import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
 
 const props = defineProps<{
   item: FlattenedItem<FolderNode>;
@@ -50,7 +46,7 @@ const makeNewOpenedAndSelect = (params: OpenNewOneParams) => {
       type: 'folder',
       thing: props.item.value.rawPath,
       scrollPosition: 0,
-      settings: getDefaultViewSettings(),
+      searchQuery: '',
       recursive: false,
     },
     params,

@@ -2,7 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     "dialog:default",
@@ -38,6 +40,7 @@
     "core:window:allow-start-dragging",
     "sql:default",
     "sql:allow-execute",
-    "store:default"
+    "store:default",
+    "os:default"
   ]
 }

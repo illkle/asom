@@ -5,12 +5,16 @@ import type { ExtractIPCEmitEventData, IPCEmitEvent } from '~/types';
 export const useListenToEvent = <E extends IPCEmitEvent['type']>(
   name: E,
   callback: (v: { t: E; c: ExtractIPCEmitEventData<E> }) => void | Promise<void>,
+  condition?: (v: { t: E; c: ExtractIPCEmitEventData<E> }) => boolean,
 ) => {
   const u = ref<UnlistenFn>();
 
   onMounted(async () => {
     u.value = await listen(name, (event) => {
       console.log('listenToEvent', event);
+      if (condition && !condition(event.payload as { t: E; c: ExtractIPCEmitEventData<E> })) {
+        return;
+      }
       callback(event.payload as { t: E; c: ExtractIPCEmitEventData<E> });
     });
   });

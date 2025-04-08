@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getDefaultViewSettings, useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStore } from '~/composables/stores/useTabsStore';
 
 const ts = useTabsStore();
 
@@ -29,7 +29,7 @@ const openAllBooks = () => {
       type: 'folder',
       thing: rootPath.data.value,
       scrollPosition: 0,
-      settings: getDefaultViewSettings(),
+      searchQuery: '',
       recursive: true,
     },
     { place: 'current', focus: true },
