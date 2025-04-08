@@ -3,6 +3,14 @@ import { defineStore } from 'pinia';
 import { clamp as _clamp, cloneDeep } from 'lodash-es';
 import { z } from 'zod';
 
+type TabHistoryState = {
+  id: string;
+  type: string;
+  thing: string;
+};
+
+
+
 /**
  * TYPES
  */

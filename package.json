@@ -8,11 +8,11 @@
     "dev:preview": "nuxt dev --envName preview",
     "generate": "nuxt generate",
     "tauri": "tauri",
-    "test": "npm run generate && npx playwright test --workers=1",
     "postinstall": "nuxt prepare",
     "typecheck": "tsc --noEmit",
     "format": "npx prettier --write \"**/*.{js,mjs,cjs,ts,mts,cts,vue,json}\"",
-    "generate:types": "cd src-tauri && cargo test export_bindings && cd bindings && npx prettier --write \"*.ts\""
+    "generate:types": "cd src-tauri && cargo test export_bindings && cd bindings && npx prettier --write \"*.ts\"",
+    "test": "vitest"
   },
   "devDependencies": {
     "@nuxtjs/color-mode": "^3.5.2",
