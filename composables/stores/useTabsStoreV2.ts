@@ -153,12 +153,48 @@ export const useTabsStore = defineStore('tabs', {
     _clearForwardHistoryItem(target: ITabEntry) {
       if (target.historyPointer !== target.history.length - 1) {
         /** If we are not at the end of history, we need to remove all history items after the current one */
-        target.history.splice(target.historyPointer, Infinity);
+        target.history.splice(target.historyPointer + 1, Infinity);
       }
     },
     _clearFocusHistory() {
       if (this.focusHistoryPointer !== this.focusHistory.length - 1) {
-        this.focusHistory.splice(this.focusHistoryPointer, Infinity);
+        this.focusHistory.splice(this.focusHistoryPointer + 1, Infinity);
+      }
+    },
+
+    _evictOldestIfNeeded() {
+      // This is simples possible eviction logic, will do for now
+      if (this.openedTab && this.openedTab?.history.length > 100) {
+        this.openedTab.history.splice(0, 25);
+        this.openedTab.historyPointer -= 25;
+
+        this.focusHistory = [this.openedTab.id];
+        this.focusHistoryPointer = 0;
+      }
+
+      if (this.focusHistory.length > 50) {
+        this.focusHistory.splice(0, 25);
+        this.focusHistoryPointer -= 25;
+      }
+    },
+
+    moveBack() {
+      if (!this.canGoBack || !this.openedTab) return;
+
+      if (this.openedTab.historyPointer > 0) {
+        this.openedTab.historyPointer--;
+      } else if (this.focusHistoryPointer > 0) {
+        this.focusHistoryPointer--;
+      }
+    },
+
+    moveForward() {
+      if (!this.canGoForward || !this.openedTab) return;
+
+      if (this.openedTab.historyPointer < this.openedTab.history.length - 1) {
+        this.openedTab.historyPointer++;
+      } else if (this.focusHistoryPointer < this.focusHistory.length - 1) {
+        this.focusHistoryPointer++;
       }
     },
 
@@ -173,8 +209,10 @@ export const useTabsStore = defineStore('tabs', {
       if (this.openedTab?.id === target.id) {
         this._clearFocusHistory();
       }
+      this._evictOldestIfNeeded();
 
       target.history.push(data);
+      target.historyPointer = target.history.length - 1;
     },
 
     focusTab(id: string) {
@@ -182,6 +220,7 @@ export const useTabsStore = defineStore('tabs', {
         this._clearForwardHistoryItem(this.openedTab);
       }
       this._clearFocusHistory();
+      this._evictOldestIfNeeded();
 
       this.focusHistory.push(id);
       this.focusHistoryPointer++;
