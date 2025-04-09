@@ -4,7 +4,7 @@ import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file, returnErrorHandler } from '~/api/tauriActions';
 import { useCodeMirror } from '~/components/Editor/CodeMirror/useCodeMirror';
-import type { IOpenedFile } from '~/composables/stores/useTabsStore';
+import type { IOpenedFile } from '~/composables/stores/useTabsStoreV2';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import type { RecordFromDb, Schema } from '~/types';
 
@@ -34,8 +34,8 @@ export const useFileEditor = (
   const { getEditorState, changes, createOrUpdateEditor } = useCodeMirror(editorTemplateRef);
 
   const loadFileFromDisk = async () => {
-    if (opened.type !== 'file') return;
-    const res = await c_read_file_by_path(opened.thing).catch(returnErrorHandler);
+    if (opened._type !== 'file') return;
+    const res = await c_read_file_by_path(opened._path).catch(returnErrorHandler);
 
     if ('isError' in res) {
       useRustErrorNotification(res, {
@@ -57,7 +57,7 @@ export const useFileEditor = (
   };
 
   watchEffect(async () => {
-    if (opened.type === 'file') {
+    if (opened._type === 'file') {
       await loadFileFromDisk();
     } else {
       file.value = null;

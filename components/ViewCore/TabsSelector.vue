@@ -36,8 +36,8 @@
       :key="item.id"
       :class="[
         'absolute top-0 left-0 select-none',
-        item.id !== store.openedTabsActiveId && 'cursor-pointer',
-        item.id === store.openedTabsActiveId && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
+        item.id !== store.openedTabActiveId && 'cursor-pointer',
+        item.id === store.openedTabActiveId && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
       ]"
       :style="{
         transitionProperty: isInitialMount ? 'none' : 'transform',
@@ -51,10 +51,10 @@
     >
       <TabVisual
         :width-awailable="TAB_WIDTH_PX"
-        :is-active="store.openedTabsActiveId === item.id"
+        :is-active="store.openedTabActiveId === item.id"
         :item="item"
         :is-new-and-animating="animatingNewTabs.has(item.id)"
-        @close="store.closeOpened(index)"
+        @close="store.closeTab(item.id)"
       />
     </div>
     <div
@@ -76,16 +76,16 @@ import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabVisual.vue';
 
 import { useElementSize, useMouse } from '@vueuse/core';
-import { useTabsStore, type IOpened } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2, type ITabEntry } from '~/composables/stores/useTabsStoreV2';
 
-const store = useTabsStore();
+const store = useTabsStoreV2();
 
 //
 // Style helpers
 //
 const getZIndex = (id: string) => {
   if (draggingTab.value === id) return 3;
-  if (store.openedTabsActiveId === id) return 2;
+  if (store.openedTabActiveId === id) return 2;
   return 1;
 };
 
@@ -130,7 +130,7 @@ const virtualizedOrder = computed(() => {
       order.splice(newIndex.value, 0, order.splice(draggingIndex, 1)[0]);
     } else {
       // This is when we drag from somewhere to create new tab
-      order.splice(newIndex.value, 0, {} as IOpened);
+      order.splice(newIndex.value, 0, {} as ITabEntry);
     }
   }
 
@@ -138,7 +138,7 @@ const virtualizedOrder = computed(() => {
 });
 
 const mouseDownHandler = (id: string) => {
-  store.setOpenedId(id);
+  store.focusTab(id);
   clearTimeout(commitTimeout.value);
 
   baseXTab.value = getXPosition(id);
@@ -151,7 +151,7 @@ const mouseDownHandler = (id: string) => {
 };
 
 const commitVirtualized = () => {
-  store.updateOpened(virtualizedOrder.value);
+  store.openedTabs = virtualizedOrder.value;
   newIndex.value = null;
   draggingTab.value = null;
 };
@@ -221,22 +221,24 @@ const onDrop = (e: DragEvent) => {
   if (type !== 'file' && type !== 'folder') return;
   if (!draggedPath) return;
 
-  store.openNewOne(
+  /*
+  store.openNewTab(
     {
-      id: store.generateRandomId(),
-      type,
-      thing: draggedPath,
+      _type: type,
+      _path: draggedPath,
       scrollPosition: 0,
-      searchQuery: '',
+      details: {
+        searchQuery: '',
+      },
     },
     typeof newIndex.value === 'number'
       ? {
-          place: 'insert',
-          index: newIndex.value,
+          place: newIndex.value,
           focus: true,
         }
       : { place: 'last', focus: true },
   );
+  */
 
   newIndex.value = null;
   draggingTab.value = null;

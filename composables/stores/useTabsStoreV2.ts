@@ -1,8 +1,10 @@
+import { cloneDeep } from 'lodash-es';
 import { defineStore } from 'pinia';
 
 import ShortUniqueId from 'short-unique-id';
 import { z } from 'zod';
-import type { RenameProps } from '~/types/rename';
+
+import { ConfigStoredInRootFolder } from '~/utils/configStoredInRootFolder';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -67,8 +69,9 @@ export const zTabEntry = z.object({
 });
 
 export const ZOpenedTabs = z.object({
-  tabs: z.array(zTabEntry),
-  activeId: z.string().default(''),
+  openedTabs: z.array(zTabEntry),
+  focusHistory: z.array(z.string()),
+  focusHistoryPointer: z.number(),
 });
 
 export type IOpenedPath = z.infer<typeof zOpenedPath>;
@@ -80,32 +83,23 @@ export type IOpenedTabs = z.infer<typeof ZOpenedTabs>;
 
 type ICoreBase = z.infer<typeof zCore>;
 
-type ICore = RenameProps<
-  ICoreBase,
-  {
-    type: '_type';
-    path: '_path';
-  }
->;
-
 /**
  * File Store
  */
 
-//const openedTabsFile = new ConfigStoredInRootFolder('openedTabs.json', ZOpenedTabs);
+const openedTabsFile = new ConfigStoredInRootFolder('opened_tabs.json', ZOpenedTabs);
 
 /**
  * Pinia Store
  */
 
-export type TabsStoreState = {
-  openedTabs: IOpenedTabs['tabs'];
-  focusHistory: IOpenedTabs['activeId'][];
-  focusHistoryPointer: number;
+export type OpenNewOneParams = {
+  place: 'after' | 'last' | number;
+  focus?: boolean;
 };
 
-export const useTabsStore = defineStore('tabs', {
-  state: (): TabsStoreState => {
+export const useTabsStoreV2 = defineStore('tabs', {
+  state: (): IOpenedTabs => {
     return {
       openedTabs: [],
       focusHistory: [],
@@ -131,6 +125,11 @@ export const useTabsStore = defineStore('tabs', {
       return this.openedTabs.find((v) => v.id === this.openedTabActiveId);
     },
 
+    openedItem(): IOpened | undefined {
+      if (!this.openedTab) return;
+      return this.openedTab.history[this.openedTab.historyPointer];
+    },
+
     canGoBack() {
       if (!this.openedTab) return false;
 
@@ -150,6 +149,25 @@ export const useTabsStore = defineStore('tabs', {
     },
   },
   actions: {
+    /** Preservation on disk */
+
+    async _saveOpened() {
+      const clone: IOpenedTabs = cloneDeep({
+        openedTabs: this.openedTabs,
+        focusHistory: this.focusHistory,
+        focusHistoryPointer: this.focusHistoryPointer,
+      });
+
+      openedTabsFile.set(clone);
+    },
+    async _fetchOpened() {
+      const res = await openedTabsFile.get();
+      this.openedTabs = res.openedTabs;
+      this.focusHistory = res.focusHistory;
+      this.focusHistoryPointer = res.focusHistoryPointer;
+    },
+
+    /** Preservation on disk */
     _clearForwardHistoryItem(target: ITabEntry) {
       if (target.historyPointer !== target.history.length - 1) {
         /** If we are not at the end of history, we need to remove all history items after the current one */
@@ -177,6 +195,8 @@ export const useTabsStore = defineStore('tabs', {
         this.focusHistoryPointer -= 25;
       }
     },
+
+    /** Core api */
 
     moveBack() {
       if (!this.canGoBack || !this.openedTab) return;
@@ -228,10 +248,7 @@ export const useTabsStore = defineStore('tabs', {
 
     openNewTab(
       data: IOpened,
-      params: {
-        place: 'after' | 'last' | number;
-        focus?: boolean;
-      } = {
+      params: OpenNewOneParams = {
         place: 'last',
         focus: true,
       },
@@ -264,12 +281,159 @@ export const useTabsStore = defineStore('tabs', {
 
       this.openedTabs.splice(index, 1);
       const lenBefore = this.focusHistory.length;
-      this.focusHistory = this.focusHistory.filter((id) => id !== id);
+      this.focusHistory = this.focusHistory.filter((itemId) => itemId !== id);
       const lenAfter = this.focusHistory.length;
 
+
       if (lenBefore !== lenAfter) {
-        this.focusHistoryPointer += lenBefore - lenAfter;
+        this.focusHistoryPointer -= lenBefore - lenAfter;
+      }
+    },
+
+    setOpenedIndexRelative(relative: number) {
+      if (!this.openedTabs.length || typeof this.openedTabActiveIndex !== 'number') return;
+
+      const max = this.openedTabs.length;
+      const indexToSet = (this.openedTabActiveIndex + relative + max) % max;
+
+      this.focusTab(this.openedTabs[indexToSet].id);
+    },
+
+    /**
+     * Helpers
+     */
+
+    openNewThingFast({ _type, _path }: ICoreBase, mode: 'here' | 'last' | "lastUnfocused" = 'here') {
+      let data: IOpened;
+
+      if (_type === 'folder') {
+        data = {
+          _type: 'folder',
+          _path: _path,
+          scrollPosition: 0,
+          details: {
+            searchQuery: '',
+          },
+        };
+      } else if (_type === 'file') {
+        data = {
+          _type: 'file',
+          _path: _path,
+          scrollPosition: 0,
+        };
+      } else if (_type === 'innerPage') {
+        data = {
+          _type: 'innerPage',
+          _path: _path,
+          scrollPosition: 0,
+        };
+      } else {
+        throw new Error('Unknown type');
+      }
+
+      
+      if (mode === 'here') {
+        if(this.openedTab){
+          this.updateTabContent(data);
+        }else{
+          this.openNewTab(data, { place: 'last', focus: true });
+        }
+      } else if (mode === 'last') {
+        this.openNewTab(data, { place: 'last', focus: true });
+      } else if (mode === 'lastUnfocused') {
+        this.openNewTab(data, { place: 'last', focus: false });
+      } else {
+        throw new Error('Unknown mode');
+      }
+    },
+
+    /**
+     * Internal stuff for event handlers
+     */
+
+    _handlePathRename(oldPath: string, newPath: string) {
+      for (const tab of this.openedTabs) {
+        for (const item of tab.history) {
+          if (item._type === 'file' || item._type === 'folder') {
+            if (item._path.startsWith(oldPath)) {
+              item._path = item._path.replace(oldPath, newPath);
+            }
+          }
+        }
+      }
+    },
+
+    _handlePathDeletion(path: string, isFolder: boolean) {
+      const tabsToDelete: number[] = [];
+
+      for (const [index, tab] of this.openedTabs.entries()) {
+        const itemsToDelete: number[] = [];
+
+        for (const [index, item] of tab.history.entries()) {
+          if (isFolder) {
+            if ((item._type === 'folder' || item._type === 'file') && item._path.startsWith(path)) {
+              itemsToDelete.push(index);
+            }
+          } else {
+            if (item._type === 'file' && item._path === path) {
+              itemsToDelete.push(index);
+            }
+          }
+        }
+
+        if (itemsToDelete.length === tab.history.length) {
+          tabsToDelete.push(index);
+        } else if (itemsToDelete.length > 0) {
+          for (let i = itemsToDelete.length - 1; i >= 0; i--) {
+            tab.history.splice(itemsToDelete[i], 1);
+
+            if (tab.historyPointer >= i) {
+              tab.historyPointer = Math.max(0, tab.historyPointer - 1);
+            }
+          }
+        }
+      }
+
+      for (let i = tabsToDelete.length - 1; i >= 0; i--) {
+        this.openedTabs.splice(tabsToDelete[i], 1);
+        if (this.focusHistoryPointer >= i) {
+          this.focusHistoryPointer = Math.max(0, this.focusHistoryPointer - 1);
+        }
       }
     },
   },
 });
+
+/**
+ * Hooks
+ */
+
+const useFetchTabsOnRootPathChange = () => {
+  const store = useTabsStoreV2();
+  const rootPath = useRootPath();
+
+  watch(
+    rootPath.data,
+    (v) => {
+      if (!v) return;
+      store._fetchOpened();
+    },
+    { immediate: true },
+  );
+};
+
+const useCloseInvalidTabsOnDeletions = () => {
+  const store = useTabsStoreV2();
+  useListenToEvent('FileRemove', ({ c: path }) => {
+    store._handlePathDeletion(path, false);
+  });
+
+  useListenToEvent('FolderRemove', ({ c: event }) => {
+    store._handlePathDeletion(event.path, true);
+  });
+};
+
+export const useGlobalTabHooks = () => {
+  useFetchTabsOnRootPathChange();
+  useCloseInvalidTabsOnDeletions();
+};

@@ -14,7 +14,7 @@ import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 
 import path from 'path-browserify';
 import type { FolderNode } from '~/components/FileTree/filePathsToTree';
-import { useTabsStore, type OpenNewOneParams } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2, type OpenNewOneParams } from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps<{
   item: FlattenedItem<FolderNode>;
@@ -37,21 +37,8 @@ watchEffect(() => {
   }
 });
 
-const ts = useTabsStore();
+const ts = useTabsStoreV2();
 
-const makeNewOpenedAndSelect = (params: OpenNewOneParams) => {
-  ts.openNewOne(
-    {
-      id: ts.generateRandomId(),
-      type: 'folder',
-      thing: props.item.value.rawPath,
-      scrollPosition: 0,
-      searchQuery: '',
-      recursive: false,
-    },
-    params,
-  );
-};
 
 const hasChildren = computed(() => props.item.value.children.length > 0);
 
@@ -91,7 +78,7 @@ const renameFolder = async () => {
     const newPath = await path.join(onlyDir, newName);
     await rename(oldPath, newPath);
 
-    ts.handleFolderRename(oldPath, newPath);
+    ts._handlePathRename(oldPath, newPath);
   }
 
   isRenaming.value = false;
@@ -149,9 +136,9 @@ useAppearingInputFocuser('inputRefCreate');
               size="sm"
               class="flex-1 w-full text-left justify-start"
               :class="hasChildren && 'rounded-l-none pl-1.5'"
-              @click="makeNewOpenedAndSelect({ place: 'current', focus: true })"
-              @click.alt.exact="makeNewOpenedAndSelect({ place: 'last' })"
-              @click.middle.exact="makeNewOpenedAndSelect({ place: 'last' })"
+              @click="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'here')"
+              @click.alt.exact="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')"
+              @click.middle.exact="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')"
             >
               <FolderIcon v-if="!hasChildren" :size="12" />
 

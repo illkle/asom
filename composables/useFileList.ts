@@ -1,6 +1,6 @@
 import path from 'path-browserify';
 import { c_get_files_path } from '~/api/tauriActions';
-import type { IOpenedPath } from '~/composables/stores/useTabsStore';
+import type { IOpenedPath } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
@@ -8,8 +8,8 @@ import type { RecordFromDb } from '~/types';
 
 const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string) => [
   'files',
-  opened.type,
-  opened.thing,
+  opened._type,
+  opened._path,
   searchQuery,
 ];
 
@@ -24,12 +24,12 @@ export const useFlesListV2 = ({
    * Schema is included in files query below, however since files query depends on searchQuery
    * it's better to keep stable schema separately to avoid visual flickering on search change.
    */
-  const schemaPath = computed(() => opened.thing);
+  const schemaPath = computed(() => opened._path);
   const schema = useSchemaByPath(schemaPath);
 
   const files = useQuery({
     key: () => FILES_LIST_KEY(opened, searchQuery.value),
-    query: () => c_get_files_path(opened.thing, searchQuery.value),
+    query: () => c_get_files_path(opened._path, searchQuery.value),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -113,29 +113,29 @@ export const useFlesListV2 = ({
   useListenToEvent(
     'FileAdd',
     (v) => onEvent({ event: 'add', book: v.c }),
-    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+    (v) => (v.c.path ? isChangeRelevant(opened._path, v.c.path) : false),
   );
   useListenToEvent(
     'FileUpdate',
     (v) => onEvent({ event: 'update', book: v.c }),
-    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+    (v) => (v.c.path ? isChangeRelevant(opened._path, v.c.path) : false),
   );
   useListenToEvent(
     'FileRemove',
     (v) => onEvent({ event: 'remove', path: v.c }),
-    (v) => isChangeRelevant(opened.thing, v.c),
+    (v) => isChangeRelevant(opened._path, v.c),
   );
 
   // For folder events we just reload everything because it can modify a lot of sub-files\sub-dirs
   useListenToEvent(
     'FolderAdd',
     (v) => processQueue(true),
-    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+    (v) => (v.c.path ? isChangeRelevant(opened._path, v.c.path) : false),
   );
   useListenToEvent(
     'FolderRemove',
     (v) => processQueue(true),
-    (v) => (v.c.path ? isChangeRelevant(opened.thing, v.c.path) : false),
+    (v) => (v.c.path ? isChangeRelevant(opened._path, v.c.path) : false),
   );
 
   return { files, schema };

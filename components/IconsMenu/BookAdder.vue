@@ -23,7 +23,7 @@
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 const props = defineProps({
   pathToSave: {
     type: String,
@@ -31,7 +31,7 @@ const props = defineProps({
   },
 });
 
-const ts = useTabsStore();
+const ts = useTabsStoreV2();
 
 const newFileOpened = ref(false);
 const newFileName = ref('');
@@ -60,15 +60,7 @@ const addBook = async () => {
 
   await writeTextFile(finalPath, '');
 
-  ts.openNewOne(
-    {
-      id: ts.generateRandomId(),
-      type: 'file',
-      thing: finalPath,
-      scrollPosition: 0,
-    },
-    { place: 'last', focus: true },
-  );
+  ts.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
   newFileOpened.value = false;
 };
 </script>

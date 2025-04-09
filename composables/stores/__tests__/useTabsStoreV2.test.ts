@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useTabsStore, zOpenedFile } from '../useTabsStoreV2';
+import { useTabsStoreV2, zOpenedFile } from '../useTabsStoreV2';
 
 const mockFile = (id: string) => {
   return zOpenedFile.parse({
@@ -10,7 +10,7 @@ const mockFile = (id: string) => {
   });
 };
 
-const logDegug = (store: ReturnType<typeof useTabsStore>, info?: string) => {
+const logDegug = (store: ReturnType<typeof useTabsStoreV2>, info?: string) => {
   console.log(info ?? '', {
     openedTabActiveId: store.openedTabActiveId,
     openedTabActiveIndex: store.openedTabActiveIndex,
@@ -29,7 +29,7 @@ describe('useTabsStore', () => {
   });
 
   it('should start with empty tabs list', () => {
-    const store = useTabsStore();
+    const store = useTabsStoreV2();
 
     expect(store.openedTabs).toEqual([]);
     expect(store.openedTabActiveId).toBe(undefined);
@@ -38,7 +38,7 @@ describe('useTabsStore', () => {
   });
 
   it('should add a new tab and update state correctly', () => {
-    const store = useTabsStore();
+    const store = useTabsStoreV2();
 
     // Create a sample file tab
     const fileTab = mockFile('1');
@@ -75,7 +75,7 @@ describe('useTabsStore', () => {
   });
 
   it('should handle adding new tabs and navigating back correctly', () => {
-    const store = useTabsStore();
+    const store = useTabsStoreV2();
 
     // Create 4 tabs with different paths
     const tab1 = mockFile('1');
@@ -141,7 +141,7 @@ describe('useTabsStore', () => {
   });
 
   it('should handle tab content updates and navigation history correctly', () => {
-    const store = useTabsStore();
+    const store = useTabsStoreV2();
 
     // Create 4 tabs with different paths
     const tab1 = mockFile('1');
@@ -209,7 +209,7 @@ describe('useTabsStore', () => {
   });
 
   it('should handle multiple tab state updates and history navigation correctly', () => {
-    const store = useTabsStore();
+    const store = useTabsStoreV2();
 
     // Create one tab
     const initialTab = mockFile('1');
@@ -272,5 +272,115 @@ describe('useTabsStore', () => {
 
     expect(store.openedTabs[0].historyPointer).toBe(0);
     expect(store.openedTabs[0].history[0]).toEqual(initialTab);
+  });
+
+  it('should evict oldest history entries when thresholds are exceeded', () => {
+    const store = useTabsStoreV2();
+
+    // Create one tab with initial entry
+    const initialTab = mockFile('0');
+    store.openNewTab(initialTab);
+
+    // Create 100 more entries for the tab (exceeding the 100 threshold)
+    for (let i = 1; i <= 100; i++) {
+      const newState = mockFile(`${i}`);
+      store.updateTabContent(newState);
+    }
+
+    // Lengh is 101, next one will evict 25
+    expect(store.openedTabs[0].history.length).toBe(101);
+    expect(store.openedTabs[0].historyPointer).toBe(100);
+
+    // Update one more time, should evict 25
+    const newState = mockFile(`101`);
+    store.updateTabContent(newState);
+    expect(store.openedTabs[0].history.length).toBe(77); // 101 + 1 - 25 evicted entries
+    expect(store.openedTabs[0].historyPointer).toBe(76);
+
+    // Check that the focus history was reset to only contain the current tab
+    expect(store.focusHistory).toEqual([store.openedTabs[0].id]);
+    expect(store.focusHistoryPointer).toBe(0);
+
+    // Create 50  more focus history entries (next one will evict 25)
+    for (let i = 0; i < 50; i++) {
+      const newTab = mockFile(`focus-${i}`);
+      store.openNewTab(newTab);
+    }
+
+    // Lengh is 51, next one will evict 25
+    expect(store.focusHistory.length).toBe(51);
+    expect(store.focusHistoryPointer).toBe(50);
+
+    // Update one more time, should evict 25
+    const newTab = mockFile(`focus-52`);
+    store.openNewTab(newTab);
+    expect(store.focusHistory.length).toBe(27); // 51 + 1 - 25 evicted entries
+    expect(store.focusHistoryPointer).toBe(26); // Adjusted pointer after eviction
+  });
+
+  it('should adjust focusHistoryPointer correctly when closing tabs', () => {
+    const store = useTabsStoreV2();
+
+    // Create 4 tabs with different paths
+    const tab1 = mockFile('1');
+    const tab2 = mockFile('2');
+    const tab3 = mockFile('3');
+    const tab4 = mockFile('4');
+
+    // Add all tabs
+    store.openNewTab(tab1);
+    store.openNewTab(tab2);
+    store.openNewTab(tab3);
+    store.openNewTab(tab4);
+
+    // Check that we have 4 tabs
+    expect(store.openedTabs.length).toBe(4);
+
+    // Check that focus is on the last (4th) tab
+    expect(store.openedTabActiveId).toBe(store.openedTabs[3].id);
+    expect(store.focusHistoryPointer).toBe(3);
+
+    // Focus tab 3, then tab 2, then tab 1
+    store.focusTab(store.openedTabs[2].id); // Tab 3
+    store.focusTab(store.openedTabs[1].id); // Tab 2
+    store.focusTab(store.openedTabs[0].id); // Tab 1
+
+    // Check that tab 1 is focused
+    expect(store.openedTabActiveId).toBe(store.openedTabs[0].id);
+    expect(store.focusHistoryPointer).toBe(6); // 4 initial + 3 focus changes
+
+    // Close tab 2 (middle tab)
+    const tab2Id = store.openedTabs[1].id;
+    store.closeTab(tab2Id);
+
+    // Check that focusHistoryPointer was adjusted correctly
+    // We removed one tab whic was focues twice, therefore 6-2=4
+    expect(store.focusHistoryPointer).toBe(4);
+
+    // Close tab 1 (first tab)
+    const tab1Id = store.openedTabs[0].id;
+    store.closeTab(tab1Id);
+
+    // Check that focusHistoryPointer was adjusted correctly
+    // We removed one more entry from focusHistory, so pointer should decrease by 2 again
+    expect(store.focusHistoryPointer).toBe(2);
+
+    // Close tab 4 (last tab)
+    const tab4Id = store.openedTabs[1].id;
+    store.closeTab(tab4Id);
+
+    // Check that tab 4 was removed
+    expect(store.openedTabs.length).toBe(1);
+    expect(store.openedTabs.find((tab) => tab.id === tab4Id)).toBeUndefined();
+
+    // Check that focusHistoryPointer was adjusted correctly
+    // We removed one more entry from focusHistory, so pointer should decrease by 1
+    expect(store.focusHistoryPointer).toBe(1);
+
+    // Close the last tab (tab 3)
+    const tab3Id = store.openedTabs[0].id;
+    store.closeTab(tab3Id);
+    expect(store.openedTabs.length).toBe(0);
+    expect(store.focusHistoryPointer).toBe(-1);
   });
 });

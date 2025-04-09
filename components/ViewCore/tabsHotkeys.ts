@@ -1,11 +1,9 @@
 import path from 'path-browserify';
 import { onMounted, onUnmounted } from 'vue';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 export const setupTabsHotkeys = () => {
-  const store = useTabsStore();
-
-  const rootPath = useRootPath();
+  const store = useTabsStoreV2();
 
   const actionKey = navigator.platform.indexOf('Mac') > -1 ? 'metaKey' : 'ctrlKey';
 
@@ -15,29 +13,22 @@ export const setupTabsHotkeys = () => {
     if (e.code === 'KeyT' && e[actionKey]) {
       e.preventDefault();
 
-      store.openNewOne(
+      store.openNewThingFast(
         {
-          id: store.generateRandomId(),
-          type: 'folder',
-          thing: store.openedItem
-            ? store.openedItem.type === 'file'
-              ? path.dirname(store.openedItem.thing)
-              : store.openedItem.thing
+          _type: 'folder',
+          _path: store.openedItem
+            ? store.openedItem._type === 'file'
+              ? path.dirname(store.openedItem._path)
+              : store.openedItem._path
             : Object.keys(usableSchemas.data.value ?? {})[0],
-          searchQuery: '',
-          scrollPosition: 0,
-          recursive: true,
         },
-        {
-          place: 'last',
-          focus: true,
-        },
+        'last',
       );
     }
 
     if (e.code === 'KeyW' && e[actionKey]) {
       e.preventDefault();
-      store.closeOpened();
+      store.closeTab(store.openedTabActiveId);
     }
 
     if (e.code === 'BracketLeft' && e[actionKey] && e.shiftKey) {
@@ -49,18 +40,25 @@ export const setupTabsHotkeys = () => {
       e.preventDefault();
       store.setOpenedIndexRelative(1);
     }
+  };
 
-    if (e.code.startsWith('Digit') && e[actionKey]) {
-      if (e.code === 'Digit9') {
-        store.setOpenedIndex(store.openedTabs.length - 1);
-      } else {
-        store.setOpenedIndex(Number(e.code.replace('Digit', '')) - 1);
-      }
+  const mouseHandler = (e: MouseEvent) => {
+    console.log(e.button);
+
+    if (e.button === 3) {
+      e.preventDefault();
+      store.moveBack();
+    }
+
+    if (e.button === 4) {
+      e.preventDefault();
+      store.moveForward();
     }
   };
 
   onMounted(() => {
     window.addEventListener('keydown', hotkeyHandler);
+    window.addEventListener('mousedown', mouseHandler);
   });
 
   onUnmounted(() => {

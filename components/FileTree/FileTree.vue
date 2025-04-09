@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import { TreeRoot } from 'reka-ui';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import FolderNodeSidebar from './FolderNodeSidebar.vue';
 import type { FolderNode } from './filePathsToTree';
 
@@ -28,10 +28,10 @@ const props = defineProps<{
 
 const selectedFolder = ref<FolderNode | undefined>(undefined);
 
-const s = useTabsStore();
+const s = useTabsStoreV2();
 
 const openedItem = computed(() =>
-  s.openedItem && s.openedItem.type === 'folder' ? { rawPath: s.openedItem.thing } : undefined,
+  s.openedItem && s.openedItem._type === 'folder' ? { rawPath: s.openedItem._path } : undefined,
 );
 
 const handler = useFolderInvalidator();

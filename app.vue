@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { useGlobalTabHooks } from './composables/stores/useTabsStore';
+import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
 
 const colorMode = useColorMode();
 

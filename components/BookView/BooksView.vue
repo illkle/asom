@@ -27,11 +27,7 @@ import {
 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { getSortFunction, type TableRowType } from '~/components/BookView/helpers';
-import {
-  useTabsStore,
-  type IOpenedPath,
-  type OpenNewOneParams,
-} from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2, type IOpenedPath } from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, SchemaItem } from '~/types';
 import BookItemDisplay from './BookItemDisplay.vue';
 import SimpleDNDList from './SimpleDNDList.vue';
@@ -41,17 +37,13 @@ const props = defineProps({
     type: Object as PropType<IOpenedPath>,
     required: true,
   },
-  index: {
-    type: Number,
-    required: true,
-  },
 });
 
 const searchQuery = ref('');
 watch(
-  () => props.opened.searchQuery,
+  () => props.opened.details.searchQuery,
   debounce(() => {
-    searchQuery.value = props.opened.searchQuery;
+    searchQuery.value = props.opened.details.searchQuery;
   }, 200),
 );
 
@@ -205,20 +197,7 @@ function measureElement(el?: Element) {
   return undefined;
 }
 
-const ts = useTabsStore();
-
-const openFullEditor = (params: OpenNewOneParams, path: string | null) => {
-  if (!path) return;
-  ts.openNewOne(
-    {
-      id: ts.generateRandomId(),
-      type: 'file',
-      thing: path,
-      scrollPosition: 0,
-    },
-    params,
-  );
-};
+const ts = useTabsStoreV2();
 
 const sortingDialogOpened = ref(false);
 
@@ -258,10 +237,6 @@ const lastSelectedIndex = ref<number | null>(null);
 const currentPlatform = platform();
 const isMacOS = currentPlatform === 'macos';
 
-const openItemNewTab = (index: number) => {
-  openFullEditor({ place: 'last' }, rows.value[index].original.path);
-};
-
 onKeyStroke('Escape', () => {
   if (isSelecting.value) {
     isSelecting.value = null;
@@ -274,6 +249,9 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 
   if (dropdownOpened.value) return;
 
+  const path = rows.value[index].original.path;
+  if (!path) return;
+
   const LMB = e.button === 0;
 
   const targetRow = rows.value[index];
@@ -283,13 +261,13 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 
   if (!isSelecting.value && !wantSelection) {
     // Open in new tab
-    const openNewTabKeyborad = ((isMacOS && e.metaKey) || (!isMacOS && e.altKey)) && LMB;
+    const openNewTabKeyboard = ((isMacOS && e.metaKey) || (!isMacOS && e.altKey)) && LMB;
     const middleClick = e.button === 1;
 
-    if (openNewTabKeyborad || middleClick) {
-      openFullEditor({ place: 'last', focus: e.shiftKey }, rows.value[index].original.path);
+    if (openNewTabKeyboard || middleClick) {
+      ts.openNewThingFast({ _type: 'file', _path: path }, e.shiftKey ? 'last' : 'lastUnfocused');
     } else if (LMB) {
-      openFullEditor({ place: 'current', focus: true }, targetRow.original.path);
+      ts.openNewThingFast({ _type: 'file', _path: path }, 'here');
     }
     return;
   }
@@ -504,7 +482,15 @@ const deleteSelected = async () => {
               </tbody>
             </ContextMenuTrigger>
             <ContextMenuContent v-if="dropdownRowLock !== null">
-              <ContextMenuItem @click="dropdownRowLock && openItemNewTab(dropdownRowLock)">
+              <ContextMenuItem
+                @click="
+                  dropdownRowLock &&
+                  ts.openNewThingFast(
+                    { _type: 'file', _path: rows[dropdownRowLock].original.path ?? '' },
+                    'lastUnfocused',
+                  )
+                "
+              >
                 <CornerUpRightIcon :size="16" /> Open In New Tab
               </ContextMenuItem>
 

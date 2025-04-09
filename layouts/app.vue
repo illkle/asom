@@ -29,14 +29,14 @@
 import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const appState = useIsAppUsable();
 
-const tabsStore = useTabsStore();
+const tabsStore = useTabsStoreV2();
 
 const isFirstTab = computed(() => {
-  return tabsStore.openedTabs.length >= 1 && tabsStore.openedTabsActiveIndex === 0;
+  return tabsStore.openedTabs.length >= 1 && tabsStore.openedTabActiveIndex === 0;
 });
 
 const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');

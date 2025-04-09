@@ -1,19 +1,18 @@
 <template>
   <template v-if="tabsStore.openedItem" class="h-full w-full">
-    <template v-if="tabsStore.openedItem.type === 'innerPage'">
-      <ToolsGoodreadsImporter v-if="tabsStore.openedItem.thing === 'goodreadsImporter'" />
+    <template v-if="tabsStore.openedItem._type === 'innerPage'">
+      <ToolsGoodreadsImporter v-if="tabsStore.openedItem._path === 'goodreadsImporter'" />
     </template>
     <template v-else>
       <RecordEditor
-        v-if="tabsStore.openedItem.type === 'file'"
+        v-if="tabsStore.openedItem._type === 'file'"
         :opened="tabsStore.openedItem"
-        :key="tabsStore.openedItem.id + '_f'"
+        :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
       />
       <TableView
-        v-else-if="tabsStore.openedItem.type === 'folder'"
+        v-else-if="tabsStore.openedItem._type === 'folder'"
         :opened="tabsStore.openedItem"
-        :index="tabsStore.openedTabsActiveIndex || 0"
-        :key="tabsStore.openedItem.id + '_t'"
+        :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
       />
     </template>
   </template>
@@ -26,9 +25,9 @@
 <script setup lang="ts">
 import TableView from '~/components/BookView/BooksView.vue';
 import RecordEditor from '~/components/Editor/RecordEditor.vue';
-import { useTabsStore } from '~/composables/stores/useTabsStore';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
-const tabsStore = useTabsStore();
+const tabsStore = useTabsStoreV2();
 
 definePageMeta({
   layout: 'app',

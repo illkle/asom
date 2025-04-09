@@ -21,7 +21,7 @@ import { XIcon } from 'lucide-vue-next';
 
 import { computed, type PropType } from 'vue';
 import { useMainStore } from '~/composables/stores/useMainStore';
-import type { IOpened } from '~/composables/stores/useTabsStore';
+import type { ITabEntry } from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps({
   isNewAndAnimating: {
@@ -37,7 +37,7 @@ const props = defineProps({
     default: 150,
   },
   item: {
-    type: Object as PropType<IOpened>,
+    type: Object as PropType<ITabEntry>,
     required: true,
   },
 });
@@ -54,19 +54,22 @@ const capitalize = (string: string) => {
 
 const text = computed(() => {
   if (!rootPath.data.value || !props.item) return '';
-  if (props.item.type === 'folder') {
-    if (props.item.thing === rootPath.data.value || !props.item.thing.length) {
+
+  const opened = props.item.history[props.item.historyPointer];
+
+  if (opened._type === 'folder') {
+    if (opened._path === rootPath.data.value || !opened._path.length) {
       return 'All Books';
     }
-    return props.item.thing.replace(rootPath.data.value, '').replace(/[\\/]/, '');
+    return opened._path.replace(rootPath.data.value, '').replace(/[\\/]/, '');
   }
 
-  if (props.item.type === 'file') {
-    return props.item.thing.split(/[\\/]/).pop();
+  if (opened._type === 'file') {
+    return opened._path.split(/[\\/]/).pop();
   }
 
-  if (props.item.type === 'innerPage') {
-    return capitalize(props.item.thing);
+  if (opened._type === 'innerPage') {
+    return capitalize(opened._path);
   }
 
   return '';
