@@ -4,7 +4,7 @@
   <div class="mx-auto max-w-[600px]">
     <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-      <Button @click="navigateTo('/')" variant="outline">Save </Button>
+      <Button @click="navigateTo('/', { replace: true })" variant="outline">Save </Button>
 
       <Link href="/"> </Link>
     </div>
@@ -87,7 +87,7 @@ const rootPath = useRootPath();
 
 watch(rootPath.data, (v) => {
   if (!v) {
-    navigateTo('/');
+    navigateTo('/', { replace: true });
   }
 });
 

@@ -27,7 +27,11 @@ import {
 } from 'lucide-vue-next';
 import { ref } from 'vue';
 import { getSortFunction, type TableRowType } from '~/components/BookView/helpers';
-import { useTabsStoreV2, type IOpenedPath } from '~/composables/stores/useTabsStoreV2';
+import {
+  useNavigationBlock,
+  useTabsStoreV2,
+  type IOpenedPath,
+} from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, SchemaItem } from '~/types';
 import BookItemDisplay from './BookItemDisplay.vue';
 import SimpleDNDList from './SimpleDNDList.vue';
@@ -200,6 +204,7 @@ function measureElement(el?: Element) {
 const ts = useTabsStoreV2();
 
 const sortingDialogOpened = ref(false);
+useNavigationBlock(sortingDialogOpened);
 
 const hoveringRowIndex = ref<number | null>(null);
 

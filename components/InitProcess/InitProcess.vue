@@ -35,7 +35,11 @@
         >Create</Button
       >
 
-      <Button variant="outline" class="mt-8 w-full" @click="navigateTo('/schemas')">
+      <Button
+        variant="outline"
+        class="mt-8 w-full"
+        @click="navigateTo('/schemas', { replace: true })"
+      >
         Open schemas editor
       </Button>
     </div>

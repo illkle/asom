@@ -39,7 +39,7 @@
 
     <SidebarFooter>
       <SidebarMenuButton @click="openGoodreadsImporter"> <WrenchIcon /> Tools </SidebarMenuButton>
-      <Dialog>
+      <Dialog v-model:open="settingsDialogOpened">
         <DialogContent>
           <SettingsPage />
         </DialogContent>
@@ -54,7 +54,7 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, CogIcon, PlusIcon, WrenchIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
-import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const { schemasArray } = useUsableSchemas();
 
@@ -72,4 +72,7 @@ const pathToSave = computed(() => {
 const openGoodreadsImporter = () => {
   tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last');
 };
+
+const settingsDialogOpened = ref(false);
+useNavigationBlock(settingsDialogOpened);
 </script>

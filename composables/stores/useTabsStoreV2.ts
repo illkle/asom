@@ -1,3 +1,4 @@
+import { useDebounceFn } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
 import { defineStore } from 'pinia';
 
@@ -9,6 +10,32 @@ import { ConfigStoredInRootFolder } from '~/utils/configStoredInRootFolder';
 const uid = new ShortUniqueId({ length: 10 });
 
 export const generateUniqId = () => uid.randomUUID();
+
+export const spliceKeepingPointer = (array: unknown[], pointer: number, indexToRemove: number) => {
+  array.splice(indexToRemove, 1);
+
+  if (pointer >= indexToRemove && pointer > 0) {
+    pointer--;
+  }
+
+  return pointer;
+};
+
+export const removeIndexesKeepingPointer = (
+  array: unknown[],
+  pointer: number,
+  indexesToRemove: number[],
+) => {
+  for (let i = indexesToRemove.length - 1; i >= 0; i--) {
+    pointer = spliceKeepingPointer(array, pointer, indexesToRemove[i]);
+  }
+
+  if (array.length === 0) {
+    return -1;
+  }
+
+  return pointer;
+};
 
 /**
  * Each tab is zTabEntry. Each tab has id and content
@@ -99,12 +126,13 @@ export type OpenNewOneParams = {
 };
 
 export const useTabsStoreV2 = defineStore('tabs', {
-  state: (): IOpenedTabs => {
+  state: (): IOpenedTabs & { navigationBlocks: Set<string> } => {
     return {
       openedTabs: [],
       focusHistory: [],
       /** -1 means no active tab */
       focusHistoryPointer: -1,
+      navigationBlocks: new Set<string>(),
     };
   },
 
@@ -116,12 +144,15 @@ export const useTabsStoreV2 = defineStore('tabs', {
     openedTabActiveIndex(state) {
       const activeID = state.focusHistory[state.focusHistoryPointer];
       if (!activeID) return;
-      return state.openedTabs.findIndex((v) => v.id === activeID);
+      const index = state.openedTabs.findIndex((v) => v.id === activeID);
+      if (index === -1) {
+        console.error('Active id is present but no tab with such id exists');
+      }
+      return index;
     },
 
     openedTab(): ITabEntry | undefined {
       if (typeof this.openedTabActiveId !== 'string') return;
-
       return this.openedTabs.find((v) => v.id === this.openedTabActiveId);
     },
 
@@ -131,6 +162,8 @@ export const useTabsStoreV2 = defineStore('tabs', {
     },
 
     canGoBack() {
+      if (this.navigationBlocks.size > 0) return false;
+
       if (!this.openedTab) return false;
 
       if (this.openedTab?.historyPointer > 0) return true;
@@ -140,6 +173,8 @@ export const useTabsStoreV2 = defineStore('tabs', {
     },
 
     canGoForward() {
+      if (this.navigationBlocks.size > 0) return false;
+
       if (!this.openedTab) return false;
 
       if (this.openedTab?.historyPointer < this.openedTab?.history.length - 1) return true;
@@ -150,21 +185,24 @@ export const useTabsStoreV2 = defineStore('tabs', {
   },
   actions: {
     /** Preservation on disk */
-
     async _saveOpened() {
-      const clone: IOpenedTabs = cloneDeep({
+      const tabs: IOpenedTabs = cloneDeep({
         openedTabs: this.openedTabs,
         focusHistory: this.focusHistory,
         focusHistoryPointer: this.focusHistoryPointer,
       });
 
-      openedTabsFile.set(clone);
+      await openedTabsFile.set(tabs);
     },
     async _fetchOpened() {
-      const res = await openedTabsFile.get();
-      this.openedTabs = res.openedTabs;
-      this.focusHistory = res.focusHistory;
-      this.focusHistoryPointer = res.focusHistoryPointer;
+      try {
+        const res = await openedTabsFile.get();
+        this.openedTabs = res.openedTabs;
+        this.focusHistory = res.focusHistory;
+        this.focusHistoryPointer = res.focusHistoryPointer;
+      } catch (e) {
+        console.error('Encountered an error when trying to load tabs state from disk');
+      }
     },
 
     /** Preservation on disk */
@@ -272,6 +310,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
       if (params.focus) {
         this.focusTab(newTab.id);
       }
+      return newTab.id;
     },
 
     closeTab(id: string) {
@@ -280,14 +319,19 @@ export const useTabsStoreV2 = defineStore('tabs', {
       if (index === -1) return;
 
       this.openedTabs.splice(index, 1);
-      const lenBefore = this.focusHistory.length;
-      this.focusHistory = this.focusHistory.filter((itemId) => itemId !== id);
-      const lenAfter = this.focusHistory.length;
 
+      const deleteFromFocusHistoryIndexes: number[] = [];
 
-      if (lenBefore !== lenAfter) {
-        this.focusHistoryPointer -= lenBefore - lenAfter;
+      for (const [index, item] of this.focusHistory.entries()) {
+        if (item === id) {
+          deleteFromFocusHistoryIndexes.push(index);
+        }
       }
+      this.focusHistoryPointer = removeIndexesKeepingPointer(
+        this.focusHistory,
+        this.focusHistoryPointer,
+        deleteFromFocusHistoryIndexes,
+      );
     },
 
     setOpenedIndexRelative(relative: number) {
@@ -303,7 +347,10 @@ export const useTabsStoreV2 = defineStore('tabs', {
      * Helpers
      */
 
-    openNewThingFast({ _type, _path }: ICoreBase, mode: 'here' | 'last' | "lastUnfocused" = 'here') {
+    openNewThingFast(
+      { _type, _path }: ICoreBase,
+      mode: 'here' | 'last' | 'lastUnfocused' = 'here',
+    ) {
       let data: IOpened;
 
       if (_type === 'folder') {
@@ -331,11 +378,10 @@ export const useTabsStoreV2 = defineStore('tabs', {
         throw new Error('Unknown type');
       }
 
-      
       if (mode === 'here') {
-        if(this.openedTab){
+        if (this.openedTab) {
           this.updateTabContent(data);
-        }else{
+        } else {
           this.openNewTab(data, { place: 'last', focus: true });
         }
       } else if (mode === 'last') {
@@ -364,9 +410,9 @@ export const useTabsStoreV2 = defineStore('tabs', {
     },
 
     _handlePathDeletion(path: string, isFolder: boolean) {
-      const tabsToDelete: number[] = [];
+      const tabsToDeleteId: string[] = [];
 
-      for (const [index, tab] of this.openedTabs.entries()) {
+      for (const tab of this.openedTabs) {
         const itemsToDelete: number[] = [];
 
         for (const [index, item] of tab.history.entries()) {
@@ -382,23 +428,18 @@ export const useTabsStoreV2 = defineStore('tabs', {
         }
 
         if (itemsToDelete.length === tab.history.length) {
-          tabsToDelete.push(index);
+          tabsToDeleteId.push(tab.id);
         } else if (itemsToDelete.length > 0) {
-          for (let i = itemsToDelete.length - 1; i >= 0; i--) {
-            tab.history.splice(itemsToDelete[i], 1);
-
-            if (tab.historyPointer >= i) {
-              tab.historyPointer = Math.max(0, tab.historyPointer - 1);
-            }
-          }
+          tab.historyPointer = removeIndexesKeepingPointer(
+            tab.history,
+            tab.historyPointer,
+            itemsToDelete,
+          );
         }
       }
 
-      for (let i = tabsToDelete.length - 1; i >= 0; i--) {
-        this.openedTabs.splice(tabsToDelete[i], 1);
-        if (this.focusHistoryPointer >= i) {
-          this.focusHistoryPointer = Math.max(0, this.focusHistoryPointer - 1);
-        }
+      for (const id of tabsToDeleteId) {
+        this.closeTab(id);
       }
     },
   },
@@ -408,7 +449,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
  * Hooks
  */
 
-const useFetchTabsOnRootPathChange = () => {
+const useTabsPreservation = () => {
   const store = useTabsStoreV2();
   const rootPath = useRootPath();
 
@@ -420,6 +461,18 @@ const useFetchTabsOnRootPathChange = () => {
     },
     { immediate: true },
   );
+
+  const saveTabsDebounced = useDebounceFn(store._saveOpened, 5000);
+
+  let unsubscribe: () => void;
+
+  onMounted(() => {
+    unsubscribe = store.$subscribe(saveTabsDebounced);
+  });
+
+  onUnmounted(() => {
+    unsubscribe();
+  });
 };
 
 const useCloseInvalidTabsOnDeletions = () => {
@@ -434,6 +487,34 @@ const useCloseInvalidTabsOnDeletions = () => {
 };
 
 export const useGlobalTabHooks = () => {
-  useFetchTabsOnRootPathChange();
+  useTabsPreservation();
   useCloseInvalidTabsOnDeletions();
+};
+
+/**
+ * Helper to block navigation when modal is opened or some thing like that.
+ * (you can hit back button with dialog opened, but mouse button still need to be disabled manually)
+ */
+export const useNavigationBlock = (isBlocked: Ref<boolean>) => {
+  const store = useTabsStoreV2();
+
+  const id = generateUniqId();
+
+  watch(
+    isBlocked,
+    (v) => {
+      if (v) {
+        store.navigationBlocks.add(id);
+      } else {
+        store.navigationBlocks.delete(id);
+      }
+    },
+    { immediate: true },
+  );
+
+  onUnmounted(() => {
+    store.navigationBlocks.delete(id);
+  });
+
+  return isBlocked;
 };

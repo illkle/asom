@@ -43,8 +43,6 @@ export const setupTabsHotkeys = () => {
   };
 
   const mouseHandler = (e: MouseEvent) => {
-    console.log(e.button);
-
     if (e.button === 3) {
       e.preventDefault();
       store.moveBack();

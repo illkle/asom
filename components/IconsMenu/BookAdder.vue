@@ -23,7 +23,7 @@
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
-import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 const props = defineProps({
   pathToSave: {
     type: String,
@@ -34,6 +34,7 @@ const props = defineProps({
 const ts = useTabsStoreV2();
 
 const newFileOpened = ref(false);
+useNavigationBlock(newFileOpened);
 const newFileName = ref('');
 
 const actualFilename = computed(() => {

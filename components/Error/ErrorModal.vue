@@ -1,5 +1,5 @@
 <template>
-  <Dialog :open="err ? true : false" @update:open="() => (store.errorModal = null)">
+  <Dialog :open="isError" @update:open="() => (store.errorModal = null)">
     <DialogContent>
       <DialogTitle>
         {{ err?.title }}
@@ -28,8 +28,12 @@
 
 <script setup lang="ts">
 import { useMainStore } from '~/composables/stores/useMainStore';
+import { useNavigationBlock } from '~/composables/stores/useTabsStoreV2';
 
 const store = useMainStore();
 
 const err = computed(() => store.errorModal);
+
+const isError = computed(() => err.value !== null);
+useNavigationBlock(isError);
 </script>
