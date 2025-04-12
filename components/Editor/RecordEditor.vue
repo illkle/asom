@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import type { PropType } from 'vue';
 
-import type { IOpenedFile } from '~/composables/stores/useTabsStore';
+import { useScrollRestorationOnMount, type IOpenedFile } from '~/composables/stores/useTabsStoreV2';
 import { useFileEditor } from '../../composables/useFileEditor';
 
 const props = defineProps({
@@ -32,6 +32,8 @@ const editorWrapper = useTemplateRef('editorWrapper');
 const colorMode = useColorMode();
 
 const { file, schema, error, changes } = useFileEditor(props.opened, editorWrapper);
+
+useScrollRestorationOnMount(computed(() => !!file.value));
 </script>
 
 <style scoped>

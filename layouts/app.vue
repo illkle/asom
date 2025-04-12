@@ -29,7 +29,7 @@
 import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
-import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import { useScrollWatcher, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const appState = useIsAppUsable();
 
@@ -41,6 +41,8 @@ const isFirstTab = computed(() => {
 
 const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
 provide('scrollElementRef', scrollElementRef);
+
+useScrollWatcher(scrollElementRef);
 </script>
 
 <style>

@@ -29,6 +29,7 @@ import { ref } from 'vue';
 import { getSortFunction, type TableRowType } from '~/components/BookView/helpers';
 import {
   useNavigationBlock,
+  useScrollRestorationOnMount,
   useTabsStoreV2,
   type IOpenedPath,
 } from '~/composables/stores/useTabsStoreV2';
@@ -180,7 +181,7 @@ const tableContainerRef = ref<HTMLDivElement | null>(null);
 const rowVirtualizerOptions = computed(() => {
   return {
     count: rows.value.length,
-    estimateSize: () => 36, //estimate row height for accurate scrollbar dragging
+    estimateSize: () => 37, //estimate row height for accurate scrollbar dragging
     getScrollElement: () => injectScrollElementRef?.value as HTMLDivElement,
     overscan: 10,
   };
@@ -309,6 +310,8 @@ const deleteSelected = async () => {
   );
   table.setRowSelection({});
 };
+
+useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
 </script>
 
 <template>

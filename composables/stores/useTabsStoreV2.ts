@@ -1,8 +1,9 @@
-import { useDebounceFn } from '@vueuse/core';
+import { useDebounceFn, useEventListener } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
 import { defineStore } from 'pinia';
 
 import ShortUniqueId from 'short-unique-id';
+import type { ShallowRef } from 'vue';
 import { z } from 'zod';
 
 import { ConfigStoredInRootFolder } from '~/utils/configStoredInRootFolder';
@@ -517,4 +518,50 @@ export const useNavigationBlock = (isBlocked: Ref<boolean>) => {
   });
 
   return isBlocked;
+};
+
+export const useScrollRestorationOnMount = (condition: Ref<boolean>) => {
+  const store = useTabsStoreV2();
+
+  const scrollElementRef = inject<Ref<HTMLDivElement>>('scrollElementRef');
+
+  const mounted = ref(false);
+
+  onMounted(() => {
+    mounted.value = true;
+  });
+
+  watch([condition, mounted], ([v, v2]) => {
+    if (!v2 || !scrollElementRef || !v) return;
+
+    if (!scrollElementRef.value) return;
+
+    nextTick(() => {
+      scrollElementRef.value.scrollTo(0, store.openedItem?.scrollPosition ?? 0);
+    });
+  });
+};
+
+export const useScrollWatcher = (item: ShallowRef<HTMLDivElement | null>) => {
+  const tabsStore = useTabsStoreV2();
+
+  const ignored = ref(false);
+
+  watch(
+    computed(() => tabsStore.openedItem),
+    (v) => {
+      if (!v) return;
+      ignored.value = true;
+    },
+  );
+
+  useEventListener(item, 'scroll', (e) => {
+    if (!tabsStore.openedItem) return;
+
+    if (ignored.value) {
+      ignored.value = false;
+      return;
+    }
+    tabsStore.openedItem.scrollPosition = (e.target as HTMLDivElement).scrollTop;
+  });
 };
