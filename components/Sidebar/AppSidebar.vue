@@ -62,7 +62,7 @@ const tabsStore = useTabsStoreV2();
 
 const pathToSave = computed(() => {
   if (!tabsStore.openedItem) return null;
-  if (tabsStore.openedItem._type === 'file') return path.basename(tabsStore.openedItem._path);
+  if (tabsStore.openedItem._type === 'file') return path.dirname(tabsStore.openedItem._path);
 
   if (tabsStore.openedItem._type === 'folder') return tabsStore.openedItem._path;
 

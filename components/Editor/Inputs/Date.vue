@@ -14,6 +14,7 @@ const props = defineProps<{
     end?: string;
   };
   name?: string;
+  class?: string;
 }>();
 
 const modelValue = defineModel<string | null>({ default: null });
@@ -38,7 +39,11 @@ const isOpened = ref(false);
       <Button
         variant="outline"
         :class="
-          cn('w-60 justify-start text-left font-normal', !dateModel && 'text-muted-foreground')
+          cn(
+            'min-w-40 grow justify-start text-left font-normal',
+            !dateModel && 'text-muted-foreground',
+            props.class,
+          )
         "
       >
         <CalendarIcon class="mr-2 h-4 w-4" />

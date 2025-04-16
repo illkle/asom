@@ -1,27 +1,37 @@
 <template>
   <div class="w-full rounded">
-    <div class="flex flex-col gap-2">
-      <div
-        v-for="(date, index) in modelValue"
-        :key="index"
-        class="flex w-fit items-center justify-between gap-2"
-      >
-        <DateInput v-model="date.started" :limits="{ end: date.finished }" />
-        <MoveRightIcon class="w-4" />
-        <DateInput v-model="date.finished" :limits="{ start: date.started }" />
+    <div class="flex flex-col gap-2 w-fit">
+      <div v-for="(date, index) in modelValue" :key="index" class="flex items-center">
+        <DateInput
+          v-model="date.started"
+          :limits="{ end: date.finished }"
+          class="rounded-r-none min-w-40 grow-0"
+        />
+        <DateInput
+          v-model="date.finished"
+          :limits="{ start: date.started }"
+          class="rounded-none border-l-0 border-r-0 w-fit min-w-40 grow-0"
+        />
 
-        <Button variant="ghost" size="icon" @click="removeDate(index)">
+        <Button
+          variant="outline"
+          size="icon"
+          class="rounded-l-none border-l-0"
+          @click="removeDate(index)"
+        >
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="ghost" size="sm" class="mt-2" @click="addNewDate"> Log new </Button>
+      <Button variant="outline" size="sm" class="" @click="addNewDate">
+        <PlusIcon :size="16" /> Log Dates
+      </Button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { format } from 'date-fns';
-import { MoveRightIcon, XIcon } from 'lucide-vue-next';
+import { PlusIcon, XIcon } from 'lucide-vue-next';
 import type { DatePair } from '~/types';
 import DateInput from './Date.vue';
 

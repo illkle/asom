@@ -1,25 +1,6 @@
 <template>
-  <NumberField
-    v-if="settings.style === 'Default'"
-    :step-snapping="false"
-    :model-value="modelValue"
-    :min="settings.min"
-    :max="settings.max"
-    :format-options="{
-      minimumFractionDigits: settings.decimalPlaces,
-      maximumFractionDigits: settings.decimalPlaces,
-    }"
-    @update:model-value="(v) => $emit('update:modelValue', v)"
-  >
-    <Label class="opacity-30">
-      {{ settings.displayName || name }}
-    </Label>
-    <NumberFieldContent>
-      <NumberFieldInput />
-    </NumberFieldContent>
-  </NumberField>
   <RatingStars
-    v-else-if="settings.style === 'Stars'"
+    v-if="settings.style === 'Stars'"
     :decimal-places="settings.decimalPlaces"
     :model-value="modelValue"
     :stars-count="settings.starsCount"
@@ -39,6 +20,26 @@
       <span class="font-mono opacity-30">{{ formatWithDecimalPlaces(modelValue) }}</span>
     </div>
   </div>
+  <NumberField
+    v-else
+    :step-snapping="false"
+    :model-value="modelValue"
+    :min="settings.min"
+    :max="settings.max"
+    :format-options="{
+      minimumFractionDigits: settings.decimalPlaces,
+      maximumFractionDigits: settings.decimalPlaces,
+      useGrouping: false,
+    }"
+    :disable-wheel-change="true"
+    @update:model-value="(v) => $emit('update:modelValue', v)"
+  >
+    <NumberFieldContent>
+      <NumberFieldInput
+        class="bg-transparent border-transparent dark:bg-transparent dark:border-transparent ',"
+      />
+    </NumberFieldContent>
+  </NumberField>
 </template>
 
 <script setup lang="ts">

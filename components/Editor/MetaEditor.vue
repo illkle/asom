@@ -1,11 +1,23 @@
 <template>
-  <div class="grid gap-2" :class="$attrs.class">
-    <template v-for="item in schema?.items">
-      <EditorAttributesRouter
-        v-model:model-value="openedFile.attrs[item.name]"
-        :schema-item="item"
-      />
+  <div class="grid gap-2" :class="$attrs.class" id="attributesContainer">
+    <template v-if="false" v-for="item in schema?.items">
+      <div :id="item.name" class="flex">
+        <EditorAttributesRouter
+          v-model:model-value="openedFile.attrs[item.name]"
+          :schema-item="item"
+        />
+      </div>
     </template>
+
+    <DynamicViewRenderDynamic :group="rootGroup">
+      <template #default="{ data }">
+        <EditorAttributesRouter
+          v-if="attributesByKey?.[data]"
+          v-model:model-value="openedFile.attrs[data]"
+          :schema-item="attributesByKey[data]"
+        />
+      </template>
+    </DynamicViewRenderDynamic>
   </div>
 
   <div ref="forDrag" class="absolute top-[-500px]">
@@ -16,7 +28,8 @@
 <script setup lang="ts">
 import type { PropType } from 'vue';
 
-import type { RecordFromDb, Schema } from '~/types';
+import type { RecordFromDb, Schema, SchemaItem } from '~/types';
+import type { IDynamicViewGroup } from '../DynamicView/helpers';
 const p = defineProps({
   schema: {
     type: Object as PropType<Schema | null>,
@@ -26,6 +39,61 @@ const p = defineProps({
 const openedFile = defineModel<RecordFromDb>({
   required: true,
 });
+
+const attributesByKey = computed(() => {
+  return p.schema?.items.reduce((acc: Record<string, SchemaItem>, attr) => {
+    acc[attr.name] = attr;
+    return acc;
+  }, {});
+});
+
+const rootGroup: IDynamicViewGroup = {
+  name: 'root',
+  style: {
+    direction: 'row',
+    gap: 16,
+    align: 'start',
+    justify: 'between',
+  },
+  subcategories: [
+    {
+      name: 'left',
+      style: {
+        direction: 'column',
+        gap: 4,
+        align: 'center',
+        justify: 'start',
+      },
+      subcategories: ['cover', 'myRating'],
+    },
+    {
+      name: 'right',
+      style: {
+        direction: 'column',
+        gap: 8,
+        align: 'start',
+        justify: 'start',
+      },
+      subcategories: [
+        'title',
+        'author',
+        {
+          name: 'subline',
+          style: {
+            direction: 'row',
+            gap: 16,
+            align: 'center',
+            justify: 'start',
+          },
+          subcategories: ['year', 'ISBN13'],
+        },
+
+        'tags',
+        'read',
+      ],
+    },
+  ],
+};
 
 /*
 ///
@@ -100,3 +168,5 @@ const startDrag = (devt: DragEvent) => {
 
 };  */
 </script>
+
+<style scoped></style>

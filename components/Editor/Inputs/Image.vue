@@ -1,7 +1,7 @@
 <template>
   <ContextMenu v-if="imagePath">
     <ContextMenuTrigger>
-      <div class="max-h-[200px] max-w-[200px] rounded-md overflow-hidden">
+      <div class="max-w-[200px] rounded-md overflow-hidden">
         <img :src="imagePath" draggable="false" />
       </div>
     </ContextMenuTrigger>
@@ -20,7 +20,7 @@
     File not found: {{ imageName }}
   </div>
   <div
-    class="h-46 w-46 rounded-md border flex items-center flex-col justify-center"
+    class="h-46 min-w-46 w-full rounded-md border flex items-center flex-col justify-center"
     v-else
     @click="changeImageHandler"
   >

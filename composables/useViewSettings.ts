@@ -17,9 +17,9 @@ const zSorting = z.array(
   }),
 );
 
-const zVisibilityState = z.record(z.boolean());
+const zVisibilityState = z.record(z.string(), z.boolean());
 
-const zSizingState = z.record(z.number());
+const zSizingState = z.record(z.string(), z.number());
 const zOrderState = z.array(z.string());
 
 const zViewSettings = z.object({
