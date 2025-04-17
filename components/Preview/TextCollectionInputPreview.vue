@@ -39,5 +39,27 @@ const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
       value: { type: 'TextCollection', settings: { settingsType: 'TextCollection', prefix: '#' } },
     },
   },
+  {
+    value: { type: 'StringVec', value: ['fun', 'nice', 'great'] },
+    label: 'M',
+    schema: {
+      name: 'test',
+      value: {
+        type: 'TextCollection',
+        settings: { settingsType: 'TextCollection', prefix: '#', size: 'M' },
+      },
+    },
+  },
+  {
+    value: { type: 'StringVec', value: ['fun', 'nice', 'great'] },
+    label: 'L SERIF',
+    schema: {
+      name: 'test',
+      value: {
+        type: 'TextCollection',
+        settings: { settingsType: 'TextCollection', prefix: '#', size: 'L', font: 'Serif' },
+      },
+    },
+  },
 ]);
 </script>

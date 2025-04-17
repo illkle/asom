@@ -1,7 +1,19 @@
 <template>
-  <div class="flex w-full flex-col overflow-x-hidden overscroll-none px-4">
+  <div class="flex w-full flex-col overscroll-none px-4">
     <div class="mx-auto h-fit w-full max-w-2xl">
-      <EditorMetaEditor v-if="file" v-model="file" :schema="schema" class="py-2" />
+      <div class="sticky top-0 z-10">
+        {{ new Date(fileQ.data.value?.record.modified ?? 0).toLocaleString() }}
+        <br />
+        {{ lastSyncedTimestamp.toLocaleString() }}
+        <br />
+        {{ changesTracker }}
+      </div>
+      <EditorMetaEditor
+        v-if="editableProxy && schema"
+        v-model="editableProxy.record"
+        :schema="schema.schema"
+        class="py-2"
+      />
 
       <div class="h-full min-h-[200px] border-t py-4">
         <div
@@ -18,7 +30,6 @@
 import type { PropType } from 'vue';
 
 import { useScrollRestorationOnMount, type IOpenedFile } from '~/composables/stores/useTabsStoreV2';
-import { useFileEditor } from '../../composables/useFileEditor';
 
 const props = defineProps({
   opened: {
@@ -31,9 +42,19 @@ const editorWrapper = useTemplateRef('editorWrapper');
 
 const colorMode = useColorMode();
 
-const { file, schema, error, changes } = useFileEditor(props.opened, editorWrapper);
+const {
+  fileQ,
+  editableProxy,
+  performUpdate,
+  viewSettingsQ,
+  viewSettingsUpdater,
+  changesTracker,
+  lastSyncedTimestamp,
+} = useFileEditorV2(props.opened, editorWrapper);
 
-useScrollRestorationOnMount(computed(() => !!file.value));
+const schema = computed(() => fileQ.data.value?.schema);
+
+useScrollRestorationOnMount(computed(() => !!fileQ.data.value));
 </script>
 
 <style scoped>

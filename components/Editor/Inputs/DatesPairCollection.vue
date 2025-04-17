@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full rounded">
+  <div class="w-full">
+    <CommonLabel v-if="name">{{ name }}</CommonLabel>
+
     <div class="flex flex-col gap-2 w-fit">
       <div v-for="(date, index) in modelValue" :key="index" class="flex items-center">
         <DateInput
@@ -33,7 +35,12 @@
 import { format } from 'date-fns';
 import { PlusIcon, XIcon } from 'lucide-vue-next';
 import type { DatePair } from '~/types';
+import CommonLabel from './CommonLabel.vue';
 import DateInput from './Date.vue';
+
+const props = defineProps<{
+  name: string;
+}>();
 
 const datePairs = defineModel<DatePair[] | null>();
 

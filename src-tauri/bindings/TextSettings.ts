@@ -2,7 +2,6 @@
 import type { InputSize } from './InputSize';
 import type { SettingsTypeText } from './SettingsTypeText';
 import type { TextFont } from './TextFont';
-import type { TextTheme } from './TextTheme';
 import type { TextWeight } from './TextWeight';
 
 export type TextSettings = {
@@ -11,6 +10,5 @@ export type TextSettings = {
   size?: InputSize;
   font?: TextFont;
   weight?: TextWeight;
-  theme?: TextTheme;
   isMultiline?: boolean;
 };

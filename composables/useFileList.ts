@@ -6,7 +6,7 @@ import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation'
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import type { RecordFromDb } from '~/types';
 
-const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string) => [
+export const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string) => [
   'files',
   opened._type,
   opened._path,

@@ -3,8 +3,7 @@ use crate::schema::types::{
 };
 
 use super::types::{
-    InputSize, NumberStyle, Schema, SchemaAttrType, SchemaItem, SchemaItems, TextFont, TextTheme,
-    TextWeight,
+    InputSize, NumberStyle, Schema, SchemaAttrType, SchemaItem, SchemaItems, TextFont, TextWeight,
 };
 
 pub fn default_book_schema() -> SchemaItems {
@@ -15,7 +14,6 @@ pub fn default_book_schema() -> SchemaItems {
                 size: Some(InputSize::L),
                 font: Some(TextFont::Serif),
                 is_multiline: Some(true),
-                theme: Some(TextTheme::Hidden),
                 ..TextSettings::default()
             }),
         },
@@ -24,7 +22,6 @@ pub fn default_book_schema() -> SchemaItems {
             value: SchemaAttrType::Text(TextSettings {
                 size: Some(InputSize::M),
                 weight: Some(TextWeight::Bold),
-                theme: Some(TextTheme::Hidden),
                 ..TextSettings::default()
             }),
         },
@@ -80,7 +77,6 @@ pub fn default_movie_schema() -> SchemaItems {
                 size: Some(InputSize::L),
                 font: Some(TextFont::Serif),
                 is_multiline: Some(true),
-                theme: Some(TextTheme::Hidden),
 
                 ..TextSettings::default()
             }),
@@ -90,7 +86,6 @@ pub fn default_movie_schema() -> SchemaItems {
             value: SchemaAttrType::Text(TextSettings {
                 size: Some(InputSize::M),
                 weight: Some(TextWeight::Bold),
-                theme: Some(TextTheme::Hidden),
                 ..TextSettings::default()
             }),
         },
@@ -133,7 +128,6 @@ pub fn default_game_schema() -> SchemaItems {
                 size: Some(InputSize::L),
                 font: Some(TextFont::Serif),
                 is_multiline: Some(true),
-                theme: Some(TextTheme::Hidden),
 
                 ..TextSettings::default()
             }),
@@ -143,7 +137,6 @@ pub fn default_game_schema() -> SchemaItems {
             value: SchemaAttrType::Text(TextSettings {
                 size: Some(InputSize::M),
                 weight: Some(TextWeight::Bold),
-                theme: Some(TextTheme::Hidden),
                 ..TextSettings::default()
             }),
         },

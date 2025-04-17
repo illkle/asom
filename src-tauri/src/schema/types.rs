@@ -5,7 +5,7 @@ use ts_rs::TS;
 /*
    #[ts(optional)] means use val?: String instean of val: String | null
    It's mandatory everywhere, because you can't v-model String | null in radix-vue.
-   Hopefully this gets merged soon and it can be set on struct level
+   Hopefully this gets released soon and it can be set on struct level
    https://github.com/Aleph-Alpha/ts-rs/pull/366
 
    (the same thing for serde is  #[serde_with::skip_serializing_none] btw)
@@ -32,7 +32,7 @@ pub enum AttrValue {
     DatePairVec(Option<Vec<DatePair>>),
     /**
      * 1. Integer and float are split for better readability of frontmatter. Year: 2025.0 looks stupid
-     * 2. Integer is stored as f64 becuase i64 can theoretically convert to bigint after getting to js, which is incovenitent for any logic.
+     * 2. Integer is stored as f64 becuase i64 can theoretically convert to bigint after getting to js, which is incovenitent.
      * Both those issues might be solved in a more optimal way in the future.
      */
     Integer(Option<f64>),
@@ -40,7 +40,7 @@ pub enum AttrValue {
 }
 
 /*
-  Helper type just for saving to disk. For readability of fronmatter it should be unttaged, while in TS we need tagged values.
+  Helper type just for saving to disk. For readability of frontmatter it should be unttaged, while in TS we need tagged values.
 */
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -134,8 +134,6 @@ pub struct TextSettings {
     #[ts(optional)]
     pub weight: Option<TextWeight>,
     #[ts(optional)]
-    pub theme: Option<TextTheme>,
-    #[ts(optional)]
     pub is_multiline: Option<bool>,
 }
 impl Default for TextSettings {
@@ -146,7 +144,6 @@ impl Default for TextSettings {
             size: None,
             font: None,
             weight: None,
-            theme: None,
             is_multiline: None,
         }
     }
@@ -173,8 +170,13 @@ pub struct NumberSettings {
     pub decimal_places: Option<u8>,
     #[ts(optional)]
     pub style: Option<NumberStyle>,
+    // Stars only
     #[ts(optional)]
     pub stars_count: Option<u8>,
+
+    // Input(default) only
+    #[ts(optional)]
+    pub input_size: Option<InputSize>,
 }
 
 impl Default for NumberSettings {
@@ -188,6 +190,7 @@ impl Default for NumberSettings {
             style: None,
             decimal_places: None,
             stars_count: None,
+            input_size: None,
         }
     }
 }

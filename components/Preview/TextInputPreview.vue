@@ -29,7 +29,6 @@ const inputValue = ref('Sample text');
 
 const defaultTextSettings: TextSettings = {
   displayName: 'Test',
-  theme: 'Default',
   size: 'M',
   font: 'Sans',
   weight: 'Normal',
@@ -37,7 +36,6 @@ const defaultTextSettings: TextSettings = {
 };
 
 const possibleValues: SettingsOptions<TextSettings> = {
-  theme: ['Default', 'Hidden'],
   size: ['S', 'M', 'L'],
   font: ['Sans', 'Serif'],
   weight: ['Light', 'Normal', 'Bold', 'Black'],
@@ -52,7 +50,6 @@ const extras: { label: string; settings: TextSettings }[] = [
       isMultiline: true,
       size: 'L',
       font: 'Serif',
-      theme: 'Hidden',
     },
   },
 ];

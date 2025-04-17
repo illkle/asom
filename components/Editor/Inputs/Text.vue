@@ -1,4 +1,5 @@
 <template>
+  <CommonLabel>{{ name }}</CommonLabel>
   <!-- prettier-ignore-attribute v-bind:model-value -->
   <Input
     v-if="!settings.isMultiline"
@@ -6,8 +7,8 @@
     :placeholder="settings.displayName ?? name"
     :multi-line="settings.isMultiline"
     :class="[
-      extraInputVariants({
-        theme: settings.theme,
+      textInputVariants({
+        theme: 'Default',
         size: settings.size,
         font: settings.font,
         weight: settings.weight,
@@ -15,7 +16,6 @@
     ]"
     @update:model-value="(v) => $emit('update:modelValue', String(v))"
   />
-
   <!-- prettier-ignore-attribute v-bind:model-value -->
   <Textarea
     v-else
@@ -24,20 +24,22 @@
     :multi-line="settings.isMultiline"
     :rows="1"
     :class="[
-      extraInputVariants({
-        theme: settings.theme,
+      textInputVariants({
+        theme: 'Default',
         size: settings.size,
         font: settings.font,
         weight: settings.weight,
       }),
     ]"
+    auto-resize
     @update:model-value="(v) => $emit('update:modelValue', String(v))"
   />
 </template>
 
 <script setup lang="ts">
 import type { TextSettings } from '~/types';
-import { extraInputVariants } from './helpers';
+import { textInputVariants } from './helpers';
+import CommonLabel from './CommonLabel.vue';
 defineProps<{
   settings: TextSettings;
   name: string;

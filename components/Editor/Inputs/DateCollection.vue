@@ -1,6 +1,7 @@
 <template>
   <div class="w-full rounded">
-    <div class="flex flex-col gap-2" :key="key">
+    <CommonLabel v-if="name">{{ name }}</CommonLabel>
+    <div class="flex flex-col gap-2 w-fit" :key="key">
       <div
         v-for="(date, index) in modelValue"
         :key="index"
@@ -8,7 +9,9 @@
       >
         <DateInput :model-value="date" @update:model-value="(v) => updateDate(index, v)" />
       </div>
-      <Button variant="ghost" size="sm" class="mt-2" @click="addNewDate"> <PlusIcon /> </Button>
+      <Button variant="outline" size="sm" class="" @click="addNewDate">
+        <PlusIcon :size="16" /> Add Date
+      </Button>
     </div>
   </div>
 </template>
@@ -16,7 +19,12 @@
 <script lang="ts" setup>
 import { format, parse } from 'date-fns';
 import { PlusIcon } from 'lucide-vue-next';
+import CommonLabel from './CommonLabel.vue';
 import DateInput from './Date.vue';
+
+const props = defineProps<{
+  name: string;
+}>();
 
 const datePairs = defineModel<string[] | null>();
 

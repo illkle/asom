@@ -34,15 +34,18 @@
       <DateCollection
         v-else-if="schemaItem.value.type === 'DateCollection' && attr.type === 'StringVec'"
         v-model:model-value="attr.value"
+        :name="name"
       />
 
       <DateRangeInput
         v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DatePairVec'"
         v-model:model-value="attr.value"
+        :name="name"
       />
       <ImageInput
         v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
         v-model="attr.value"
+        :name="name"
       />
       <div v-else class="flex flex-col gap-1 border border-red-500 rounded-md py-1 px-2 text-sm">
         Unsupported attribute type or type mismatch:

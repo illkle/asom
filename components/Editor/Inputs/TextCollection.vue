@@ -1,5 +1,16 @@
 <template>
-  <div ref="containerDiv" class="relative flex flex-wrap items-center gap-1">
+  <div ref="containerDiv" class="relative flex flex-wrap items-stretch gap-1">
+    <CommonLabel
+      v-if="name"
+      :class="
+        cn([
+          textCollectionInputVariants({ size: props.settings?.size, mode: 'Title' }),
+          'flex items-center px-0 ',
+        ])
+      "
+    >
+      {{ name }}
+    </CommonLabel>
     <template v-for="(tag, index) in tags" :key="index">
       <ContentEditable
         ref="tagRefs"
@@ -7,14 +18,23 @@
         tag="div"
         spellcheck="false"
         :no-n-l="true"
-        :class="[classes, prefix ? 'prefix before:pr-0.5 before:opacity-50' : '']"
+        :class="[
+          textCollectionInputVariants({ size: props.settings?.size, font: props.settings?.font }),
+          prefix ? 'prefix before:pr-0.5 before:opacity-50' : '',
+        ]"
         @keydown="(e: KeyboardEvent) => keyDownHandler(e, index)"
         @update:model-value="(val: string | Number) => saveTag(index, String(val))"
         @returned="createNewTag"
       />
     </template>
-    <button :class="classes" @click="createNewTag">
-      <PlusIcon class="w-4 fill-foreground pr-0.5 opacity-50 transition-colors" />
+    <button
+      :class="
+        textCollectionInputVariants({ size: props.settings?.size, font: props.settings?.font })
+      "
+      @mousedown.prevent
+      @click.prevent="createNewTag"
+    >
+      <PlusIcon :size="16" class="fill-foreground pr-0.5 opacity-50 transition-colors" />
     </button>
   </div>
 </template>
@@ -24,17 +44,13 @@ import { PlusIcon } from 'lucide-vue-next';
 import { nextTick, ref } from 'vue';
 import ContentEditable from '~/components/uiExtra/ContentEditable.vue';
 import type { TextCollectionSettings } from '~/src-tauri/bindings/TextCollectionSettings';
-
-const classes = [
-  'text-foreground inline-flex h-6 items-center rounded-md px-2.5 py-0.5 text-xs font-semibold transition-all',
-  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex rounded-sm border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none   ',
-  'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-];
-
+import CommonLabel from './CommonLabel.vue';
+import { textCollectionInputVariants } from './helpers';
 const tags = defineModel<string[] | null>();
 
 const props = defineProps<{
   settings: TextCollectionSettings | null;
+  name: string;
 }>();
 
 const prefix = computed(() => (props.settings?.prefix ? `'${props.settings?.prefix}'` : undefined));

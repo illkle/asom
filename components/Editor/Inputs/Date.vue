@@ -27,7 +27,7 @@ const end = computed(() => stringToDate(props.limits?.end));
 
 const formattedDate = computed(() => {
   if (!dateModel.value) return 'Select Date';
-  return format(new Date(dateModel.value.toString()), 'dd MMMM yyyy');
+  return format(new Date(dateModel.value.toString()), 'dd MMM yyyy');
 });
 
 const isOpened = ref(false);

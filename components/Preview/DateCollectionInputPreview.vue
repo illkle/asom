@@ -16,7 +16,7 @@ onBeforeMount(() => {});
 
 const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
   {
-    value: { type: 'StringVec', value: ['2025-01-01', '2025-01-02'] },
+    value: { type: 'StringVec', value: ['2025-01-01', '2025-01-02', '2025-09-02'] },
     label: 'basic',
     schema: {
       name: 'test',

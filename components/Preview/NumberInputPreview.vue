@@ -1,4 +1,9 @@
 <template>
+  <div class="flex gap-4">
+    <Button variant="outline" @click="setAllValues(1)">Set all 1</Button>
+    <Button variant="outline" @click="setAllValues(10000)">Set all 10k</Button>
+    <Button variant="outline" @click="setAllValues(null)">Set all null</Button>
+  </div>
   <template v-for="key in Object.keys(possibleValues)" :key="key">
     <h3 class="text-lg font-bold">{{ key }}</h3>
     <div class="grid grid-cols-3 gap-4">
@@ -50,16 +55,20 @@ const possibleValues: SettingsOptions<NumberSettings> = {
   style: ['Default', 'Slider', 'Stars'],
 };
 
-onBeforeMount(() => {
+const setAllValues = (v: number | null) => {
   const keys = Object.keys(possibleValues);
   for (const key of keys) {
     for (const value of possibleValues[key as keyof SettingsOptions<NumberSettings>] ?? []) {
-      vals.value[String(key) + String(value)] = 1;
+      vals.value[String(key) + String(value)] = v;
     }
   }
   for (const extra of extras) {
-    vals.value[String(extra.label)] = 1;
+    vals.value[String(extra.label)] = v;
   }
+};
+
+onBeforeMount(() => {
+  setAllValues(1);
 });
 
 const extras: { label: string; settings: NumberSettings }[] = [
@@ -119,6 +128,18 @@ const extras: { label: string; settings: NumberSettings }[] = [
       starsCount: 5,
       min: 0,
       max: 10,
+      decimalPlaces: 4,
+    },
+  },
+
+  {
+    label: 'slider 5 15',
+    settings: {
+      ...defaultNumberSettings,
+      style: 'Slider',
+      starsCount: 5,
+      min: 5,
+      max: 15,
       decimalPlaces: 4,
     },
   },

@@ -6,6 +6,7 @@ use ts_rs::TS;
 
 use crate::cache::query::RecordFromDb;
 use crate::core::core::SchemasCacheMutex;
+use crate::schema::schema_cache::SchemaResult;
 use crate::schema::types::{AttrValue, AttrValueOnDisk, Schema};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
 
@@ -22,7 +23,7 @@ pub enum FileReadMode {
 pub struct RecordReadResult {
     pub record: RecordFromDb,
     pub parsing_error: Option<ErrFR>,
-    pub schema: Schema,
+    pub schema: SchemaResult,
 }
 
 pub async fn read_file_by_path(
@@ -62,7 +63,7 @@ pub async fn read_file_by_path(
                     ..Default::default()
                 },
                 parsing_error: parsed_meta.err(),
-                schema: files_schema.schema.clone(),
+                schema: files_schema,
             });
         }
         Err(e) => {

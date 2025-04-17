@@ -19,10 +19,6 @@
       </template>
     </DynamicViewRenderDynamic>
   </div>
-
-  <div ref="forDrag" class="absolute top-[-500px]">
-    <UiExtraDragDisplay> dragging </UiExtraDragDisplay>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -99,43 +95,7 @@ const rootGroup: IDynamicViewGroup = {
 ///
 /// Cover Right click
 ///
-const removeCoverHandler = async () => {
-  if ('unsaved' in openedFile.value) return;
-  removeCover({ bookFilePath: openedFile.value.path });
-};
 
-const setCoverHandle = () => {
-  if ('unsaved' in openedFile.value) return;
-  setCover({ bookFilePath: openedFile.value.path });
-};
-
-const fetchCoverHandle = async () => {
-  if (!openedFile.value.ISBN13) {
-    toast.error("Can't fetch cover without isbn13", {
-      description: 'Please specify ISBN and try again',
-    });
-    return;
-  }
-
-  if ('unsaved' in openedFile.value) {
-    toast.error(`Can't fetch cover for unsaved file`, {
-      description: 'Save file and try again',
-    });
-    return;
-  }
-
-  const promise = fetchCover({ bookFilePath: openedFile.value.path });
-
-  toast.promise(promise, {
-    loading: 'Fetching...',
-    success: () => {
-      return `Cover updated`;
-    },
-    error: (e: any) => {
-      return String(e);
-    },
-  });
-};
 
 const dragging = ref('');
 const forDrag = ref();

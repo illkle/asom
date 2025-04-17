@@ -20,11 +20,15 @@
     File not found: {{ imageName }}
   </div>
   <div
-    class="h-46 min-w-46 w-full rounded-md border flex items-center flex-col justify-center"
+    class="h-46 relative min-w-46 w-full rounded-md border flex items-center flex-col justify-center"
     v-else
     @click="changeImageHandler"
   >
-    <span class="text-xs text-muted-foreground">Select Image</span>
+    <EditorInputsCommonLabel v-if="name">{{ name }}</EditorInputsCommonLabel>
+    <span
+      class="text-xs absolute bottom-0 left-1/2 max-w-fit w-full -translate-x-1/2 border-b-0 rounded-b-none text-muted-foreground border p-1.5 rounded-md"
+      >Select image</span
+    >
   </div>
 </template>
 
@@ -37,6 +41,9 @@ import { computedAsync } from '@vueuse/core';
 import path from 'path-browserify';
 
 const imageName = defineModel<string | null>();
+const props = defineProps<{
+  name: string;
+}>();
 
 const rootPath = useRootPath();
 
