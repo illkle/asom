@@ -1,8 +1,8 @@
 <template>
   <motion.div
     v-bind="$attrs"
-    :class="props.class"
-    :data-can-drop="canDrop && isOver"
+    :class="[props.class, props.disabled && 'pointer-events-none']"
+    :data-can-drop="isOver"
     :data-is-over="isOver"
     @pointerenter="
       handleDragEnter({ group: props.group, index: props.index, priority: props.priority ?? 0 })
@@ -12,7 +12,7 @@
     "
     @dragover=""
   >
-    <slot :is-over="isOver" :can-drop="canDrop" />
+    <slot :is-over="isOver" />
   </motion.div>
 </template>
 
@@ -26,23 +26,17 @@ import {
 } from './common';
 
 const props = defineProps<{
-  acceptedTypes: DraggedItemInfo['type'][];
   group: HoveredItemInfo['group'];
   index: HoveredItemInfo['index'];
   priority?: HoveredItemInfo['priority'];
   class?: string;
+  disabled?: boolean;
 }>();
 
 const { draggedItem, hoveredItem, handleDragEnter, handleDragLeave } = useCoolDndContext<
   unknown,
   DraggedItemInfo
 >();
-
-const canDrop = computed(() => {
-  if (!draggedItem.value) return false;
-  if (!draggedItem.value.type) return true;
-  return props.acceptedTypes.includes(draggedItem.value.type);
-});
 
 const isOver = computed(() => {
   if (!hoveredItem.value) return false;

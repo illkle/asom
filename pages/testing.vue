@@ -1,31 +1,39 @@
 <template>
   <div class="flex flex-col gap-2 mx-auto px-4 w-full py-10 max-w-5xl">
-    <TestComponentKitTestComponent v-if="false" />
-    <div class="h-[300px]"></div>
-    <TestComponent />
+    <DynamicViewDynamicConfiguration
+      v-if="true"
+      :layout="dataRefs.layout"
+      :available-items="dataRefs.availableItems"
+    />
+    <NestedDragTestComponent v-else />
   </div>
 </template>
 
 <script setup lang="ts">
-import z from 'zod';
-import TestComponent from '~/components/TestComponent/TestComponent.vue';
+import type { IDynamicViewGroup, ILayoutItem } from '~/components/DynamicView/helpers';
 
 definePageMeta({
   layout: 'empty',
 });
 
-const zGroup = z.interface({
-  name: z.string(),
-  get subcategories() {
-    return z.array(zGroup.or(z.string()));
-  },
+const layout = ref<IDynamicViewGroup>({
+  id: 'root',
+  type: 'group',
+  style: { direction: 'row', gap: '0', align: 'start', justify: 'start' },
+  content: [
+    {
+      id: 'lol',
+      type: 'group',
+      style: { direction: 'row', gap: '16', align: 'start', justify: 'start' },
+      content: [{ type: 'item', id: '133' }],
+    },
+  ],
 });
 
-type IGroup = z.infer<typeof zGroup>;
-
-const rootGroup: IGroup = {
-  name: 'root',
-  subcategories: [],
+const availableItems = ref<ILayoutItem[]>([{ id: '133', type: 'item' }]);
+const dataRefs = {
+  layout,
+  availableItems,
 };
 </script>
 

@@ -1,7 +1,7 @@
 <template>
   <div class="flex w-full flex-col overscroll-none px-4">
     <div class="mx-auto h-fit w-full max-w-2xl">
-      <div class="sticky top-0 z-10">
+      <div class="sticky top-0 z-10" v-if="false">
         {{ new Date(fileQ.data.value?.record.modified ?? 0).toLocaleString() }}
         <br />
         {{ lastSyncedTimestamp.toLocaleString() }}

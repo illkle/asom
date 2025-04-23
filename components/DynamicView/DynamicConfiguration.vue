@@ -1,129 +1,80 @@
 <template>
-  <DynamicViewRenderDynamic :group="value" class="border rounded-md grow px-2 pb-2">
-    <template #header="{ group }">
-      <div
-        class="border border-t-0 px-2 rounded-b-md"
-        :class="{
-          'bg-accent cursor-copy': dragging,
-        }"
-        @mouseenter="
-          () => {
-            target = group.name;
-          }
-        "
-        @mouseleave="
-          () => {
-            target = null;
-          }
-        "
-      >
-        {{ group.name }}
-      </div>
-      <div class="h-4"></div>
-    </template>
-    <template #default="{ data, group, index }">
-      <div class="border rounded-md">
-        <span class="px-2">
-          {{ data }}
-        </span>
-
-        <Button variant="ghost" @click="() => group.subcategories.splice(index, 1)">
-          <XIcon :size="16" />
-        </Button>
-      </div>
-    </template>
-  </DynamicViewRenderDynamic>
-
-  <div class="flex gap-2">
-    <Button v-for="value in values" @mousedown="onDragStart(value)">
-      <div>{{ value }}</div>
-    </Button>
-  </div>
-
-  <Button
-    @mousedown="
-      onDragStart({
-        name: generateUniqId(),
-        subcategories: [],
-        style: { direction: 'row', gap: 0, align: 'start', justify: 'start' },
-      })
-    "
+  <div></div>
+  <DynamicViewRenderDynamicEditor
+    :item="props.layout.value"
+    :level="0"
+    class="border rounded-md grow data-[is-over=true]:bg-accent"
+    @delete="onDelete"
   >
-    Group
-  </Button>
+    <template #item="{ item }">
+      <slot name="item" :item="item" />
+    </template>
+  </DynamicViewRenderDynamicEditor>
 
-  {{ dragging }}
-
-  {{ target }}
-
-  {{ value }}
-
-  {{ allGroups }}
+  <div class="flex gap-2 items-center">
+    <NestedDragDropTarget group="toDelete" :index="0" class="mr-2">
+      <Button :disabled="!draggedItem" variant="destructive">Delete</Button>
+    </NestedDragDropTarget>
+    <NestedDragDraggable
+      v-for="value in props.availableItems.value"
+      :id="value.id"
+      :type="value.type"
+      :user-flags="{ external: 'true' }"
+    >
+      <div class="border rounded-md px-2 py-1.5 min-w-20">{{ value.id }}</div>
+    </NestedDragDraggable>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { XIcon } from 'lucide-vue-next';
-import { ref } from 'vue';
-import type { IDynamicViewGroup } from './helpers';
+import { useProvideDNDContext } from '../NestedDrag/common';
+import {
+  findAndRemoveItem,
+  insertItemIntoGroup,
+  type IDynamicViewGroup,
+  type ILayoutItem,
+} from './helpers';
 
-const value = ref<IDynamicViewGroup>({
-  name: 'root',
-  style: { direction: 'row', gap: 0, align: 'start', justify: 'start' },
-  subcategories: [
-    {
-      name: 'lol',
-      style: { direction: 'row', gap: 0, align: 'start', justify: 'start' },
-      subcategories: [],
-    },
-  ],
+const props = defineProps<{
+  layout: Ref<IDynamicViewGroup>;
+  availableItems: Ref<ILayoutItem[]>;
+}>();
+
+const { draggedItem } = useProvideDNDContext({
+  onMove: (draggedItem, hoveredItem) => {
+    if (hoveredItem.group === 'toDelete') {
+      const i = findAndRemoveItem(props.layout.value, draggedItem.id);
+
+      if (!i) {
+        throw new Error('Item not found ' + draggedItem.id);
+      }
+
+      return;
+    }
+
+    if (draggedItem.userFlags?.external) {
+      const i = props.availableItems.value.find((id) => id.id === draggedItem.id);
+
+      if (!i) {
+        throw new Error('Item not found ' + draggedItem.id);
+      }
+
+      insertItemIntoGroup(props.layout.value, i, hoveredItem.group, hoveredItem.index);
+
+      return;
+    }
+
+    const i = findAndRemoveItem(props.layout.value, draggedItem.id);
+
+    if (!i) {
+      throw new Error('Item not found ' + draggedItem.id);
+    }
+
+    insertItemIntoGroup(props.layout.value, i, hoveredItem.group, hoveredItem.index);
+  },
 });
 
-const allGroups = computed(() => {
-  const q = [value.value];
-
-  const g: Record<string, IDynamicViewGroup> = {};
-
-  while (q.length > 0) {
-    const group = q.shift();
-
-    if (!group) return;
-
-    g[group.name] = group;
-
-    if (group?.subcategories) {
-      q.push(...group.subcategories.filter((s) => typeof s === 'object'));
-    }
-  }
-
-  return g;
-});
-
-type Item = string | IDynamicViewGroup;
-
-const dragging = ref<Item | null>(null);
-
-const values = ref<Item[]>(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
-
-const onDragStart = (item: Item) => {
-  dragging.value = item;
-
-  document.addEventListener('mouseup', onDragEnd);
+const onDelete = (id: string) => {
+  findAndRemoveItem(props.layout.value, id);
 };
-
-const onDragEnd = () => {
-  if (target.value && dragging.value && allGroups.value) {
-    console.log(target.value, dragging.value);
-    const group = allGroups.value[target.value];
-
-    console.log(group);
-    if (group) {
-      group.subcategories.push(dragging.value);
-    }
-  }
-  dragging.value = null;
-};
-
-const dragTarget = ref<HTMLElement | null>(null);
-
-const target = ref<string | null>();
 </script>

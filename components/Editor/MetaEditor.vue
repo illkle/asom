@@ -1,20 +1,31 @@
 <template>
   <div class="grid gap-2" :class="$attrs.class" id="attributesContainer">
-    <template v-if="false" v-for="item in schema?.items">
-      <div :id="item.name" class="flex">
-        <EditorAttributesRouter
-          v-model:model-value="openedFile.attrs[item.name]"
-          :schema-item="item"
-        />
-      </div>
+    <Button variant="ghost" @click="editMode = !editMode">
+      {{ editMode ? 'View' : 'Edit' }}
+    </Button>
+    <template v-if="editMode">
+      <DynamicViewDynamicConfiguration
+        :available-items="dataRefs.availableItems"
+        :layout="dataRefs.rootGroup"
+      >
+        <template #item="{ item }">
+          <div class="pointer-events-none p-1">
+            <EditorAttributesRouter
+              v-if="attributesByKey?.[item.id]"
+              v-model:model-value="openedFile.attrs[item.id]"
+              :schema-item="attributesByKey[item.id]"
+            />
+          </div>
+        </template>
+      </DynamicViewDynamicConfiguration>
     </template>
 
-    <DynamicViewRenderDynamic :group="rootGroup">
+    <DynamicViewRenderDynamic v-else :group="rootGroup">
       <template #default="{ data }">
         <EditorAttributesRouter
-          v-if="attributesByKey?.[data]"
-          v-model:model-value="openedFile.attrs[data]"
-          :schema-item="attributesByKey[data]"
+          v-if="attributesByKey?.[data.id]"
+          v-model:model-value="openedFile.attrs[data.id]"
+          :schema-item="attributesByKey[data.id]"
         />
       </template>
     </DynamicViewRenderDynamic>
@@ -25,7 +36,7 @@
 import type { PropType } from 'vue';
 
 import type { RecordFromDb, Schema, SchemaItem } from '~/types';
-import type { IDynamicViewGroup } from '../DynamicView/helpers';
+import { getFlatItems, type IDynamicViewGroup, type ILayoutItem } from '../DynamicView/helpers';
 const p = defineProps({
   schema: {
     type: Object as PropType<Schema | null>,
@@ -43,53 +54,91 @@ const attributesByKey = computed(() => {
   }, {});
 });
 
-const rootGroup: IDynamicViewGroup = {
-  name: 'root',
+const rootGroup: Ref<IDynamicViewGroup> = ref({
+  id: 'root',
+  type: 'group',
   style: {
     direction: 'row',
-    gap: 16,
+    gap: '16',
     align: 'start',
     justify: 'between',
   },
-  subcategories: [
+  content: [
     {
-      name: 'left',
+      id: 'left',
+      type: 'group',
       style: {
         direction: 'column',
-        gap: 4,
+        gap: '4',
         align: 'center',
         justify: 'start',
       },
-      subcategories: ['cover', 'myRating'],
+      content: [
+        {
+          id: 'cover',
+          type: 'item',
+        },
+        { id: 'myRating', type: 'item' },
+      ],
     },
     {
-      name: 'right',
+      id: 'right',
+      type: 'group',
       style: {
         direction: 'column',
-        gap: 8,
+        gap: '8',
         align: 'start',
         justify: 'start',
       },
-      subcategories: [
-        'title',
-        'author',
+      content: [
+        { id: 'title', type: 'item' },
+        { id: 'author', type: 'item' },
         {
-          name: 'subline',
+          id: 'subline',
+          type: 'group',
           style: {
             direction: 'row',
-            gap: 16,
+            gap: '16',
             align: 'center',
             justify: 'start',
           },
-          subcategories: ['year', 'ISBN13'],
+          content: [
+            { id: 'year', type: 'item' },
+            { id: 'ISBN13', type: 'item' },
+          ],
         },
-
-        'tags',
-        'read',
+        { id: 'tags', type: 'item' },
+        { id: 'read', type: 'item' },
       ],
     },
   ],
+});
+
+const flatItems = computed(() => {
+  return new Set(getFlatItems(rootGroup.value).map((v) => v.id));
+});
+
+const availableItems = computed<{ id: string; type: 'item' }[]>({
+  get() {
+    const i =
+      p.schema?.items
+        .filter((v) => !flatItems.value.has(v.name))
+        .map((attr) => ({
+          id: attr.name,
+          type: 'item',
+        })) || [];
+
+    return i as ILayoutItem[];
+  },
+  set(value: { id: string; type: 'item' }[]) {},
+});
+
+const dataRefs = {
+  rootGroup,
+  availableItems,
 };
+
+const editMode = ref(false);
 
 /*
 ///
