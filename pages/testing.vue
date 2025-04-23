@@ -1,15 +1,14 @@
 <template>
   <div class="flex flex-col gap-2 mx-auto px-4 w-full py-10 max-w-5xl">
-    <div class="grid grid-cols-2 dense">
-      <div class="w-[400px] h-[500px] bg-amber-100"></div>
-      <div class="w-[400px] h-[200px] bg-amber-200"></div>
-      <div class="w-[400px] col-start-2 h-[200px] bg-amber-300"></div>
-    </div>
+    <TestComponentKitTestComponent v-if="false" />
+    <div class="h-[300px]"></div>
+    <TestComponent />
   </div>
 </template>
 
 <script setup lang="ts">
 import z from 'zod';
+import TestComponent from '~/components/TestComponent/TestComponent.vue';
 
 definePageMeta({
   layout: 'empty',

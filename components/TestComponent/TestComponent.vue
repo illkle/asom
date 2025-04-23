@@ -1,41 +1,69 @@
 <template>
-  <Input v-model="string" />
-  Modifying string: {{ q.data.value }}
-  <Input v-model="object.a" />
-  Modifying object: {{ q2.data.value }}
+  <div class="flex gap-2">
+    <TestGroup
+      :item="groups"
+      :level="0"
+      class="p-2 data-[dragging=true]:border-accent-foreground border data-[can-drop=true]:bg-red-500"
+    >
+    </TestGroup>
+  </div>
 
-  Modifying object passing string: {{ q3.data.value }}
+  {{ groups }}
 
-  <Input v-model="shallowObject.a" />
-  Modifying shallow object: {{ q4.data.value }}
-
-  <br />
-
-  <Input v-model="forSub" />
-  <Input v-model="forSubObject.a" />
-
-  {{ forSubObject.a }}
-  <SubComponent :thing-string="forSubObject.a" :thing-object="forSubObject" />
+  <div>
+    {{ hoveredItem }}
+  </div>
 </template>
 
 <script setup lang="ts">
-import SubComponent from './SubComponent.vue';
-import { useObjectThing, useThing } from './useThing';
+import { ref } from 'vue';
+import { useProvideDNDContext } from './common';
+import {
+  findAndRemoveItem,
+  insertItemIntoGroup,
+  sampleData,
+  type ContentGroup,
+  type Item,
+} from './dataShape';
+import TestGroup from './TestGroup.vue';
 
-const string = ref('');
+const commonType = 'test';
 
-const { q } = useThing(string.value);
+const groups = ref<ContentGroup>(sampleData);
 
-const object = ref({ a: '123' });
+const getAllSubItems = (data: Item) => {
+  const res: Item[] = [data];
 
-const { q: q2 } = useObjectThing(object.value);
+  if (data.type !== 'group') {
+    return [];
+  }
 
-const { q: q3 } = useThing(object.value.a);
+  for (const item of data.content) {
+    res.push(item);
+    if (item.type === 'group') {
+      res.push(...getAllSubItems(item));
+    }
+  }
 
-const shallowObject = shallowRef({ a: '1234' });
+  return res;
+};
 
-const { q: q4 } = useObjectThing(shallowObject.value);
-
-const forSub = ref<string>('string');
-const forSubObject = ref<{ a: string }>({ a: '123' });
+const { virtual, offset, starterPosition, draggedItem, hoveredItem } = useProvideDNDContext({
+  itemsRef: groups,
+  removeItemInPlace: (data, item) => {
+    const i = findAndRemoveItem(data, item.id);
+    if (!i) {
+      throw new Error('Item not found ' + item.id);
+    }
+    return i;
+  },
+  idFromItem: (item) => item.id,
+  insertItemInPlace: (data, itemInfo, target) => {
+    const res = insertItemIntoGroup(data, target, itemInfo.group, itemInfo.index);
+    if (!res) {
+      throw new Error('Item not inserted ' + itemInfo.group + ' ' + itemInfo.index);
+    }
+    return res;
+  },
+});
 </script>

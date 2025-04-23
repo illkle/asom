@@ -7,7 +7,7 @@ use ts_rs::TS;
 use crate::cache::query::RecordFromDb;
 use crate::core::core::SchemasCacheMutex;
 use crate::schema::schema_cache::SchemaResult;
-use crate::schema::types::{AttrValue, AttrValueOnDisk, Schema};
+use crate::schema::types::{AttrValue, AttrValueOnDisk};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
 
 use super::metadata::parse_metadata;
