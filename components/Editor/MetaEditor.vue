@@ -140,7 +140,7 @@ const dataRefs = {
   availableItems,
 };
 
-const editMode = ref(false);
+const editMode = ref(true);
 
 /*
 ///

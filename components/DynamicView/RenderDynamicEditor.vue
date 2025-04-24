@@ -1,9 +1,12 @@
 <template>
   <motion.div layout class="">
     <template v-if="props.item.type === 'group'">
-      <motion.div layout class="flex justify-between items-center pl-2 border-b">
-        <motion.div layout class="text-xs text-muted-foreground">Group</motion.div>
-        <motion.div layout="position" class="flex">
+      <!-- Top Menu-->
+      <motion.div layout="preserve-aspect" class="flex justify-between items-center pl-2 border-b">
+        <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"
+          >Group</motion.div
+        >
+        <motion.div layout="preserve-aspect" class="flex">
           <Button
             variant="outline"
             size="sm"
@@ -51,10 +54,10 @@
           </Button>
         </motion.div>
       </motion.div>
-
+      <!-- Content-->
       <div :style="getStyle(props.item)" class="p-2">
         <template v-if="props.item.content.length">
-          <NestedDragOrderable
+          <NestedDragOrderable2
             v-for="(p, index) in props.item.content"
             :key="p.id"
             :group="props.item.id"
@@ -63,10 +66,14 @@
             :index="index"
             :priority="props.level"
             :disabled="props.disabled"
-            class="rounded-md cursor-grab bg-background data-[is-dragging-me=true]:bg-muted data-[is-over=true]:bg-accent transition-colors duration-300"
-            :class="[p.type === 'item' ? '' : 'border']"
+            :location="[...props.location, p.id]"
+            :class="[p.type === 'item' ? '' : 'border', 'rounded-md data-[is-over=true]:bg-accent']"
+            :drag-class="[
+              'rounded-md cursor-grab data-[is-dragging-me=true]:bg-background/30 data-[is-dragging-me=true]:border-muted-foreground  transition-colors duration-300',
+              p.type === 'item' ? '' : 'border',
+            ]"
           >
-            <template #default="{ isOver, isDraggingMe }">
+            <template #default="{ isDraggingMe }">
               <slot v-if="p.type === 'item'" name="item" :item="p" />
 
               <RenderDynamicEditor
@@ -74,6 +81,7 @@
                 :item="p"
                 :level="props.level + 1"
                 :disabled="isDraggingMe"
+                :location="[...props.location, p.id]"
                 @delete="(id) => emit('delete', id)"
               >
                 <!-- @vue-expect-error This is correct, but ts is stuck because recursive type -->
@@ -82,7 +90,7 @@
                 </template>
               </RenderDynamicEditor>
             </template>
-          </NestedDragOrderable>
+          </NestedDragOrderable2>
         </template>
 
         <NestedDragDropTarget
@@ -115,6 +123,7 @@ const props = defineProps<{
   item: IDynamicItem;
   level: number;
   disabled?: boolean;
+  location: string[];
 }>();
 
 const emit = defineEmits<{
