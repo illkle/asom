@@ -7,12 +7,14 @@
     :stars-count="settings.starsCount"
     :min="settings.min"
     :max="settings.max"
+    :disabled="disabled"
     @update:model-value="(v) => $emit('update:modelValue', v)"
   />
   <div v-else-if="settings.style === 'Slider'" class="flex items-center gap-2">
     <Slider
       :model-value="[modelValue ?? settings.min ?? 0]"
       :min="settings.min"
+      :disabled="disabled"
       :max="settings.max"
       @update:model-value="(v) => $emit('update:modelValue', v?.[0] ?? null)"
       :step="decimalToStep(settings.decimalPlaces ?? 0)"
@@ -34,6 +36,7 @@
       maximumFractionDigits: settings.decimalPlaces,
       useGrouping: false,
     }"
+    :disabled="disabled"
     :disable-wheel-change="true"
     @update:model-value="(v) => $emit('update:modelValue', v)"
   >
@@ -53,6 +56,7 @@ defineModel<number | null>({ required: true });
 const props = defineProps<{
   settings: NumberSettings;
   name: string;
+  disabled?: boolean;
 }>();
 
 const decimalToStep = (decimalPlaces: number) => {

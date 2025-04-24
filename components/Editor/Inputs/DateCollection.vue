@@ -7,9 +7,13 @@
         :key="index"
         class="flex w-fit items-center justify-between gap-2"
       >
-        <DateInput :model-value="date" @update:model-value="(v) => updateDate(index, v)" />
+        <DateInput
+          :model-value="date"
+          @update:model-value="(v) => updateDate(index, v)"
+          :disabled="disabled"
+        />
       </div>
-      <Button variant="outline" size="sm" class="" @click="addNewDate">
+      <Button variant="outline" size="sm" class="" @click="addNewDate" :disabled="disabled">
         <PlusIcon :size="16" /> Add Date
       </Button>
     </div>
@@ -24,6 +28,7 @@ import DateInput from './Date.vue';
 
 const props = defineProps<{
   name: string;
+  disabled?: boolean;
 }>();
 
 const datePairs = defineModel<string[] | null>();

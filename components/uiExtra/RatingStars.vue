@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex h-fit fill-foreground relative w-fit"
-    :class="!disabled && 'cursor-pointer'"
+    :class="!disabled ? 'cursor-pointer' : 'opacity-50'"
     ref="target"
     @click="$emit('update:modelValue', hoveredValue)"
   >

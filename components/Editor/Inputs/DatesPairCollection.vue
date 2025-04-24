@@ -8,23 +8,26 @@
           v-model="date.started"
           :limits="{ end: date.finished }"
           class="rounded-r-none min-w-40 grow-0"
+          :disabled="disabled"
         />
         <DateInput
           v-model="date.finished"
           :limits="{ start: date.started }"
           class="rounded-none border-l-0 border-r-0 w-fit min-w-40 grow-0"
+          :disabled="disabled"
         />
 
         <Button
           variant="outline"
           size="icon"
           class="rounded-l-none border-l-0"
+          :disabled="disabled"
           @click="removeDate(index)"
         >
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="outline" size="sm" class="" @click="addNewDate">
+      <Button variant="outline" size="sm" class="" @click="addNewDate" :disabled="disabled">
         <PlusIcon :size="16" /> Log Dates
       </Button>
     </div>
@@ -40,6 +43,7 @@ import DateInput from './Date.vue';
 
 const props = defineProps<{
   name: string;
+  disabled?: boolean;
 }>();
 
 const datePairs = defineModel<DatePair[] | null>();

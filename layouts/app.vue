@@ -10,7 +10,7 @@
         </div>
         <div
           ref="scrollElementRef"
-          class="overscroll-none scrollbarMod gutter-stable h-full bg-background transition-all duration-100"
+          class="overscroll-none scrollbarMod overflow-hidden gutter-stable h-full bg-background transition-all duration-100"
           :class="isFirstTab ? '' : 'rounded-tl-md'"
         >
           <slot />

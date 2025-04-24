@@ -5,6 +5,7 @@
     class="outline-none focus:outline-none"
     :class="isPlaceholder && placeholderClasses"
     :contenteditable="contenteditable"
+    :data-disabled="disabled"
     @input="inputHandler"
     @focus="focusHandler"
     @blur="blurHandler"
@@ -15,10 +16,14 @@
 
 <script lang="ts" setup>
 // Based on https://github.com/hl037/vue-contenteditable/blob/master/src/components/contenteditable.vue.d.ts
-import { ref, onMounted, watch, onBeforeUnmount, getCurrentInstance } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { NUMBERS_REGEX } from '~/api/utils';
 
 const props = defineProps({
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
   tag: {
     type: String,
     default: 'div',

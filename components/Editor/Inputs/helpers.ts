@@ -52,6 +52,7 @@ export const textCollectionInputVariants = cva({
     'text-foreground inline-flex items-center  transition-all',
     'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground  border  flex   outline-none   ',
     'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] ',
+    'data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 data-[disabled=true]:bg-red-500',
   ],
   variants: {
     size: {

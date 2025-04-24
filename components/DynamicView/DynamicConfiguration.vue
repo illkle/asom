@@ -1,29 +1,32 @@
 <template>
-  <div></div>
-  <DynamicViewRenderDynamicEditor
-    :item="props.layout.value"
-    :level="0"
-    class="border rounded-md grow data-[is-over=true]:bg-accent"
-    @delete="onDelete"
-  >
-    <template #item="{ item }">
-      <slot name="item" :item="item" />
-    </template>
-  </DynamicViewRenderDynamicEditor>
+  <LayoutGroup>
+    <MotionConfig :transition="{ duration: 0.3 }">
+      <DynamicViewRenderDynamicEditor
+        :item="props.layout.value"
+        :level="0"
+        class="border rounded-md grow data-[is-over=true]:bg-accent"
+        @delete="onDelete"
+      >
+        <template #item="{ item }">
+          <slot name="item" :item="item" />
+        </template>
+      </DynamicViewRenderDynamicEditor>
 
-  <div class="flex gap-2 items-center">
-    <NestedDragDropTarget group="toDelete" :index="0" class="mr-2">
-      <Button :disabled="!draggedItem" variant="destructive">Delete</Button>
-    </NestedDragDropTarget>
-    <NestedDragDraggable
-      v-for="value in props.availableItems.value"
-      :id="value.id"
-      :type="value.type"
-      :user-flags="{ external: 'true' }"
-    >
-      <div class="border rounded-md px-2 py-1.5 min-w-20">{{ value.id }}</div>
-    </NestedDragDraggable>
-  </div>
+      <div class="flex gap-2 items-center">
+        <NestedDragDropTarget group="toDelete" :index="0" class="mr-2">
+          <Button :disabled="!draggedItem" variant="destructive">Delete</Button>
+        </NestedDragDropTarget>
+        <NestedDragDraggable
+          v-for="value in props.availableItems.value"
+          :id="value.id"
+          :type="value.type"
+          :user-flags="{ external: 'true' }"
+        >
+          <div class="border rounded-md px-2 py-1.5 min-w-20">{{ value.id }}</div>
+        </NestedDragDraggable>
+      </div>
+    </MotionConfig>
+  </LayoutGroup>
 </template>
 
 <script setup lang="ts">

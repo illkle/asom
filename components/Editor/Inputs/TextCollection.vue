@@ -18,6 +18,7 @@
         tag="div"
         spellcheck="false"
         :no-n-l="true"
+        :disabled="disabled"
         :class="[
           textCollectionInputVariants({ size: props.settings?.size, font: props.settings?.font }),
           prefix ? 'prefix before:pr-0.5 before:opacity-50' : '',
@@ -51,6 +52,7 @@ const tags = defineModel<string[] | null>();
 const props = defineProps<{
   settings: TextCollectionSettings | null;
   name: string;
+  disabled?: boolean;
 }>();
 
 const prefix = computed(() => (props.settings?.prefix ? `'${props.settings?.prefix}'` : undefined));

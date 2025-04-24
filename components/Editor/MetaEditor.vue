@@ -3,6 +3,7 @@
     <Button variant="ghost" @click="editMode = !editMode">
       {{ editMode ? 'View' : 'Edit' }}
     </Button>
+
     <template v-if="editMode">
       <DynamicViewDynamicConfiguration
         :available-items="dataRefs.availableItems"
@@ -14,6 +15,7 @@
               v-if="attributesByKey?.[item.id]"
               v-model:model-value="openedFile.attrs[item.id]"
               :schema-item="attributesByKey[item.id]"
+              :disabled="true"
             />
           </div>
         </template>

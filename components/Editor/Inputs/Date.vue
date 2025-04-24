@@ -15,6 +15,7 @@ const props = defineProps<{
   };
   name?: string;
   class?: string;
+  disabled?: boolean;
 }>();
 
 const modelValue = defineModel<string | null>({ default: null });
@@ -37,6 +38,7 @@ const isOpened = ref(false);
   <Popover>
     <PopoverTrigger as-child>
       <Button
+        :disabled="disabled"
         variant="outline"
         :class="
           cn(

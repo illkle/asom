@@ -6,6 +6,7 @@
         v-model="attr.value"
         :settings="schemaItem.value.settings"
         :name="name"
+        :disabled="disabled"
       />
 
       <!-- prettier-ignore-attribute  v-model -->
@@ -16,6 +17,7 @@
         v-model="(attr.value as number | null)"
         :settings="schemaItem.value.settings"
         :name="name"
+        :disabled="disabled"
       />
 
       <TagsInput
@@ -23,29 +25,34 @@
         :settings="schemaItem.value.settings"
         v-model:model-value="attr.value"
         :name="name"
+        :disabled="disabled"
       />
 
       <DateInput
         v-else-if="schemaItem.value.type === 'Date' && attr.type === 'String'"
         v-model:model-value="attr.value"
         :name="name"
+        :disabled="disabled"
       />
 
       <DateCollection
         v-else-if="schemaItem.value.type === 'DateCollection' && attr.type === 'StringVec'"
         v-model:model-value="attr.value"
         :name="name"
+        :disabled="disabled"
       />
 
       <DateRangeInput
         v-else-if="schemaItem.value.type === 'DatesPairCollection' && attr.type === 'DatePairVec'"
         v-model:model-value="attr.value"
         :name="name"
+        :disabled="disabled"
       />
       <ImageInput
         v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
         v-model="attr.value"
         :name="name"
+        :disabled="disabled"
       />
       <div v-else class="flex flex-col gap-1 border border-red-500 rounded-md py-1 px-2 text-sm">
         Unsupported attribute type or type mismatch:
@@ -70,6 +77,7 @@ const attr = defineModel<AttrValue>();
 
 const props = defineProps<{
   schemaItem: SchemaItem;
+  disabled?: boolean;
 }>();
 
 const name = computed(() => {

@@ -7,6 +7,7 @@
       y: offset.y * (isDraggingMe ? 1 : 0),
       zIndex: isDraggingMe ? 9999 : 0,
     }"
+    :layout-id="props.id"
     :transition="{
       x: {
         duration: isDraggingMe ? 0 : 0.3,
@@ -19,11 +20,9 @@
         delay: isDraggingMe ? 0 : 0.3,
       },
     }"
-    :layout-id="props.id"
     :data-is-over="isOver"
     :data-is-dragging-me="isDraggingMe"
     :class="[
-      props.class,
       (props.disabled || isDraggingMe) && 'pointer-events-none',
       !props.disabled && 'cursor-grab',
     ]"
@@ -69,7 +68,7 @@ const props = defineProps<{
   group: HoveredItemInfo['group'];
   index: HoveredItemInfo['index'];
   priority?: HoveredItemInfo['priority'];
-  class?: string;
+
   disabled?: boolean;
 }>();
 
@@ -91,5 +90,10 @@ const isDraggingMe = computed(() => {
     id: props.id,
     type: props.type,
   });
+});
+
+const isDraggingSomeoneElse = computed(() => {
+  if (!draggedItem.value) return false;
+  return !isDraggingMe.value;
 });
 </script>

@@ -6,6 +6,7 @@
     :model-value="modelValue ?? ''"
     :placeholder="settings.displayName ?? name"
     :multi-line="settings.isMultiline"
+    :disabled="disabled"
     :class="[
       textInputVariants({
         theme: 'Default',
@@ -22,6 +23,7 @@
     :model-value="modelValue ?? ''"
     :placeholder="settings.displayName ?? name"
     :multi-line="settings.isMultiline"
+    :disabled="disabled"
     :rows="1"
     :class="[
       textInputVariants({
@@ -38,11 +40,12 @@
 
 <script setup lang="ts">
 import type { TextSettings } from '~/types';
-import { textInputVariants } from './helpers';
 import CommonLabel from './CommonLabel.vue';
+import { textInputVariants } from './helpers';
 defineProps<{
   settings: TextSettings;
   name: string;
+  disabled?: boolean;
 }>();
 
 defineModel<string | null>({ required: true });
