@@ -47,7 +47,7 @@
             size="sm"
             variant="outline"
             class="rounded-none border-0"
-            @click.stop="emit('delete', props.item.id)"
+            @click.stop="emit('delete', { id: props.item.id, parentIds: props.parentIds })"
             @pointerdown.stop
           >
             <TrashIcon />
@@ -57,16 +57,15 @@
       <!-- Content-->
       <div :style="getStyle(props.item)" class="p-2">
         <template v-if="props.item.content.length">
-          <NestedDragOrderable2
+          <NestedDragOrderable
             v-for="(p, index) in props.item.content"
             :key="p.id"
             :group="props.item.id"
             :id="p.id"
             :type="commonType"
-            :index="index"
             :priority="props.level"
             :disabled="props.disabled"
-            :location="[...props.location, p.id]"
+            :parentIds="[...props.parentIds]"
             :class="[p.type === 'item' ? '' : 'border', 'rounded-md data-[is-over=true]:bg-accent']"
             :drag-class="[
               'rounded-md cursor-grab data-[is-dragging-me=true]:bg-background/30 data-[is-dragging-me=true]:border-muted-foreground  transition-colors duration-300',
@@ -81,8 +80,8 @@
                 :item="p"
                 :level="props.level + 1"
                 :disabled="isDraggingMe"
-                :location="[...props.location, p.id]"
-                @delete="(id) => emit('delete', id)"
+                :parentIds="[...props.parentIds, p.id]"
+                @delete="(v) => emit('delete', v)"
               >
                 <!-- @vue-expect-error This is correct, but ts is stuck because recursive type -->
                 <template #item="{ item }">
@@ -90,14 +89,14 @@
                 </template>
               </RenderDynamicEditor>
             </template>
-          </NestedDragOrderable2>
+          </NestedDragOrderable>
         </template>
 
         <NestedDragDropTarget
           v-else
-          :accepted-types="[commonType]"
-          :group="props.item.id"
+          :id="props.item.id + '-first-item'"
           :index="props.item.content.length"
+          :parentIds="props.parentIds"
           :priority="props.level + 1"
           :class="'w-full data-[is-dragging-me=true]:bg-muted data-[is-over=true]:bg-accent transition-colors duration-300 h-10'"
         >
@@ -114,6 +113,7 @@
 <script setup lang="ts">
 import { CogIcon, SquarePlus, TrashIcon } from 'lucide-vue-next';
 import { motion } from 'motion-v';
+import type { ItemInfoCore } from '~/components/NestedDrag/common';
 import type { IDynamicItem } from './helpers';
 import { getStyle } from './helpers';
 
@@ -123,10 +123,10 @@ const props = defineProps<{
   item: IDynamicItem;
   level: number;
   disabled?: boolean;
-  location: string[];
+  parentIds: ItemInfoCore['parentIds'];
 }>();
 
 const emit = defineEmits<{
-  (e: 'delete', id: string): void;
+  (e: 'delete', id: ItemInfoCore): void;
 }>();
 </script>

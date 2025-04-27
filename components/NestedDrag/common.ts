@@ -1,18 +1,21 @@
-import { useMouse } from '@vueuse/core';
+import type { ShallowRef } from 'vue';
 
-export type DraggedItemInfo = {
-  location: string[];
+export interface ItemInfoCore {
+  parentIds: string[];
   id: string;
-  type?: string;
-  userFlags?: Record<string, string>;
-};
+}
 
-export type HoveredItemInfo = {
-  group: string;
-  index: number;
-  priority: number;
-  userFlags?: Record<string, string>;
-};
+export interface DraggableInfo extends ItemInfoCore {
+  // Undefined is type="default"
+  type?: string;
+}
+
+export const DEFAULT_DRAGGABLE_TYPE = 'default';
+
+export interface DropTargetInfo extends ItemInfoCore {
+  // Undefined means any type is accepted
+  acceptedTypes?: string[];
+}
 
 type StarterDragInfo = {
   mouseX: number;
@@ -23,33 +26,71 @@ type StarterDragInfo = {
   height: number;
 };
 
+export type TargetPositionData = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+export type RegisteredTarget = {
+  info: DropTargetInfo;
+  position: TargetPositionData;
+  /* Extra precaution to avoid conflicts when unregistering and immediately registering the same target */
+  regKey: string;
+};
+
 export type DNDContext = {
-  draggedItem: Ref<DraggedItemInfo | null>;
+  draggedItem: Ref<DraggableInfo | null>;
   hoveredId: Ref<string | null>;
-  starterDragInfo: Ref<StarterDragInfo>;
-  draggedRect: Ref<CornerPositionData>;
 
-  startDrag: (e: PointerEvent, item: DraggedItemInfo, t: HTMLElement) => void;
-  handleDragEnd: () => void;
+  dropTargets: ShallowRef<Record<string, RegisteredTarget>>;
 
-  elementRepository: Ref<Record<string, ComputedRef<CornerPositionData>>>;
-};
+  startDrag: (e: PointerEvent, item: DraggableInfo, t: HTMLElement) => void;
 
-export const compareDraggedInfo = (a: DraggedItemInfo, b: DraggedItemInfo) => {
-  return JSON.stringify(a) === JSON.stringify(b);
-};
-
-export const compareHoveredInfo = (a: HoveredItemInfo, b: HoveredItemInfo) => {
-  return a.group === b.group && a.index === b.index;
+  registerDropTarget: (id: string, info: DraggableInfo) => string;
+  updateDropTargetPositon: (id: string, regKey: string, position: TargetPositionData) => void;
+  updateDropTargetInfo: (id: string, regKey: string, info: DropTargetInfo) => void;
+  unregisterDropTarget: (id: string, regKey: string) => void;
 };
 
 export const useProvideDNDContext = ({
   onMove,
 }: {
-  onMove: (draggedItem: DraggedItemInfo, hoveredItem: HoveredItemInfo) => void;
+  onMove: (draggedItem: DraggableInfo, hoveredItem: DropTargetInfo) => void;
 }): DNDContext => {
-  const draggedItem = ref<DraggedItemInfo | null>(null);
-  const elementRepository = ref<Record<string, ComputedRef<CornerPositionData>>>({});
+  const draggedItem = ref<DraggableInfo | null>(null);
+  const dropTargets = shallowRef<Record<string, RegisteredTarget>>({});
+
+  const registerDropTarget: DNDContext['registerDropTarget'] = (id, info) => {
+    const k = generateUniqId();
+    dropTargets.value[id] = { info, position: { left: 0, top: 0, width: 0, height: 0 }, regKey: k };
+    return k;
+  };
+
+  provide('pID', []);
+
+  const updateDropTargetPositon: DNDContext['updateDropTargetPositon'] = (id, regKey, position) => {
+    if (dropTargets.value[id]?.regKey === regKey) {
+      dropTargets.value[id].position = position;
+    } else {
+      console.error('updateDropTargetPositon: Drop target reg key mismatch', id, regKey);
+    }
+  };
+
+  const updateDropTargetInfo: DNDContext['updateDropTargetInfo'] = (id, regKey, info) => {
+    if (dropTargets.value[id]?.regKey === regKey) {
+      dropTargets.value[id].info = info;
+    } else {
+      console.error('updateDropTargetInfo: Drop target reg key mismatch', id, regKey);
+    }
+  };
+
+  const unregisterDropTarget: DNDContext['unregisterDropTarget'] = (id, regKey) => {
+    if (dropTargets.value[id]?.regKey === regKey) {
+      delete dropTargets.value[id];
+    }
+  };
 
   const starterDragInfo = ref<StarterDragInfo>({
     mouseX: 0,
@@ -59,41 +100,70 @@ export const useProvideDNDContext = ({
     width: 0,
     height: 0,
   });
-  const mousePosition = useMouse();
 
-  const draggedRect = computed(() => {
-    return getCornerPositionDataFromStarterInfo(
-      starterDragInfo.value,
-      mousePosition.x.value,
-      mousePosition.y.value,
-    );
+  const cursorPosition = ref({
+    x: 0,
+    y: 0,
+  });
+
+  const relevantTargets = computed(() => {
+    const targets: string[] = [];
+    if (!draggedItem.value) return targets;
+
+    for (const k of Object.keys(dropTargets.value)) {
+      const t = dropTargets.value[k];
+
+      if (t.info.parentIds.includes(draggedItem.value.id)) continue;
+
+      if (
+        t.info.acceptedTypes &&
+        !t.info.acceptedTypes.includes(draggedItem.value.type ?? DEFAULT_DRAGGABLE_TYPE)
+      )
+        continue;
+
+      targets.push(k);
+    }
+
+    return targets;
   });
 
   const hoveredId = computed(() => {
     if (!draggedItem.value) return null;
 
-    console.log(Object.entries(elementRepository.value));
+    let smallestRect: { id: string; size: number } | null = null;
 
-    const ids = Object.keys(elementRepository.value);
+    for (const id of relevantTargets.value) {
+      const rect = dropTargets.value[id].position;
 
-    let closestItem: { id: string; distance: number } | null = null;
+      const isInside = checkPointInsideRect(rect, {
+        x: cursorPosition.value.x,
+        y: cursorPosition.value.y,
+      });
 
-    for (const id of ids) {
-      const rect = elementRepository.value[id];
-      const distance = calculateCornerDistanceSum(draggedRect.value, toValue(rect));
-
-      if (!closestItem || distance < closestItem.distance) {
-        closestItem = { id, distance };
+      if (isInside) {
+        if (!smallestRect || rect.width * rect.height < smallestRect.size) {
+          smallestRect = { id, size: rect.width * rect.height };
+        }
       }
     }
 
-    return closestItem?.id ?? null;
+    return smallestRect?.id ?? null;
   });
 
+  const moveDrag = (e: PointerEvent) => {
+    // To prevent selection. It can be achieved by doing prevent on pointerdown too, but that conflicts with motion's drag
+    e.preventDefault();
+
+    cursorPosition.value = {
+      x: e.clientX,
+      y: e.clientY,
+    };
+  };
+
   const startDrag: DNDContext['startDrag'] = (e, item, t) => {
+    console.log('startDrag', e, item, t);
     if (t instanceof HTMLElement) {
       const { x, y, width, height } = t.getBoundingClientRect();
-      console.log(x, y, width, height);
 
       starterDragInfo.value = {
         mouseX: e.clientX,
@@ -103,51 +173,48 @@ export const useProvideDNDContext = ({
         elX: x,
         elY: y,
       };
+
+      t.setPointerCapture(e.pointerId);
     } else {
       console.error('target is not an HTMLElement', t);
+      return;
     }
+
     draggedItem.value = item;
 
-    const prevent = (e: PointerEvent) => {
-      e.preventDefault();
-    };
-
-    document.addEventListener('pointermove', prevent);
-
-    document.addEventListener(
-      'pointerup',
-      () => {
-        handleDragEnd();
-        document.removeEventListener('pointermove', prevent);
-      },
-      { once: true },
-    );
+    document.addEventListener('pointermove', moveDrag);
+    document.addEventListener('pointerup', finishDrag, { once: true });
+    document.addEventListener('pointercancel', finishDrag, { once: true });
+    document.addEventListener('lostpointercapture', finishDrag, { once: true });
   };
 
-  const handleDragEnd: DNDContext['handleDragEnd'] = () => {
+  const finishDrag = () => {
+    try {
+      if (hoveredId.value && draggedItem.value && hoveredId.value !== draggedItem.value.id) {
+        onMove(draggedItem.value, dropTargets.value[hoveredId.value].info);
+      }
+    } catch (e) {
+      console.error('finishDrag', e);
+    }
+
     draggedItem.value = null;
+    document.removeEventListener('pointermove', moveDrag);
   };
 
   const ctx = {
     draggedItem,
-    starterDragInfo,
     startDrag,
-    handleDragEnd,
-    elementRepository,
-    draggedRect,
+    registerDropTarget,
+    unregisterDropTarget,
+    dropTargets,
     hoveredId,
+    updateDropTargetPositon,
+    updateDropTargetInfo,
   } satisfies DNDContext;
 
   provide('dndContext', ctx);
 
   return ctx;
-};
-
-export type CornerPositionData = {
-  topLeft: { x: number; y: number };
-  topRight: { x: number; y: number };
-  bottomLeft: { x: number; y: number };
-  bottomRight: { x: number; y: number };
 };
 
 export const useCoolDndContext = <ItemShape, TargetShape>() => {
@@ -159,38 +226,28 @@ export const useCoolDndContext = <ItemShape, TargetShape>() => {
   return dndContext;
 };
 
-const calculateDistance = (p1: { x: number; y: number }, p2: { x: number; y: number }): number => {
-  const dx = p2.x - p1.x;
-  const dy = p2.y - p1.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
-
-export const calculateCornerDistanceSum = (
-  rect1: CornerPositionData,
-  rect2: CornerPositionData,
-): number => {
-  const topLeftDistance = calculateDistance(rect1.topLeft, rect2.topLeft);
-  const topRightDistance = calculateDistance(rect1.topRight, rect2.topRight);
-  const bottomLeftDistance = calculateDistance(rect1.bottomLeft, rect2.bottomLeft);
-  const bottomRightDistance = calculateDistance(rect1.bottomRight, rect2.bottomRight);
-
-  return topLeftDistance + topRightDistance + bottomLeftDistance + bottomRightDistance;
-};
-
-export const getCornerPositionDataFromStarterInfo = (
+export const getCenterFromStarterInfo = (
   starterInfo: StarterDragInfo,
   mouseX: number,
   mouseY: number,
-): CornerPositionData => {
-  const { elX, elY, width, height, mouseX: initialMouseX, mouseY: initialMouseY } = starterInfo;
-
-  const dx = mouseX - initialMouseX;
-  const dy = mouseY - initialMouseY;
-
+): { x: number; y: number } => {
+  const { elX, elY, width, height } = starterInfo;
+  const dx = mouseX - starterInfo.mouseX;
+  const dy = mouseY - starterInfo.mouseY;
   return {
-    topLeft: { x: elX + dx, y: elY + dy },
-    topRight: { x: elX + width + dx, y: elY + dy },
-    bottomLeft: { x: elX + dx, y: elY + height + dy },
-    bottomRight: { x: elX + width + dx, y: elY + height + dy },
+    x: elX + width / 2 + dx,
+    y: elY + height / 2 + dy,
   };
+};
+
+export const checkPointInsideRect = (
+  rect: TargetPositionData,
+  point: { x: number; y: number },
+): boolean => {
+  const { left, top, width, height } = rect;
+  const { x, y } = point;
+
+  const isInside = x >= left && x <= left + width && y >= top && y <= top + height;
+
+  return isInside;
 };

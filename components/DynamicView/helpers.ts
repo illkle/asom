@@ -1,4 +1,5 @@
 import z from 'zod';
+import type { ItemInfoCore } from '~/components/NestedDrag/common';
 
 export const zLayoutItem = z.interface({
   id: z.string(),
@@ -55,77 +56,60 @@ export const getStyle = (group: IDynamicViewGroup) => {
   };
 };
 
-export const findItem = (data: IDynamicItem, targetId: string): IDynamicItem => {
-  if (data.id === targetId) {
-    return data;
-  }
-
-  if (data.type === 'group' && Array.isArray(data.content)) {
-    for (let i = 0; i < data.content.length; i++) {
-      const item = data.content[i];
-      if (item.id === targetId) {
-        return item;
-      }
-      if (item.type === 'group' && Array.isArray(item.content)) {
-        const foundItem = findItem(item, targetId);
-        if (foundItem) {
-          return foundItem;
-        }
-      }
+const locateParent = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicViewGroup => {
+  let parent = data;
+  while (info.parentIds.length > 0) {
+    const parentId = info.parentIds.shift();
+    if (!parentId) {
+      throw new Error('Error when locating parent on shift');
     }
+    const g = parent.content.find((item) => item.id === parentId);
+    if (!g) {
+      throw new Error('Parent ID not found');
+    }
+
+    if (g.type !== 'group') {
+      throw new Error('Parent ID is not a group');
+    }
+
+    parent = g;
   }
-  throw new Error('Item not found');
+  return parent;
 };
 
 export const findAndRemoveItem = (
   data: IDynamicViewGroup,
-  targetId: string,
+  info: ItemInfoCore,
 ): IDynamicItem | undefined => {
-  for (let i = 0; i < data.content.length; i++) {
-    const item = data.content[i];
-    if (item.id === targetId) {
-      const removedItem = data.content.splice(i, 1)[0];
-      return removedItem;
-    }
-    if (item.type === 'group' && Array.isArray(item.content)) {
-      const foundItem = findAndRemoveItem(item, targetId);
-      if (foundItem) {
-        return foundItem;
-      }
-    }
-  }
-  return undefined;
+  let parent = locateParent(data, info);
+
+  const removedItem = parent.content.splice(info.index, 1)[0];
+
+  return removedItem;
 };
 
 export const insertItemIntoGroup = (
   data: IDynamicViewGroup,
   itemToInsert: IDynamicItem,
-  targetGroupId: string,
-  index: number,
+  info: ItemInfoCore,
 ): boolean => {
-  if (data.id === targetGroupId) {
-    data.content.splice(index, 0, itemToInsert);
-    return true;
-  }
+  let parent = locateParent(data, info);
 
-  for (let i = 0; i < data.content.length; i++) {
-    const currentItem = data.content[i];
+  const index = parent.content.findIndex((item) => item.id === itemToInsert.id);
 
-    if (currentItem.type === 'group' && currentItem.id === targetGroupId) {
-      const saved = currentItem.content[index];
-      currentItem.content.splice(index, 0, itemToInsert);
-      return true;
-    }
+  parent.content.splice(index, 0, itemToInsert);
+  return true;
+};
 
-    if (currentItem.type === 'group') {
-      const inserted = insertItemIntoGroup(currentItem, itemToInsert, targetGroupId, index);
-      if (inserted) {
-        return true;
-      }
-    }
-  }
+export const swapItems = (data: IDynamicViewGroup, from: ItemInfoCore, to: ItemInfoCore) => {
+  const parentFrom = locateParent(data, from);
+  const parentTo = locateParent(data, to);
 
-  return false;
+  const pointerFrom = parentFrom.content.findIndex((item) => item.id === from.id);
+  const pointerTo = parentTo.content.findIndex((item) => item.id === to.id);
+
+  const resFrom = parentFrom.content.splice(pointerFrom, 1);
+  parentTo.content.splice(pointerTo, 0, ...resFrom);
 };
 
 export const getFlatItems = (group: IDynamicViewGroup): IDynamicItem[] => {

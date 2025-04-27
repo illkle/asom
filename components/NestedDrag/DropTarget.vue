@@ -2,7 +2,7 @@
   <motion.div
     ref="el"
     v-bind="$attrs"
-    :class="[props.class, props.disabled && 'pointer-events-none', 'relative']"
+    :class="[props.class, props.disabled && 'pointer-events-none']"
     :data-can-drop="isOver"
     :data-is-over="isOver"
     @dragover=""
@@ -13,52 +13,109 @@
 
 <script setup lang="ts">
 import { motion } from 'motion-v';
-import {
-  useCoolDndContext,
-  type DraggedItemInfo,
-  type CornerPositionData,
-  type HoveredItemInfo,
-} from './common';
-import { useElementBounding, useMouseInElement } from '@vueuse/core';
+import { useCoolDndContext, type DraggableInfo, type DropTargetInfo } from './common';
 
 const props = defineProps<{
-  group: HoveredItemInfo['group'];
-  index: HoveredItemInfo['index'];
-  priority?: HoveredItemInfo['priority'];
+  id: DropTargetInfo['id'];
+  parentIds: DropTargetInfo['parentIds'];
+  acceptedTypes?: DropTargetInfo['acceptedTypes'];
   class?: string;
   disabled?: boolean;
 }>();
 
-const { draggedItem, elementRepository, hoveredId } = useCoolDndContext<unknown, DraggedItemInfo>();
+const pID = inject<string[]>('pID');
+provide('pID', [...(pID ?? []), props.id]);
+
+const {
+  draggedItem,
+  hoveredId,
+  registerDropTarget,
+  updateDropTargetPositon,
+  unregisterDropTarget,
+  updateDropTargetInfo,
+} = useCoolDndContext<unknown, DraggableInfo>();
 
 const isOver = computed(() => {
-  return hoveredId.value === key.value;
+  return hasDraggedItem.value && hoveredId.value === props.id;
 });
 
 const el = useTemplateRef('el');
 
-const { x, y, top, right, bottom, left, width, height } = useElementBounding(el, {
-  updateTiming: 'sync',
+const hasDraggedItem = computed(() => {
+  return draggedItem.value !== null;
 });
 
-const computeInfo = computed<CornerPositionData>(() => {
-  return {
-    topLeft: { x: left.value, y: top.value },
-    topRight: { x: left.value + width.value, y: top.value },
-    bottomLeft: { x: left.value, y: top.value + height.value },
-    bottomRight: { x: left.value + width.value, y: top.value + height.value },
-  };
+const trackSizeChanges = ref(false);
+
+watch(hasDraggedItem, () => {
+  if (hasDraggedItem.value) {
+    trackSizeChanges.value = true;
+    computeIfTracking();
+  } else {
+    trackSizeChanges.value = false;
+  }
 });
 
-const key = computed(() => {
-  return props.group + '-' + props.index;
-});
+const backup = ref({ left: 0, top: 0, width: 0, height: 0 });
+
+const computeSizeData = () => {
+  if (!el.value) return { left: 0, top: 0, width: 0, height: 0 };
+
+  const rect = el.value.$el.getBoundingClientRect();
+
+  return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+};
+
+const computeIfTracking = () => {
+  if (trackSizeChanges.value) {
+    const sd = computeSizeData();
+    updateDropTargetPositon(props.id, regKey.value, sd);
+    backup.value = sd;
+  }
+};
+
+const regKey = ref('');
+
+const id = computed(() => props.id);
+const parentIds = computed(() => props.parentIds);
+
+watch(
+  id,
+  (current, prev) => {
+    if (regKey.value && prev) {
+      unregisterDropTarget(prev, regKey.value);
+    }
+
+    console.log('registerDropTarget', current);
+    regKey.value = registerDropTarget(current, {
+      id: current,
+      parentIds: props.parentIds,
+    });
+  },
+  { immediate: true },
+);
+
+watch(
+  [parentIds],
+  (current, prev) => {
+    updateDropTargetInfo(id.value, regKey.value, {
+      id: id.value,
+      parentIds: props.parentIds,
+    });
+  },
+  { deep: true },
+);
 
 onMounted(() => {
-  elementRepository.value[key.value] = computeInfo;
+  addEventListener('scroll', computeIfTracking, true);
+  addEventListener('resize', computeIfTracking);
 });
 
 onUnmounted(() => {
-  delete elementRepository.value[key.value];
+  removeEventListener('scroll', computeIfTracking);
+  removeEventListener('resize', computeIfTracking);
+  if (regKey.value) {
+    unregisterDropTarget(props.id, regKey.value);
+  }
 });
 </script>

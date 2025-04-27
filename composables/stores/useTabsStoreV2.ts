@@ -12,14 +12,14 @@ const uid = new ShortUniqueId({ length: 10 });
 
 export const generateUniqId = () => uid.randomUUID();
 
-export const spliceKeepingPointer = (array: unknown[], pointer: number, indexToRemove: number) => {
-  array.splice(indexToRemove, 1);
+export const spliceKeepingPointer = <T>(array: T[], pointer: number, indexToRemove: number) => {
+  const spliceResult = array.splice(indexToRemove, 1);
 
   if (pointer >= indexToRemove && pointer > 0) {
     pointer--;
   }
 
-  return pointer;
+  return { spliceResult, pointer };
 };
 
 export const removeIndexesKeepingPointer = (
@@ -28,7 +28,8 @@ export const removeIndexesKeepingPointer = (
   indexesToRemove: number[],
 ) => {
   for (let i = indexesToRemove.length - 1; i >= 0; i--) {
-    pointer = spliceKeepingPointer(array, pointer, indexesToRemove[i]);
+    const { pointer: newPointer } = spliceKeepingPointer(array, pointer, indexesToRemove[i]);
+    pointer = newPointer;
   }
 
   if (array.length === 0) {
