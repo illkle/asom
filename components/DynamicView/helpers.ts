@@ -1,5 +1,5 @@
 import z from 'zod';
-import type { ItemInfoCore } from '~/components/NestedDrag/common';
+import type { ItemInfoCore, PointQuadrant } from '~/components/NestedDrag/common';
 
 export const zLayoutItem = z.interface({
   id: z.string(),
@@ -94,21 +94,32 @@ export const insertItemIntoGroup = (
   data: IDynamicViewGroup,
   itemToInsert: IDynamicItem,
   info: ItemInfoCore,
+  quadrant: PointQuadrant,
 ): boolean => {
   let parent = locateParent(data, info);
 
   const index = parent.content.findIndex((item) => item.id === itemToInsert.id);
 
+  const before = parent.style.direction === 'row' ? quadrant.x === 'left' : quadrant.y === 'top';
+
   parent.content.splice(index, 0, itemToInsert);
   return true;
 };
 
-export const swapItems = (data: IDynamicViewGroup, from: ItemInfoCore, to: ItemInfoCore) => {
+export const swapItems = (
+  data: IDynamicViewGroup,
+  from: ItemInfoCore,
+  to: ItemInfoCore,
+  quadrant: PointQuadrant,
+) => {
   const parentFrom = locateParent(data, from);
   const parentTo = locateParent(data, to);
 
   const pointerFrom = parentFrom.content.findIndex((item) => item.id === from.id);
   const pointerTo = parentTo.content.findIndex((item) => item.id === to.id);
+
+  const isBefore =
+    parentTo.style.direction === 'row' ? quadrant.x === 'left' : quadrant.y === 'top';
 
   const resFrom = parentFrom.content.splice(pointerFrom, 1);
   parentTo.content.splice(pointerTo, 0, ...resFrom);

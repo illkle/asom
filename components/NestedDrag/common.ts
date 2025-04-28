@@ -186,7 +186,7 @@ export const useCoolDndContext = <ItemShape, TargetShape>() => {
   return dndContext;
 };
 
-export type PointQuadrant = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+export type PointQuadrant = { y: 'top' | 'bottom'; x: 'left' | 'right' };
 
 export const checkPointInsideRect = (
   rect: TargetPositionData,
@@ -205,8 +205,8 @@ export const checkPointInsideRect = (
   const midY = top + height / 2;
 
   if (x < midX) {
-    return y < midY ? 'topLeft' : 'bottomLeft';
+    return y < midY ? { y: 'top', x: 'left' } : { y: 'bottom', x: 'left' };
   } else {
-    return y < midY ? 'topRight' : 'bottomRight';
+    return y < midY ? { y: 'top', x: 'right' } : { y: 'bottom', x: 'right' };
   }
 };

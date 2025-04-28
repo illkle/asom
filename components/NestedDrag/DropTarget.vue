@@ -2,12 +2,13 @@
   <motion.div
     ref="el"
     v-bind="$attrs"
-    :class="[props.disabled && 'pointer-events-none']"
+    :class="[props.disabled && 'pointer-events-none', '']"
     :data-can-drop="isOver"
     :data-is-over="isOver"
+    :data-quadrant="hoveredItem?.quadrant"
     @dragover=""
   >
-    <slot :is-over="isOver" />
+    <slot :is-over="isOver" :quadrant="hoveredItem?.quadrant" />
   </motion.div>
 </template>
 

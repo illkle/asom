@@ -73,6 +73,7 @@ const offset = computed(() => {
 });
 
 const pointerDown = (e: PointerEvent) => {
+  console.log('pointerDown', props.id);
   if (!constraintsRef.value) return;
   e.preventDefault();
 
@@ -108,5 +109,13 @@ const scrollAnywhere = () => {
 
 const pointerUp = () => {
   document.removeEventListener('scroll', scrollAnywhere, { capture: true });
+  pos.value = {
+    leftStart: 0,
+    topStart: 0,
+    leftCurrent: 0,
+    topCurrent: 0,
+    cursorStartX: 0,
+    cursorStartY: 0,
+  };
 };
 </script>

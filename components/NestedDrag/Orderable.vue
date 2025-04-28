@@ -4,14 +4,16 @@
     :disabled="disabled"
     :id="id"
     :acceptedTypes="acceptedTypes"
-    :class="[isDraggingMyChild && 'bg-red-500 z-50']"
+    :class="[isDraggingMyChild && ' z-50']"
     :to-slot="true"
   >
-    <Draggable :id="id" :type="type" :parentIds="parentIds" :class="dragClass">
-      <template #default="{ isDraggingMe }">
-        <slot :is-dragging-me="isDraggingMe" />
-      </template>
-    </Draggable>
+    <template #default="{ isOver, quadrant }">
+      <Draggable :id="id" :type="type" :parentIds="parentIds" :class="dragClass">
+        <template #default="{ isDraggingMe }">
+          <slot :is-dragging-me="isDraggingMe" :is-over="isOver" :quadrant="quadrant" />
+        </template>
+      </Draggable>
+    </template>
   </DropTarget>
 </template>
 

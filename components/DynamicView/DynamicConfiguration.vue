@@ -57,7 +57,7 @@ const props = defineProps<{
 }>();
 
 const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
-  onMove: (draggedItem, hoveredItem) => {
+  onMove: (draggedItem, hoveredItem, quadrant) => {
     console.log('onMove', draggedItem, hoveredItem);
     if (hoveredItem.id === 'toDelete') {
       const i = findAndRemoveItem(props.layout.value, draggedItem);
@@ -76,12 +76,12 @@ const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
         throw new Error('Item not found ' + draggedItem.id);
       }
 
-      insertItemIntoGroup(props.layout.value, i, hoveredItem);
+      insertItemIntoGroup(props.layout.value, i, hoveredItem, quadrant);
 
       return;
     }
 
-    swapItems(props.layout.value, draggedItem, hoveredItem);
+    swapItems(props.layout.value, draggedItem, hoveredItem, quadrant);
   },
 });
 
