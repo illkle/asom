@@ -1,11 +1,6 @@
 <template>
   <div class="flex flex-col gap-2 mx-auto px-4 w-full py-10 max-w-5xl">
-    <DynamicViewDynamicConfiguration
-      v-if="true"
-      :layout="dataRefs.layout"
-      :available-items="dataRefs.availableItems"
-    />
-    <NestedDragTestComponent v-else />
+    <NestedDragTestComponent />
   </div>
 </template>
 

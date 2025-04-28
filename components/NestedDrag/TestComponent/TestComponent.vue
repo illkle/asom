@@ -1,90 +1,103 @@
 <template>
-  <div class="flex gap-2">
-    <NestedDragTestComponentTestGroup :item="groups" :level="0" class="p-2 border">
-    </NestedDragTestComponentTestGroup>
-  </div>
-
-  <NestedDragDraggable
-    v-for="id in idsToAdd"
-    :id="id.id"
-    :type="id.type"
-    :user-flags="{ external: 'true' }"
-    class="p-2 border"
+  <DynamicViewDynamicConfiguration
+    :layout="dataRefs.rootGroup"
+    :availableItems="dataRefs.availableItems"
   >
-    {{ id }}
-  </NestedDragDraggable>
+    <template #item="{ item }">
+      <div class="pointer-events-none p-1">
+        {{ item }}
+      </div>
+    </template>
+  </DynamicViewDynamicConfiguration>
 
-  {{ groups }}
-
-  <div>
-    {{ hoveredItem }}
-  </div>
-
-  {{ offset }}
+  {{ dataRefs.rootGroup }}
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useProvideDNDContext } from '../common';
-import {
-  findAndRemoveItem,
-  insertItemIntoGroup,
-  sampleData,
-  type ContentGroup,
-  type Item,
-} from './dataShape';
+import { getFlatItems, type IDynamicViewGroup } from '~/components/DynamicView/helpers';
 
-const commonType = 'test';
-
-const groups = ref<ContentGroup>(sampleData);
-
-const getAllSubItems = (data: Item) => {
-  const res: Item[] = [data];
-
-  if (data.type !== 'group') {
-    return [];
-  }
-
-  for (const item of data.content) {
-    res.push(item);
-    if (item.type === 'group') {
-      res.push(...getAllSubItems(item));
-    }
-  }
-
-  return res;
-};
-
-const idsToAdd = ref<Item[]>([
-  { id: '11111', type: 'string', data: '11111' },
-  { id: '22222', type: 'string', data: '22222' },
-  { id: '33333', type: 'string', data: '33333' },
-  { id: '44444', type: 'string', data: '44444' },
-  { id: '55555', type: 'string', data: '55555' },
-]);
-
-const { offset, starterPosition, draggedItem, hoveredItem } = useProvideDNDContext({
-  onMove: (draggedItem, hoveredItem) => {
-    if (draggedItem.userFlags?.external) {
-      const index = idsToAdd.value.findIndex((id) => id.id === draggedItem.id);
-
-      if (index === -1) {
-        throw new Error('Item not found ' + draggedItem.id);
-      }
-
-      const i = idsToAdd.value.splice(index, 1)[0];
-      insertItemIntoGroup(groups.value, i, hoveredItem.group, hoveredItem.index);
-
-      return;
-    }
-
-    const i = findAndRemoveItem(groups.value, draggedItem.id);
-
-    if (!i) {
-      throw new Error('Item not found ' + draggedItem.id);
-    }
-
-    insertItemIntoGroup(groups.value, i, hoveredItem.group, hoveredItem.index);
+const rootGroup: Ref<IDynamicViewGroup> = ref({
+  id: 'root',
+  type: 'group',
+  style: {
+    direction: 'row',
+    gap: '16',
+    align: 'start',
+    justify: 'between',
   },
+  content: [
+    {
+      id: 'left',
+      type: 'group',
+      style: {
+        direction: 'column',
+        gap: '4',
+        align: 'center',
+        justify: 'start',
+      },
+      content: [
+        {
+          id: 'cover',
+          type: 'item',
+        },
+        { id: 'myRating', type: 'item' },
+      ],
+    },
+    {
+      id: 'right',
+      type: 'group',
+      style: {
+        direction: 'column',
+        gap: '8',
+        align: 'start',
+        justify: 'start',
+      },
+      content: [
+        { id: 'title', type: 'item' },
+        { id: 'author', type: 'item' },
+        {
+          id: 'subline',
+          type: 'group',
+          style: {
+            direction: 'row',
+            gap: '16',
+            align: 'center',
+            justify: 'start',
+          },
+          content: [
+            { id: 'year', type: 'item' },
+            { id: 'ISBN13', type: 'item' },
+          ],
+        },
+        { id: 'tags', type: 'item' },
+        { id: 'read', type: 'item' },
+      ],
+    },
+  ],
 });
+
+const flatItems = computed(() => {
+  return new Set(getFlatItems(rootGroup.value).map((v) => v.id));
+});
+const base: { id: string; type: 'item' }[] = [
+  { id: 'cover', type: 'item' },
+  { id: 'myRating', type: 'item' },
+  { id: 'title', type: 'item' },
+  { id: 'author', type: 'item' },
+  { id: 'year', type: 'item' },
+  { id: 'ISBN13', type: 'item' },
+  { id: 'tags', type: 'item' },
+];
+
+const availableItems = computed<{ id: string; type: 'item' }[]>({
+  get() {
+    return base.filter((v) => !flatItems.value.has(v.id));
+  },
+  set(value: { id: string; type: 'item' }[]) {},
+});
+
+const dataRefs = {
+  rootGroup,
+  availableItems,
+};
 </script>

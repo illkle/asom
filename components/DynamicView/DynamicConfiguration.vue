@@ -14,10 +14,17 @@
         </template>
       </DynamicViewRenderDynamicEditor>
 
+      <NestedDragDropTarget
+        id="toDelete"
+        :parentIds="[]"
+        :index="0"
+        class="mr-2 border bg-accent flex items-center justify-center h-10 gap-2 data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed transition-opacity"
+        :data-disabled="!draggedItem"
+      >
+        <Trash2Icon :size="16" /> Drag here to delete
+      </NestedDragDropTarget>
+
       <div class="flex gap-2 items-center">
-        <NestedDragDropTarget id="toDelete" :parentIds="[]" :index="0" class="mr-2">
-          <Button :disabled="!draggedItem" variant="destructive">Delete</Button>
-        </NestedDragDropTarget>
         <NestedDragDraggable
           v-for="(value, index) in props.availableItems.value"
           :id="value.id"
@@ -34,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { Trash2Icon } from 'lucide-vue-next';
 import { useProvideDNDContext, type ItemInfoCore } from '~/components/NestedDrag/common';
 import {
   findAndRemoveItem,
@@ -48,11 +56,7 @@ const props = defineProps<{
   availableItems: Ref<ILayoutItem[]>;
 }>();
 
-const {
-  draggedItem,
-  dropTargets: elementRepository,
-  hoveredId,
-} = useProvideDNDContext({
+const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
   onMove: (draggedItem, hoveredItem) => {
     console.log('onMove', draggedItem, hoveredItem);
     if (hoveredItem.id === 'toDelete') {

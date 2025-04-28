@@ -2,7 +2,7 @@
   <motion.div
     ref="el"
     v-bind="$attrs"
-    :class="[props.class, props.disabled && 'pointer-events-none']"
+    :class="[props.disabled && 'pointer-events-none']"
     :data-can-drop="isOver"
     :data-is-over="isOver"
     @dragover=""
@@ -17,18 +17,21 @@ import { useCoolDndContext, type DraggableInfo, type DropTargetInfo } from './co
 
 const props = defineProps<{
   id: DropTargetInfo['id'];
-  parentIds: DropTargetInfo['parentIds'];
+  parentIds?: DropTargetInfo['parentIds'];
   acceptedTypes?: DropTargetInfo['acceptedTypes'];
-  class?: string;
   disabled?: boolean;
+  toSlot?: boolean;
 }>();
 
 const pID = inject<string[]>('pID');
-provide('pID', [...(pID ?? []), props.id]);
+
+const parentIds = computed(() => props.parentIds ?? pID ?? []);
+
+provide('pID', [...parentIds.value, props.id]);
 
 const {
   draggedItem,
-  hoveredId,
+  hoveredItem,
   registerDropTarget,
   updateDropTargetPositon,
   unregisterDropTarget,
@@ -36,7 +39,7 @@ const {
 } = useCoolDndContext<unknown, DraggableInfo>();
 
 const isOver = computed(() => {
-  return hasDraggedItem.value && hoveredId.value === props.id;
+  return hasDraggedItem.value && hoveredItem.value?.id === props.id;
 });
 
 const el = useTemplateRef('el');
@@ -77,7 +80,6 @@ const computeIfTracking = () => {
 const regKey = ref('');
 
 const id = computed(() => props.id);
-const parentIds = computed(() => props.parentIds);
 
 watch(
   id,
@@ -86,10 +88,9 @@ watch(
       unregisterDropTarget(prev, regKey.value);
     }
 
-    console.log('registerDropTarget', current);
     regKey.value = registerDropTarget(current, {
       id: current,
-      parentIds: props.parentIds,
+      parentIds: parentIds.value,
     });
   },
   { immediate: true },
@@ -97,22 +98,24 @@ watch(
 
 watch(
   [parentIds],
-  (current, prev) => {
+  () => {
     updateDropTargetInfo(id.value, regKey.value, {
       id: id.value,
-      parentIds: props.parentIds,
+      parentIds: parentIds.value,
     });
   },
   { deep: true },
 );
 
 onMounted(() => {
-  addEventListener('scroll', computeIfTracking, true);
+  addEventListener('scroll', computeIfTracking, {
+    capture: true,
+  });
   addEventListener('resize', computeIfTracking);
 });
 
 onUnmounted(() => {
-  removeEventListener('scroll', computeIfTracking);
+  removeEventListener('scroll', computeIfTracking, { capture: true });
   removeEventListener('resize', computeIfTracking);
   if (regKey.value) {
     unregisterDropTarget(props.id, regKey.value);

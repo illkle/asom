@@ -83,7 +83,9 @@ export const findAndRemoveItem = (
 ): IDynamicItem | undefined => {
   let parent = locateParent(data, info);
 
-  const removedItem = parent.content.splice(info.index, 1)[0];
+  const index = parent.content.findIndex((item) => item.id === info.id);
+
+  const removedItem = parent.content.splice(index, 1)[0];
 
   return removedItem;
 };

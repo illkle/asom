@@ -43,15 +43,6 @@
               <DynamicViewDropdownConfigMenu v-model="props.item.style" />
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
-            size="sm"
-            variant="outline"
-            class="rounded-none border-0"
-            @click.stop="emit('delete', { id: props.item.id, parentIds: props.parentIds })"
-            @pointerdown.stop
-          >
-            <TrashIcon />
-          </Button>
         </motion.div>
       </motion.div>
       <!-- Content-->
@@ -111,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { CogIcon, SquarePlus, TrashIcon } from 'lucide-vue-next';
+import { CogIcon, SquarePlus } from 'lucide-vue-next';
 import { motion } from 'motion-v';
 import type { ItemInfoCore } from '~/components/NestedDrag/common';
 import type { IDynamicItem } from './helpers';
