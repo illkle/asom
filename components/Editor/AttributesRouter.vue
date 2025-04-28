@@ -78,9 +78,11 @@ const attr = defineModel<AttrValue>();
 const props = defineProps<{
   schemaItem: SchemaItem;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>();
 
 const name = computed(() => {
+  if (props.hideLabel) return '';
   return props.schemaItem.value.settings.displayName ?? props.schemaItem.name;
 });
 </script>

@@ -5,8 +5,6 @@ import type {
   Updater,
   VisibilityState,
 } from '@tanstack/vue-table';
-import * as fs from '@tauri-apps/plugin-fs';
-import path from 'path-browserify';
 
 import { z } from 'zod';
 
@@ -27,6 +25,7 @@ const zViewSettings = z.object({
   columnVisibility: zVisibilityState,
   columnSizing: zSizingState,
   columnOrder: zOrderState,
+  labelsHidden: z.boolean(),
 });
 
 export type IViewSettings = {
@@ -34,6 +33,7 @@ export type IViewSettings = {
   columnVisibility: VisibilityState;
   columnSizing: ColumnSizingState;
   columnOrder: ColumnOrderState;
+  labelsHidden: boolean;
 };
 
 export const DEFAULT_VIEW_SETTINGS = () => ({
@@ -41,27 +41,14 @@ export const DEFAULT_VIEW_SETTINGS = () => ({
   columnVisibility: {},
   columnSizing: {},
   columnOrder: [],
+  labelsHidden: false,
 });
 
-const JSON_NAME = 'viewSettings.json';
-
-export const getSettings = async (schemaOwnerFolder: string): Promise<IViewSettings> => {
-  const targetFile = path.join(schemaOwnerFolder, JSON_NAME);
-
-  const def = zViewSettings.parse(DEFAULT_VIEW_SETTINGS());
-
-  try {
-    const text = await fs.readTextFile(targetFile);
-    const f = JSON.parse(text);
-    return zViewSettings.parse(f);
-  } catch (e) {}
-  return def;
-};
-
-export const saveViewSettings = async (schemaOwnerFolder: string, settings: IViewSettings) => {
-  const targetFile = path.join(schemaOwnerFolder, JSON_NAME);
-  await fs.writeTextFile(targetFile, JSON.stringify(settings));
-};
+const viewSettingsOnDisk = new ConfigTiedToSchema(
+  'viewSettings.json',
+  zViewSettings,
+  DEFAULT_VIEW_SETTINGS(),
+);
 
 const VIEW_SETTINGS_KEY = (root: string | null | undefined, folderPath: string) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
@@ -75,7 +62,7 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
 
   const q = useQuery({
     key: () => VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value),
-    query: () => getSettings(schemaOwnerFolder.value),
+    query: () => viewSettingsOnDisk.get(schemaOwnerFolder.value),
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
@@ -97,8 +84,7 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
     const after = { ...before, [key]: v };
 
     qc.setQueryData(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value), after);
-    console.log('call saveViewSettings', schemaOwnerFolder.value, after);
-    void saveViewSettings(schemaOwnerFolder.value, after);
+    void viewSettingsOnDisk.set(schemaOwnerFolder.value, after);
   };
 
   return {

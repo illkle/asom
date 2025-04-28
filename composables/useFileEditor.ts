@@ -79,6 +79,8 @@ export const useFileEditorV2 = (
 
   const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(schemaPath);
 
+  const { q: viewLayoutQ, update: updateViewLayout } = useViewLayout(schemaPath);
+
   const changesTracker = ref(0);
 
   const { editableProxy, performUpdate, lastSyncedTimestamp } = useSyncedValue({
@@ -127,6 +129,8 @@ export const useFileEditorV2 = (
     performUpdate,
     viewSettingsQ,
     viewSettingsUpdater,
+    viewLayoutQ,
+    updateViewLayout,
     changesTracker,
     lastSyncedTimestamp,
   };

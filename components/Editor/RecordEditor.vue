@@ -1,16 +1,115 @@
 <template>
   <div class="flex w-full flex-col overscroll-none px-4">
     <div class="mx-auto h-fit w-full max-w-2xl">
-      <div class="sticky top-0 z-10" v-if="false">
-        {{ new Date(fileQ.data.value?.record.modified ?? 0).toLocaleString() }}
-        <br />
-        {{ lastSyncedTimestamp.toLocaleString() }}
-        <br />
-        {{ changesTracker }}
+      <div class="">
+        <BreadcrumbList class="flex gap-2 flex-nowrap shrink mt-2">
+          <template v-if="!breadcrumbItems.all">
+            <BreadcrumbItem
+              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+              :class="'shrink cursor-pointer'"
+              @click="
+                ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })
+              "
+            >
+              {{ breadcrumbItems.start[0].label }}
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem> ... </BreadcrumbItem>
+            <template v-for="(item, i) in breadcrumbItems.end">
+              <BreadcrumbSeparator />
+
+              <BreadcrumbItem
+                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
+                :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+                @click="
+                  i !== breadcrumbItems.end.length - 1 &&
+                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
+                "
+              >
+                {{ item.label }}
+              </BreadcrumbItem>
+            </template>
+          </template>
+
+          <template v-if="breadcrumbItems.all">
+            <template v-for="(item, i) in breadcrumbItems.all">
+              <BreadcrumbSeparator v-if="i > 1" />
+
+              <BreadcrumbItem
+                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+                :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+                @click="
+                  i !== breadcrumbItems.all.length - 1 &&
+                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
+                "
+              >
+                {{ item.label }}
+              </BreadcrumbItem>
+            </template>
+          </template>
+
+          <div class="grow"></div>
+          <DropdownMenu class="ml-auto">
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline">
+                <EllipsisVerticalIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem @click="editMode = true">
+                <EditIcon /> Edit Layout
+              </DropdownMenuItem>
+              <DropdownMenuItem @click="deleteDialog = true">
+                <Trash2Icon /> Delete
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                @click="
+                  viewSettingsUpdater(!viewSettingsQ.data.value?.labelsHidden, 'labelsHidden')
+                "
+              >
+                <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </BreadcrumbList>
       </div>
+
+      <div class="flex justify-between gap-2 mt-2"></div>
+
+      <Dialog v-model:open="deleteDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete</DialogTitle>
+          </DialogHeader>
+          <DialogDescription> Are you sure you want to delete this item? </DialogDescription>
+          <DialogFooter class="flex gap-2">
+            <DialogClose as-child>
+              <Button variant="outline" class="grow">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" class="grow" @click="onRemove">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <EditorMetaEditor
-        v-if="editableProxy && schema"
-        v-model="editableProxy.record"
+        v-if="editableProxy && schema && viewLayoutQ.data.value"
+        v-model:opened-file="editableProxy.record"
+        :view-layout="viewLayoutQ.data.value"
+        :hide-labels="viewSettingsQ.data.value?.labelsHidden"
+        @update:layout="
+          (v) => {
+            updateViewLayout(v);
+            editMode = false;
+          }
+        "
+        @discard="
+          () => {
+            console.log('discard');
+            editMode = false;
+          }
+        "
+        :edit-mode="editMode"
         :schema="schema.schema"
         class="py-2"
       />
@@ -27,9 +126,16 @@
 </template>
 
 <script lang="ts" setup>
+import { remove } from '@tauri-apps/plugin-fs';
+import { EditIcon, EllipsisVerticalIcon, EyeIcon, Trash2Icon } from 'lucide-vue-next';
+import path from 'path-browserify';
 import type { PropType } from 'vue';
 
-import { useScrollRestorationOnMount, type IOpenedFile } from '~/composables/stores/useTabsStoreV2';
+import {
+  useScrollRestorationOnMount,
+  useTabsStoreV2,
+  type IOpenedFile,
+} from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps({
   opened: {
@@ -38,9 +144,36 @@ const props = defineProps({
   },
 });
 
+const breadcrumbItems = computed(() => {
+  const rootFolder = fileQ.data.value?.schema.owner_folder ?? '';
+
+  const realPath = props.opened._path.replace(rootFolder, '');
+
+  const all = [
+    { label: path.basename(rootFolder), path: rootFolder },
+    ...realPath.split(path.sep).map((item) => ({
+      label: item,
+      path: path.join(rootFolder, item),
+    })),
+  ];
+
+  if (all.length > 4) {
+    return {
+      start: [all[0]],
+      middle: all.slice(1, all.length - 3),
+      end: [all[all.length - 2], all[all.length - 1]],
+    };
+  }
+
+  return { all };
+});
+
 const editorWrapper = useTemplateRef('editorWrapper');
 
 const colorMode = useColorMode();
+
+const editMode = ref(false);
+const deleteDialog = ref(false);
 
 const {
   fileQ,
@@ -48,6 +181,8 @@ const {
   performUpdate,
   viewSettingsQ,
   viewSettingsUpdater,
+  viewLayoutQ,
+  updateViewLayout,
   changesTracker,
   lastSyncedTimestamp,
 } = useFileEditorV2(props.opened, editorWrapper);
@@ -55,6 +190,13 @@ const {
 const schema = computed(() => fileQ.data.value?.schema);
 
 useScrollRestorationOnMount(computed(() => !!fileQ.data.value));
+
+const ts = useTabsStoreV2();
+
+const onRemove = async () => {
+  await remove(props.opened._path);
+  ts.openNewThingFast({ _type: 'folder', _path: path.dirname(props.opened._path) });
+};
 </script>
 
 <style scoped>

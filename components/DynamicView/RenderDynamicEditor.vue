@@ -3,9 +3,7 @@
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
       <motion.div layout="preserve-aspect" class="flex justify-between items-center pl-2 border-b">
-        <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"
-          >Group</motion.div
-        >
+        <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"></motion.div>
         <motion.div layout="preserve-aspect" class="flex">
           <Button
             variant="outline"
@@ -17,7 +15,7 @@
                   props.item.content.push({
                     id: generateUniqId(),
                     type: 'group',
-                    style: { direction: 'row', gap: '16', align: 'start', justify: 'start' },
+                    style: { direction: 'column', gap: '4', align: 'start', justify: 'start' },
                     content: [],
                   });
                 }
@@ -57,13 +55,35 @@
             :priority="props.level"
             :disabled="props.disabled"
             :parentIds="[...props.parentIds]"
-            :class="[p.type === 'item' ? '' : 'border', 'rounded-md data-[is-over=true]:bg-accent']"
+            :class="[p.type === 'item' ? '' : '', 'rounded-md']"
             :drag-class="[
-              'rounded-md cursor-grab data-[is-dragging-me=true]:bg-background/30 data-[is-dragging-me=true]:border-muted-foreground  transition-colors duration-300',
+              'data-[is-dragging-me=true]:bg-background/50',
+              'rounded-md cursor-grab data-[is-dragging-me=true]:border-muted-foreground transition-colors duration-300',
               p.type === 'item' ? '' : 'border',
             ]"
           >
-            <template #default="{ isDraggingMe }">
+            <template #default="{ isDraggingMe, isOver, quadrant }">
+              <template v-if="isOver && !isDraggingMe">
+                <motion.div
+                  v-if="props.item.style.direction === 'column'"
+                  :key="quadrant?.y"
+                  class="absolute w-full h-0.5 bg-accent-foreground rounded-full"
+                  :class="[quadrant?.y === 'top' ? '-top-1' : '-bottom-1']"
+                  :initial="{ opacity: 0 }"
+                  :animate="{ opacity: 1 }"
+                  :exit="{ opacity: 0 }"
+                ></motion.div>
+                <motion.div
+                  v-if="props.item.style.direction === 'row'"
+                  :key="quadrant?.x"
+                  :initial="{ opacity: 0 }"
+                  :animate="{ opacity: 1 }"
+                  :exit="{ opacity: 0 }"
+                  class="absolute top-0 w-0.5 h-full bg-accent-foreground rounded-full"
+                  :class="[quadrant?.x === 'left' ? '-left-1 ' : '-right-1 ']"
+                ></motion.div>
+              </template>
+
               <slot v-if="p.type === 'item'" name="item" :item="p" />
 
               <RenderDynamicEditor

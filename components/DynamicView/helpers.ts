@@ -98,11 +98,12 @@ export const insertItemIntoGroup = (
 ): boolean => {
   let parent = locateParent(data, info);
 
-  const index = parent.content.findIndex((item) => item.id === itemToInsert.id);
+  const index = parent.content.findIndex((item) => item.id === info.id);
+  const isBefore = parent.style.direction === 'row' ? quadrant.x === 'left' : quadrant.y === 'top';
 
-  const before = parent.style.direction === 'row' ? quadrant.x === 'left' : quadrant.y === 'top';
+  const pointerToUpdated = clamp(isBefore ? index : index + 1, 0, parent.content.length);
 
-  parent.content.splice(index, 0, itemToInsert);
+  parent.content.splice(pointerToUpdated, 0, itemToInsert);
   return true;
 };
 
@@ -116,13 +117,16 @@ export const swapItems = (
   const parentTo = locateParent(data, to);
 
   const pointerFrom = parentFrom.content.findIndex((item) => item.id === from.id);
+  const resFrom = parentFrom.content.splice(pointerFrom, 1);
+
   const pointerTo = parentTo.content.findIndex((item) => item.id === to.id);
 
   const isBefore =
     parentTo.style.direction === 'row' ? quadrant.x === 'left' : quadrant.y === 'top';
 
-  const resFrom = parentFrom.content.splice(pointerFrom, 1);
-  parentTo.content.splice(pointerTo, 0, ...resFrom);
+  const pointerToUpdated = clamp(isBefore ? pointerTo : pointerTo + 1, 0, parentTo.content.length);
+
+  parentTo.content.splice(pointerToUpdated, 0, ...resFrom);
 };
 
 export const getFlatItems = (group: IDynamicViewGroup): IDynamicItem[] => {

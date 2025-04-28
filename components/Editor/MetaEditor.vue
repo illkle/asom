@@ -1,13 +1,16 @@
 <template>
   <div class="grid gap-2" :class="$attrs.class" id="attributesContainer">
-    <Button variant="ghost" @click="editMode = !editMode">
-      {{ editMode ? 'View' : 'Edit' }}
-    </Button>
-
     <template v-if="editMode">
       <DynamicViewDynamicConfiguration
-        :available-items="dataRefs.availableItems"
-        :layout="dataRefs.rootGroup"
+        v-if="schema"
+        :layout="viewLayout"
+        :schema="schema"
+        @update:layout="(v) => emit('update:layout', v)"
+        @discard="
+          () => {
+            emit('discard');
+          }
+        "
       >
         <template #item="{ item }">
           <div class="pointer-events-none p-1">
@@ -22,12 +25,13 @@
       </DynamicViewDynamicConfiguration>
     </template>
 
-    <DynamicViewRenderDynamic v-else :group="rootGroup">
+    <DynamicViewRenderDynamic v-else :group="viewLayout">
       <template #default="{ data }">
         <EditorAttributesRouter
           v-if="attributesByKey?.[data.id]"
           v-model:model-value="openedFile.attrs[data.id]"
           :schema-item="attributesByKey[data.id]"
+          :hide-label="hideLabels"
         />
       </template>
     </DynamicViewRenderDynamic>
@@ -38,14 +42,31 @@
 import type { PropType } from 'vue';
 
 import type { RecordFromDb, Schema, SchemaItem } from '~/types';
-import { getFlatItems, type IDynamicViewGroup, type ILayoutItem } from '../DynamicView/helpers';
+import { type IDynamicViewGroup } from '../DynamicView/helpers';
 const p = defineProps({
   schema: {
     type: Object as PropType<Schema | null>,
   },
+  editMode: {
+    type: Boolean,
+    default: false,
+  },
+  viewLayout: {
+    type: Object as PropType<IDynamicViewGroup>,
+    required: true,
+  },
+  hideLabels: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const openedFile = defineModel<RecordFromDb>({
+const emit = defineEmits<{
+  (e: 'update:layout', layout: IDynamicViewGroup): void;
+  (e: 'discard'): void;
+}>();
+
+const openedFile = defineModel<RecordFromDb>('openedFile', {
   required: true,
 });
 
@@ -55,92 +76,6 @@ const attributesByKey = computed(() => {
     return acc;
   }, {});
 });
-
-const rootGroup: Ref<IDynamicViewGroup> = ref({
-  id: 'root',
-  type: 'group',
-  style: {
-    direction: 'row',
-    gap: '16',
-    align: 'start',
-    justify: 'between',
-  },
-  content: [
-    {
-      id: 'left',
-      type: 'group',
-      style: {
-        direction: 'column',
-        gap: '4',
-        align: 'center',
-        justify: 'start',
-      },
-      content: [
-        {
-          id: 'cover',
-          type: 'item',
-        },
-        { id: 'myRating', type: 'item' },
-      ],
-    },
-    {
-      id: 'right',
-      type: 'group',
-      style: {
-        direction: 'column',
-        gap: '8',
-        align: 'start',
-        justify: 'start',
-      },
-      content: [
-        { id: 'title', type: 'item' },
-        { id: 'author', type: 'item' },
-        {
-          id: 'subline',
-          type: 'group',
-          style: {
-            direction: 'row',
-            gap: '16',
-            align: 'center',
-            justify: 'start',
-          },
-          content: [
-            { id: 'year', type: 'item' },
-            { id: 'ISBN13', type: 'item' },
-          ],
-        },
-        { id: 'tags', type: 'item' },
-        { id: 'read', type: 'item' },
-      ],
-    },
-  ],
-});
-
-const flatItems = computed(() => {
-  return new Set(getFlatItems(rootGroup.value).map((v) => v.id));
-});
-
-const availableItems = computed<{ id: string; type: 'item' }[]>({
-  get() {
-    const i =
-      p.schema?.items
-        .filter((v) => !flatItems.value.has(v.name))
-        .map((attr) => ({
-          id: attr.name,
-          type: 'item',
-        })) || [];
-
-    return i as ILayoutItem[];
-  },
-  set(value: { id: string; type: 'item' }[]) {},
-});
-
-const dataRefs = {
-  rootGroup,
-  availableItems,
-};
-
-const editMode = ref(true);
 
 /*
 ///
