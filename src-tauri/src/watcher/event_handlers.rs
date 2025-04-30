@@ -80,6 +80,10 @@ async fn handle_file_update(
     path: &Path,
     ext: &OsStr,
 ) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+    if !path.exists() {
+        return Ok(vec![]);
+    }
+
     match ext.to_str() {
         Some("md") => match cache_file(&core.schemas_cache, &core.database_conn, path).await {
             Ok(v) => Ok(vec![IPCEmitEvent::FileUpdate(v)]),
@@ -162,8 +166,6 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     let core = app.state::<CoreStateManager>();
 
     for (index, path) in event.paths.iter().enumerate() {
-        println!("{:?}", event);
-
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {
                 (CreateKind::File, Some(ext)) => handle_file_add(&core, &path, ext).await,
@@ -220,8 +222,9 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                     }
                 },
                 // Data is always file
-                ModifyKind::Data(_) => match path.extension() {
-                    Some(ext) => handle_file_update(&core, &path, ext).await,
+                ModifyKind::Data(_) => match (path.extension(), path.exists()) {
+                    (Some(ext), true) => handle_file_update(&core, &path, ext).await,
+                    // We ignore for non existing files to prevent trying to update renamed file by it's old path
                     _ => Ok(vec![]),
                 },
                 _ => Ok(vec![]),

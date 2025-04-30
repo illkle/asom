@@ -1,6 +1,6 @@
 <template>
   <div class="w-full rounded">
-    <CommonLabel v-if="name">{{ name }}</CommonLabel>
+    <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
     <div class="flex flex-col gap-2 w-fit" :key="key">
       <div
         v-for="(date, index) in modelValue"
@@ -29,6 +29,7 @@ import DateInput from './Date.vue';
 const props = defineProps<{
   name: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>();
 
 const datePairs = defineModel<string[] | null>();

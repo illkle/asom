@@ -3,10 +3,36 @@ use std::collections::HashMap;
 use crate::schema::types::{AttrValue, DatePair, Schema, SchemaAttrType};
 use crate::utils::errorhandling::ErrFR;
 
-pub fn parse_metadata(
-    front_matter: &str,
-    schema: &Schema,
-) -> Result<HashMap<String, AttrValue>, ErrFR> {
+pub struct MetaDataParseResult {
+    pub metadata: HashMap<String, AttrValue>,
+    pub parsing_error: Option<ErrFR>,
+}
+
+pub fn get_default_metadata(schema_type: SchemaAttrType) -> AttrValue {
+    match schema_type {
+        // Empty
+        SchemaAttrType::Text(_) | SchemaAttrType::Image(_) | SchemaAttrType::Date(_) => {
+            return AttrValue::String(None);
+        }
+        SchemaAttrType::Number(number_settings) => {
+            if number_settings.decimal_places.is_some()
+                && number_settings.decimal_places.unwrap() > 0
+            {
+                return AttrValue::Float(None);
+            } else {
+                return AttrValue::Integer(None);
+            }
+        }
+        SchemaAttrType::TextCollection(_) | SchemaAttrType::DateCollection(_) => {
+            return AttrValue::StringVec(None);
+        }
+        SchemaAttrType::DatesPairCollection(_) => {
+            return AttrValue::DatePairVec(None);
+        }
+    }
+}
+
+pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResult {
     let parsed_meta: Result<HashMap<String, serde_yml::Value>, serde_yml::Error> =
         serde_yml::from_str(&front_matter);
 
@@ -100,38 +126,34 @@ pub fn parse_metadata(
                         );
                     }
 
-                    // Empty
-                    (
-                        _,
-                        SchemaAttrType::Text(_)
-                        | SchemaAttrType::Image(_)
-                        | SchemaAttrType::Date(_),
-                    ) => {
-                        file_meta.insert(name, AttrValue::String(None));
-                    }
-                    (_, SchemaAttrType::Number(number_settings)) => {
-                        if number_settings.decimal_places.is_some()
-                            && number_settings.decimal_places.unwrap() > 0
-                        {
-                            file_meta.insert(name, AttrValue::Float(None));
-                        } else {
-                            file_meta.insert(name, AttrValue::Integer(None));
-                        }
-                    }
-                    (_, SchemaAttrType::TextCollection(_) | SchemaAttrType::DateCollection(_)) => {
-                        file_meta.insert(name, AttrValue::StringVec(None));
-                    }
-                    (_, SchemaAttrType::DatesPairCollection(_)) => {
-                        file_meta.insert(name, AttrValue::DatePairVec(None));
+                    (_, v) => {
+                        file_meta.insert(name, get_default_metadata(v));
                     }
                 }
             }
 
-            Ok(file_meta)
+            MetaDataParseResult {
+                metadata: file_meta,
+                parsing_error: None,
+            }
         }
-        Err(e) => Err(ErrFR::new("Parsing error")
-            .info("Metadata might be lost on save")
-            .raw(e)),
+        Err(e) => {
+            let mut file_meta: HashMap<String, AttrValue> = HashMap::new();
+
+            for schema_i in schema.items.clone() {
+                let name = schema_i.name;
+                file_meta.insert(name, get_default_metadata(schema_i.value));
+            }
+
+            MetaDataParseResult {
+                metadata: file_meta,
+                parsing_error: Some(
+                    ErrFR::new("Parsing error")
+                        .info("Metadata was not parsed correctly, and will be overridden")
+                        .raw(e),
+                ),
+            }
+        }
     }
 }
 
@@ -248,10 +270,12 @@ tags: 555
             ),
         ]);
 
-        assert!(all_correct.is_ok(), "All correct parse is ok");
+        assert!(
+            all_correct.parsing_error.is_none(),
+            "All correct parse is ok"
+        );
         assert_eq!(
-            all_correct.unwrap(),
-            all_correct_expected,
+            all_correct.metadata, all_correct_expected,
             "All correct parse is as expected"
         );
     }
@@ -270,10 +294,9 @@ tags: 555
 
         let all_none = parse_metadata("", &schema_with_all_types);
 
-        assert!(all_none.is_ok(), "All none parse is ok");
+        assert!(all_none.parsing_error.is_none(), "All none parse is ok");
         assert_eq!(
-            all_none.unwrap(),
-            all_none_expected,
+            all_none.metadata, all_none_expected,
             "All none parse is as expected"
         );
     }
@@ -293,18 +316,64 @@ tags: 555
         let first_wrong = parse_metadata(METADATA_WRONG_TYPES_1, &schema_with_all_types);
         let second_wrong = parse_metadata(METADATA_WRONG_TYPES_2, &schema_with_all_types);
 
-        assert!(first_wrong.is_ok(), "First wrong parse is ok");
+        assert!(
+            first_wrong.parsing_error.is_none(),
+            "First wrong parse is ok"
+        );
         assert_eq!(
-            first_wrong.unwrap(),
-            all_none_expected,
+            first_wrong.metadata, all_none_expected,
             "First wrong parse is as expected"
         );
 
-        assert!(second_wrong.is_ok(), "Second wrong parse is ok");
+        assert!(
+            second_wrong.parsing_error.is_none(),
+            "Second wrong parse is ok"
+        );
         assert_eq!(
-            second_wrong.unwrap(),
-            all_none_expected,
+            second_wrong.metadata, all_none_expected,
             "Second wrong parse is as expected"
+        );
+    }
+
+    #[test]
+    fn empty_metadata() {
+        let schema_with_all_types = schema_with_all_types();
+
+        let empty_expected: HashMap<String, AttrValue> = HashMap::from([
+            ("title".into(), AttrValue::String(None)),
+            ("year".into(), AttrValue::Integer(None)),
+            ("myRating".into(), AttrValue::Float(None)),
+            ("read".into(), AttrValue::DatePairVec(None)),
+            ("tags".into(), AttrValue::StringVec(None)),
+        ]);
+
+        let empty = parse_metadata("", &schema_with_all_types);
+
+        assert!(empty.parsing_error.is_none(), "Empty parse is ok");
+        assert_eq!(empty.metadata, empty_expected, "Empty parse is as expected");
+    }
+
+    #[test]
+    fn broken_metadata() {
+        let schema_with_all_types = schema_with_all_types();
+
+        let broken_expected: HashMap<String, AttrValue> = HashMap::from([
+            ("title".into(), AttrValue::String(None)),
+            ("year".into(), AttrValue::Integer(None)),
+            ("myRating".into(), AttrValue::Float(None)),
+            ("read".into(), AttrValue::DatePairVec(None)),
+            ("tags".into(), AttrValue::StringVec(None)),
+        ]);
+
+        let broken = parse_metadata(
+            "---asdiaskjdhqwejh 789123981 ;:jka >?>L?ASJdq hkajhsd ",
+            &schema_with_all_types,
+        );
+
+        assert!(broken.parsing_error.is_some(), "Broken parse is ok");
+        assert_eq!(
+            broken.metadata, broken_expected,
+            "Broken parse is as expected"
         );
     }
 }

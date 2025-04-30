@@ -25,3 +25,17 @@ export const useListenToEvent = <E extends IPCEmitEvent['type']>(
     }
   });
 };
+
+export const listenOnce = async <E extends IPCEmitEvent['type']>(
+  name: E,
+  callback: (v: { t: E; c: ExtractIPCEmitEventData<E> }) => void | Promise<void>,
+) => {
+  const wrapedCallback = (data: { t: E; c: ExtractIPCEmitEventData<E> }) => {
+    callback(data);
+    unlisten();
+  };
+
+  const unlisten = await listen(name, (event) => {
+    wrapedCallback(event.payload as { t: E; c: ExtractIPCEmitEventData<E> });
+  });
+};

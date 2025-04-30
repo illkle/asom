@@ -1,5 +1,6 @@
 <template>
   <div
+    v-if="props.value"
     class="text-ellipsis max-w-full h-full flex items-center overflow-hidden whitespace-nowrap gap-0.5"
   >
     <template
@@ -20,7 +21,7 @@
 
     <template v-else-if="props.type.type === 'Text' && props.value.type === 'String'">
       <span class="text-ellipsis overflow-hidden whitespace-nowrap">
-        {{ props.value.value }}
+        {{ props.value.value ?? '—' }}
       </span>
     </template>
 
@@ -41,7 +42,7 @@
       "
     >
       <span class="text-ellipsis overflow-hidden whitespace-nowrap font-mono">
-        {{ String(props.value.value) }}
+        {{ props.value.value ? String(props.value.value) : '—' }}
       </span>
     </template>
 

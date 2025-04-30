@@ -1,7 +1,7 @@
 <template>
   <div class="flex w-full flex-col overscroll-none px-4">
     <div class="mx-auto h-fit w-full max-w-2xl">
-      <div class="">
+      <template v-if="!editMode">
         <BreadcrumbList class="flex gap-2 flex-nowrap shrink mt-2">
           <template v-if="!breadcrumbItems.all">
             <BreadcrumbItem
@@ -51,14 +51,15 @@
           <div class="grow"></div>
           <DropdownMenu class="ml-auto">
             <DropdownMenuTrigger as-child>
-              <Button variant="outline">
-                <EllipsisVerticalIcon />
+              <Button variant="outline" size="icon">
+                <EllipsisVerticalIcon :size="16" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem @click="editMode = true">
                 <EditIcon /> Edit Layout
               </DropdownMenuItem>
+              <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
               <DropdownMenuItem @click="deleteDialog = true">
                 <Trash2Icon /> Delete
               </DropdownMenuItem>
@@ -73,9 +74,26 @@
             </DropdownMenuContent>
           </DropdownMenu>
         </BreadcrumbList>
-      </div>
+      </template>
 
-      <div class="flex justify-between gap-2 mt-2"></div>
+      <Dialog v-model:open="renameDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
+
+          <div class="flex gap-2 items-center font-mono">
+            <Input v-model="newName" autofocus /> .md
+          </div>
+
+          <DialogFooter class="flex gap-2">
+            <DialogClose as-child>
+              <Button variant="outline" class="grow">Cancel</Button>
+            </DialogClose>
+            <Button class="grow" @click="onRename(newName)">Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog v-model:open="deleteDialog">
         <DialogContent>
@@ -127,7 +145,7 @@
 
 <script lang="ts" setup>
 import { remove } from '@tauri-apps/plugin-fs';
-import { EditIcon, EllipsisVerticalIcon, EyeIcon, Trash2Icon } from 'lucide-vue-next';
+import { EditIcon, EllipsisVerticalIcon, EyeIcon, PencilIcon, Trash2Icon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import type { PropType } from 'vue';
 
@@ -149,13 +167,16 @@ const breadcrumbItems = computed(() => {
 
   const realPath = props.opened._path.replace(rootFolder, '');
 
-  const all = [
-    { label: path.basename(rootFolder), path: rootFolder },
-    ...realPath.split(path.sep).map((item) => ({
+  const all = [{ label: path.basename(rootFolder), path: rootFolder }];
+
+  for (const item of realPath.split(path.sep)) {
+    all.push({
       label: item,
-      path: path.join(rootFolder, item),
-    })),
-  ];
+      path: path.join(all[all.length - 1].path, item),
+    });
+  }
+
+  console.log('all', all);
 
   if (all.length > 4) {
     return {
@@ -174,6 +195,13 @@ const colorMode = useColorMode();
 
 const editMode = ref(false);
 const deleteDialog = ref(false);
+const renameDialog = ref(false);
+const newName = ref('');
+
+const startRename = () => {
+  renameDialog.value = true;
+  newName.value = path.basename(props.opened._path, path.extname(props.opened._path));
+};
 
 const {
   fileQ,
@@ -183,8 +211,7 @@ const {
   viewSettingsUpdater,
   viewLayoutQ,
   updateViewLayout,
-  changesTracker,
-  lastSyncedTimestamp,
+  onRename,
 } = useFileEditorV2(props.opened, editorWrapper);
 
 const schema = computed(() => fileQ.data.value?.schema);

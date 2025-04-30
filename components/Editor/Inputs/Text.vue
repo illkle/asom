@@ -1,5 +1,5 @@
 <template>
-  <CommonLabel>{{ name }}</CommonLabel>
+  <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
   <!-- prettier-ignore-attribute v-bind:model-value -->
   <Input
     v-if="!settings.isMultiline"
@@ -46,6 +46,7 @@ defineProps<{
   settings: TextSettings;
   name: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>();
 
 defineModel<string | null>({ required: true });

@@ -1,5 +1,5 @@
 <template>
-  <div class="grid gap-2" :class="$attrs.class" id="attributesContainer">
+  <div class="" :class="$attrs.class" id="attributesContainer">
     <template v-if="editMode">
       <DynamicViewDynamicConfiguration
         v-if="schema"

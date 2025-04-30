@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <CommonLabel v-if="name">{{ name }}</CommonLabel>
+    <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
 
     <div class="flex flex-col gap-2 w-fit">
       <div v-for="(date, index) in modelValue" :key="index" class="flex items-center">
@@ -43,6 +43,7 @@ import DateInput from './Date.vue';
 
 const props = defineProps<{
   name: string;
+  hideLabel?: boolean;
   disabled?: boolean;
 }>();
 

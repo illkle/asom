@@ -1,5 +1,14 @@
 <template>
   <DropdownMenuSub>
+    <DropdownMenuSubTrigger>Width</DropdownMenuSubTrigger>
+    <DropdownMenuSubContent>
+      <DropdownMenuRadioGroup v-model="model.width">
+        <DropdownMenuRadioItem value="auto"> Auto </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="full"> Full </DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+    </DropdownMenuSubContent>
+  </DropdownMenuSub>
+  <DropdownMenuSub>
     <DropdownMenuSubTrigger>Direction</DropdownMenuSubTrigger>
     <DropdownMenuSubContent>
       <DropdownMenuRadioGroup v-model="model.direction">

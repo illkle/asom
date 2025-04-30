@@ -1,7 +1,6 @@
 <template>
   <LayoutGroup>
-    <div class="font-serif text-2xl">Edit Layout</div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 mt-2">
       <Button variant="outline" class="grow" @click="emit('update:layout', innerValue)">
         <SaveIcon /> Save
       </Button>
@@ -12,7 +11,7 @@
         :item="innerValue"
         :level="0"
         :index="0"
-        class="border rounded-md grow data-[is-over=true]:bg-accent"
+        class="border rounded-md grow data-[is-over=true]:bg-accent mt-4"
         @delete="onDelete"
         :parentIds="[]"
       >
@@ -25,13 +24,11 @@
         id="toDelete"
         :parentIds="[]"
         :index="0"
-        class="mr-2 border rounded-md flex items-center justify-center h-10 gap-2 data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed transition-opacity data-[is-over=true]:bg-accent"
+        class="mr-2 mt-2 border rounded-md flex items-center justify-center h-10 gap-2 data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed transition-opacity data-[is-over=true]:bg-accent"
         :data-disabled="!draggedItem"
       >
         <Trash2Icon :size="16" /> Drag here to delete
       </NestedDragDropTarget>
-
-      <hr class="mt-4 mb-2" />
 
       <div class="flex flex-col gap-2 w-fit">
         <NestedDragDraggable

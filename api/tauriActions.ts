@@ -73,6 +73,7 @@ export type BookReadResult = {
 };
 
 export const c_read_file_by_path = async (path: string) => {
+  console.log('c_read_file_by_path', path);
   return invoke('c_read_file_by_path', { path }).then(
     (v) => v as ExtractIpcResponcesType<'c_read_file_by_path'>,
   );

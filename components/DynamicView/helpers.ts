@@ -17,6 +17,7 @@ export const zDynamicViewGroup = z.interface({
       .enum(['start', 'center', 'end', 'between', 'around', 'evenly'])
       .optional()
       .default('start'),
+    width: z.enum(['auto', 'full']).default('auto'),
   }),
   get content() {
     return z.array(zDynamicViewGroup.or(zLayoutItem));
@@ -53,6 +54,7 @@ export const getStyle = (group: IDynamicViewGroup) => {
     gap: group.style.gap + 'px',
     alignItems: mapAlign[group.style.align],
     justifyContent: mapJustify[group.style.justify],
+    width: group.style.width === 'full' ? '100%' : 'auto',
   };
 };
 

@@ -1,7 +1,7 @@
 <template>
   <div ref="containerDiv" class="relative flex flex-wrap items-stretch gap-1">
     <CommonLabel
-      v-if="name"
+      v-if="!hideLabel"
       :class="
         cn([
           textCollectionInputVariants({ size: props.settings?.size, mode: 'Title' }),
@@ -53,6 +53,7 @@ const props = defineProps<{
   settings: TextCollectionSettings | null;
   name: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>();
 
 const prefix = computed(() => (props.settings?.prefix ? `'${props.settings?.prefix}'` : undefined));

@@ -14,6 +14,7 @@ const props = defineProps<{
     end?: string;
   };
   name?: string;
+  hideLabel?: boolean;
   class?: string;
   disabled?: boolean;
 }>();

@@ -15,7 +15,13 @@
                   props.item.content.push({
                     id: generateUniqId(),
                     type: 'group',
-                    style: { direction: 'column', gap: '4', align: 'start', justify: 'start' },
+                    style: {
+                      direction: 'column',
+                      gap: '4',
+                      align: 'start',
+                      justify: 'start',
+                      width: 'auto',
+                    },
                     content: [],
                   });
                 }
@@ -30,7 +36,7 @@
               <Button
                 size="sm"
                 variant="outline"
-                class="rounded-none border-0 border-r"
+                class="rounded-none border-0 border-r-0 rounded-tr-md"
                 @click.stop
                 @pointerdown.stop
               >

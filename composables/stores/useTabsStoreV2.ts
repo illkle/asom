@@ -128,13 +128,18 @@ export type OpenNewOneParams = {
 };
 
 export const useTabsStoreV2 = defineStore('tabs', {
-  state: (): IOpenedTabs & { navigationBlocks: Set<string> } => {
+  state: (): IOpenedTabs & {
+    navigationBlocks: Set<string>;
+    ignoreDeleteEvents: Set<string>;
+  } => {
     return {
       openedTabs: [],
       focusHistory: [],
       /** -1 means no active tab */
       focusHistoryPointer: -1,
       navigationBlocks: new Set<string>(),
+
+      ignoreDeleteEvents: new Set<string>(),
     };
   },
 
@@ -411,7 +416,17 @@ export const useTabsStoreV2 = defineStore('tabs', {
       }
     },
 
+    _markPathAsIgnoredForDeletion(path: string) {
+      this.ignoreDeleteEvents.add(path);
+    },
+
+    _unmarkPathAsIgnoredForDeletion(path: string) {
+      this.ignoreDeleteEvents.delete(path);
+    },
+
     _handlePathDeletion(path: string, isFolder: boolean) {
+      if (this.ignoreDeleteEvents.has(path)) return;
+
       const tabsToDeleteId: string[] = [];
 
       for (const tab of this.openedTabs) {

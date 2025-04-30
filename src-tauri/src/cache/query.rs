@@ -11,7 +11,6 @@ use crate::utils::errorhandling::ErrFR;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
-#[serde_with::skip_serializing_none]
 pub struct RecordFromDb {
     pub path: Option<String>,
     pub modified: Option<String>,

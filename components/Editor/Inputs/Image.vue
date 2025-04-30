@@ -24,7 +24,7 @@
     v-else
     @click="changeImageHandler"
   >
-    <EditorInputsCommonLabel v-if="name">{{ name }}</EditorInputsCommonLabel>
+    <EditorInputsCommonLabel v-if="!hideLabel">{{ name }}</EditorInputsCommonLabel>
     <span
       class="text-xs absolute bottom-0 left-1/2 max-w-fit w-full -translate-x-1/2 border-b-0 rounded-b-none text-muted-foreground border p-1.5 rounded-md"
       >Select image</span
@@ -43,6 +43,7 @@ import path from 'path-browserify';
 const imageName = defineModel<string | null>();
 const props = defineProps<{
   name: string;
+  hideLabel?: boolean;
 }>();
 
 const rootPath = useRootPath();

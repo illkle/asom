@@ -1,16 +1,9 @@
 import { zDynamicViewGroup, type IDynamicViewGroup } from '~/components/DynamicView/helpers';
 
-export const DEFAULT_VIEW_SETTINGS = () => ({
-  sorting: [],
-  columnVisibility: {},
-  columnSizing: {},
-  columnOrder: [],
-});
-
 const disk = new ConfigTiedToSchema('viewLayout.json', zDynamicViewGroup, {
   type: 'group',
   id: 'root',
-  style: { direction: 'row', gap: '4', align: 'start', justify: 'start' },
+  style: { direction: 'row', gap: '4', align: 'start', justify: 'start', width: 'auto' },
   content: [],
 });
 

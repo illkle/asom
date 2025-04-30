@@ -1,5 +1,5 @@
 <template>
-  <CommonLabel>{{ name }}</CommonLabel>
+  <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
   <RatingStars
     v-if="settings.style === 'Stars'"
     :decimal-places="settings.decimalPlaces"
@@ -57,6 +57,7 @@ const props = defineProps<{
   settings: NumberSettings;
   name: string;
   disabled?: boolean;
+  hideLabel?: boolean;
 }>();
 
 const decimalToStep = (decimalPlaces: number) => {

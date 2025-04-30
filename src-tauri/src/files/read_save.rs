@@ -59,10 +59,10 @@ pub async fn read_file_by_path(
                         FileReadMode::FullFile => Some(c.content),
                     },
                     modified: Some(file_modified),
-                    attrs: parsed_meta.clone().unwrap_or_default(),
+                    attrs: parsed_meta.metadata,
                     ..Default::default()
                 },
-                parsing_error: parsed_meta.err(),
+                parsing_error: parsed_meta.parsing_error,
                 schema: files_schema,
             });
         }
