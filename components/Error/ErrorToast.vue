@@ -1,6 +1,6 @@
 <template>
   <div>{{ err.info }}</div>
-  <Button v-if="err.rawError" size="xs" variant="outline" class="mt-2" @click="readFullError">
+  <Button v-if="err.rawError" size="sm" variant="outline" class="mt-2" @click="readFullError">
     Show raw error message
   </Button>
 </template>

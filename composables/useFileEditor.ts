@@ -88,6 +88,12 @@ export const useFileEditorV2 = (
     }
   });
 
+  watch(fileQ.data, (v) => {
+    if (v?.parsing_error) {
+      useRustErrorNotification(v.parsing_error);
+    }
+  });
+
   const schemaPath = computed(() => fileQ.data.value?.schema.owner_folder ?? '');
 
   const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(schemaPath);

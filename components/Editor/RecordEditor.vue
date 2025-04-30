@@ -1,145 +1,135 @@
 <template>
-  <div class="flex w-full flex-col overscroll-none px-4">
-    <div class="mx-auto h-fit w-full max-w-2xl">
-      <template v-if="!editMode">
-        <BreadcrumbList class="flex gap-2 flex-nowrap shrink mt-2">
-          <template v-if="!breadcrumbItems.all">
+  <div class="mx-auto h-full flex flex-col w-full max-w-2xl pb-4">
+    <template v-if="!editMode">
+      <BreadcrumbList class="flex gap-2 flex-nowrap shrink mt-2">
+        <template v-if="!breadcrumbItems.all">
+          <BreadcrumbItem
+            class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+            :class="'shrink cursor-pointer'"
+            @click="ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })"
+          >
+            {{ breadcrumbItems.start[0].label }}
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem> ... </BreadcrumbItem>
+          <template v-for="(item, i) in breadcrumbItems.end">
+            <BreadcrumbSeparator />
+
             <BreadcrumbItem
-              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-              :class="'shrink cursor-pointer'"
+              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
+              :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
               @click="
-                ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })
+                i !== breadcrumbItems.end.length - 1 &&
+                ts.openNewThingFast({ _type: 'folder', _path: item.path })
               "
             >
-              {{ breadcrumbItems.start[0].label }}
+              {{ item.label }}
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem> ... </BreadcrumbItem>
-            <template v-for="(item, i) in breadcrumbItems.end">
-              <BreadcrumbSeparator />
-
-              <BreadcrumbItem
-                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
-                :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-                @click="
-                  i !== breadcrumbItems.end.length - 1 &&
-                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
-                "
-              >
-                {{ item.label }}
-              </BreadcrumbItem>
-            </template>
           </template>
+        </template>
 
-          <template v-if="breadcrumbItems.all">
-            <template v-for="(item, i) in breadcrumbItems.all">
-              <BreadcrumbSeparator v-if="i > 1" />
+        <template v-if="breadcrumbItems.all">
+          <template v-for="(item, i) in breadcrumbItems.all">
+            <BreadcrumbSeparator v-if="i > 1" />
 
-              <BreadcrumbItem
-                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-                :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-                @click="
-                  i !== breadcrumbItems.all.length - 1 &&
-                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
-                "
-              >
-                {{ item.label }}
-              </BreadcrumbItem>
-            </template>
+            <BreadcrumbItem
+              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+              :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+              @click="
+                i !== breadcrumbItems.all.length - 1 &&
+                ts.openNewThingFast({ _type: 'folder', _path: item.path })
+              "
+            >
+              {{ item.label }}
+            </BreadcrumbItem>
           </template>
+        </template>
 
-          <div class="grow"></div>
-          <DropdownMenu class="ml-auto">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="icon">
-                <EllipsisVerticalIcon :size="16" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem @click="editMode = true">
-                <EditIcon /> Edit Layout
-              </DropdownMenuItem>
-              <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
-              <DropdownMenuItem @click="deleteDialog = true">
-                <Trash2Icon /> Delete
-              </DropdownMenuItem>
+        <div class="grow"></div>
+        <DropdownMenu class="ml-auto">
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="icon">
+              <EllipsisVerticalIcon :size="16" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="editMode = true"> <EditIcon /> Edit Layout </DropdownMenuItem>
+            <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
+            <DropdownMenuItem @click="deleteDialog = true">
+              <Trash2Icon /> Delete
+            </DropdownMenuItem>
 
-              <DropdownMenuItem
-                @click="
-                  viewSettingsUpdater(!viewSettingsQ.data.value?.labelsHidden, 'labelsHidden')
-                "
-              >
-                <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </BreadcrumbList>
-      </template>
+            <DropdownMenuItem
+              @click="viewSettingsUpdater(!viewSettingsQ.data.value?.labelsHidden, 'labelsHidden')"
+            >
+              <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </BreadcrumbList>
+    </template>
 
-      <Dialog v-model:open="renameDialog">
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename File</DialogTitle>
-          </DialogHeader>
+    <Dialog v-model:open="renameDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename File</DialogTitle>
+        </DialogHeader>
 
-          <div class="flex gap-2 items-center font-mono">
-            <Input v-model="newName" autofocus /> .md
-          </div>
+        <div class="flex gap-2 items-center font-mono">
+          <Input v-model="newName" autofocus /> .md
+        </div>
 
-          <DialogFooter class="flex gap-2">
-            <DialogClose as-child>
-              <Button variant="outline" class="grow">Cancel</Button>
-            </DialogClose>
-            <Button class="grow" @click="onRename(newName)">Rename</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <DialogFooter class="flex gap-2">
+          <DialogClose as-child>
+            <Button variant="outline" class="grow">Cancel</Button>
+          </DialogClose>
+          <Button class="grow" @click="onRename(newName)">Rename</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-      <Dialog v-model:open="deleteDialog">
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete</DialogTitle>
-          </DialogHeader>
-          <DialogDescription> Are you sure you want to delete this item? </DialogDescription>
-          <DialogFooter class="flex gap-2">
-            <DialogClose as-child>
-              <Button variant="outline" class="grow">Cancel</Button>
-            </DialogClose>
-            <Button variant="destructive" class="grow" @click="onRemove">Delete</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <Dialog v-model:open="deleteDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete</DialogTitle>
+        </DialogHeader>
+        <DialogDescription> Are you sure you want to delete this item? </DialogDescription>
+        <DialogFooter class="flex gap-2">
+          <DialogClose as-child>
+            <Button variant="outline" class="grow">Cancel</Button>
+          </DialogClose>
+          <Button variant="destructive" class="grow" @click="onRemove">Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
-      <EditorMetaEditor
-        v-if="editableProxy && schema && viewLayoutQ.data.value"
-        v-model:opened-file="editableProxy.record"
-        :view-layout="viewLayoutQ.data.value"
-        :hide-labels="viewSettingsQ.data.value?.labelsHidden"
-        @update:layout="
-          (v) => {
-            updateViewLayout(v);
-            editMode = false;
-          }
-        "
-        @discard="
-          () => {
-            console.log('discard');
-            editMode = false;
-          }
-        "
-        :edit-mode="editMode"
-        :schema="schema.schema"
-        class="py-2"
-      />
+    <EditorMetaEditor
+      v-if="editableProxy && schema && viewLayoutQ.data.value"
+      v-model:opened-file="editableProxy.record"
+      :view-layout="viewLayoutQ.data.value"
+      :hide-labels="viewSettingsQ.data.value?.labelsHidden"
+      @update:layout="
+        (v) => {
+          updateViewLayout(v);
+          editMode = false;
+        }
+      "
+      @discard="
+        () => {
+          console.log('discard');
+          editMode = false;
+        }
+      "
+      :edit-mode="editMode"
+      :schema="schema.schema"
+      class="py-2"
+    />
 
-      <div class="h-full min-h-[200px] border-t py-4">
-        <div
-          ref="editorWrapper"
-          class="editorRoot editorStyling h-full"
-          :class="colorMode.value === 'dark' && 'dark'"
-        ></div>
-      </div>
-    </div>
+    <div
+      ref="editorWrapper"
+      class="editorRoot editorStyling grow pt-2 border-t"
+      :class="colorMode.value === 'dark' && 'dark'"
+    ></div>
   </div>
 </template>
 
@@ -226,7 +216,7 @@ const onRemove = async () => {
 };
 </script>
 
-<style scoped>
+<style>
 .customTopGrid {
   grid-template-columns: minmax(min-content, max-content) 3fr 1fr;
 }
@@ -252,6 +242,10 @@ const onRemove = async () => {
   --selection: var(--neutral-300);
 
   --fold: var(--neutral-800);
+}
+
+.editorStyling .cm-editor {
+  height: 100%;
 }
 
 .dark.editorStyling {
