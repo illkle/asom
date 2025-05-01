@@ -4,35 +4,44 @@ import type { IOpenedPath } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
-import type { RecordFromDb } from '~/types';
+import type { RecordFromDb, RecordListGetResult, SortOrder } from '~/types';
 
-export const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string) => [
+export const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string, sort: SortOrder) => [
   'files',
   opened._type,
   opened._path,
   searchQuery,
+  sort.key,
+  sort.descending ? 'desc' : 'asc',
 ];
 
 export const useFlesListV2 = ({
   opened,
   searchQuery,
+  sort,
 }: {
   opened: IOpenedPath;
   searchQuery: Ref<string>;
+  sort: Ref<SortOrder>;
 }) => {
-  /**
-   * Schema is included in files query below, however since files query depends on searchQuery
-   * it's better to keep stable schema separately to avoid visual flickering on search change.
-   */
-  const schemaPath = computed(() => opened._path);
-  const schema = useSchemaByPath(schemaPath);
-
   const files = useQuery({
-    key: () => FILES_LIST_KEY(opened, searchQuery.value),
-    query: () => c_get_files_path(opened._path, searchQuery.value),
+    key: () => FILES_LIST_KEY(opened, searchQuery.value, sort.value),
+    query: () => c_get_files_path(opened._path, searchQuery.value, sort.value),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
+
+  const filesMemo = ref<RecordListGetResult | undefined>(undefined);
+
+  watch(
+    files.data,
+    (v) => {
+      if (v) {
+        filesMemo.value = v;
+      }
+    },
+    { immediate: true },
+  );
 
   watch(files.error, (e) => {
     if (e && isOurError(e)) {
@@ -45,55 +54,28 @@ export const useFlesListV2 = ({
   //
   // Update event handling
   //
-  const updateOrAddToFiles = (book: RecordFromDb) => {
-    const data = qc.getQueryData<Awaited<ReturnType<typeof c_get_files_path>> | null>(
-      FILES_LIST_KEY(opened, searchQuery.value),
-    );
-    if (!data) return;
-
-    const books = data.records;
-    // Do not assume that add event will be called once
-    // I encountered watcher on mac emitting duplicate events when copying files
-    const index = books.findIndex((v) => v.path === book.path);
-    if (index >= 0) {
-      books[index] = book;
-    } else {
-      books.push(book);
-    }
-    qc.setQueryData(FILES_LIST_KEY(opened, searchQuery.value), {
-      ...data,
-      records: books,
+  const updateOrAddToFiles = () => {
+    qc.invalidateQueries({
+      key: ['files', opened._type, opened._path],
     });
   };
 
-  const removeFromFiles = (path: string) => {
-    const data = qc.getQueryData<Awaited<ReturnType<typeof c_get_files_path>> | null>(
-      FILES_LIST_KEY(opened, searchQuery.value),
-    );
-    if (!data) return;
-
-    const books = data.records;
-    const index = data.records.findIndex((v) => v.path === path);
-
-    if (index >= 0) {
-      books.splice(index, 1);
-      qc.setQueryData(FILES_LIST_KEY(opened, searchQuery.value), {
-        ...data,
-        records: books,
-      });
-    }
+  const removeFromFiles = () => {
+    qc.invalidateQueries({
+      key: ['files', opened._type, opened._path],
+    });
   };
 
   const processEvent = (e: FileListEvent) => {
     switch (e.event) {
       case 'add':
-        updateOrAddToFiles(e.book);
+        updateOrAddToFiles();
         break;
       case 'remove':
-        removeFromFiles(e.path);
+        removeFromFiles();
         break;
       case 'update':
-        updateOrAddToFiles(e.book);
+        updateOrAddToFiles();
         break;
     }
   };
@@ -106,7 +88,7 @@ export const useFlesListV2 = ({
   const { onEvent, processQueue } = useThrottledEvents(
     processEvents,
     () => void files.refetch(),
-    1000,
+    250,
     15,
   );
 
@@ -138,7 +120,7 @@ export const useFlesListV2 = ({
     (v) => (v.c.path ? isChangeRelevant(opened._path, v.c.path) : false),
   );
 
-  return { files, schema };
+  return { files, filesMemo };
 };
 
 /**

@@ -62,7 +62,6 @@ import type { AttrValue, DatePair, SchemaAttrType } from '~/types';
 const props = defineProps({
   value: {
     type: Object as PropType<AttrValue>,
-    required: true,
   },
   type: {
     type: Object as PropType<SchemaAttrType>,

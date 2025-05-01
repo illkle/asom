@@ -9,7 +9,7 @@
         :opened="tabsStore.openedItem"
         :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
       />
-      <TableView
+      <BooksViewWrapper
         v-else-if="tabsStore.openedItem._type === 'folder'"
         :opened="tabsStore.openedItem"
         :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import TableView from '~/components/BookView/BooksView.vue';
+import BooksViewWrapper from '~/components/BookView/BookViewWrapper.vue';
 import RecordEditor from '~/components/Editor/RecordEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 

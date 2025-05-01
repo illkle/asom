@@ -13,7 +13,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use cache::query::{
     get_all_folders, get_all_folders_by_schema, get_all_tags, get_files_by_path,
-    FolderListGetResult, RecordFromDb, RecordListGetResult,
+    FolderListGetResult, RecordFromDb, RecordListGetResult, SortOrder,
 };
 use files::read_save::{
     read_file_by_path, save_file, FileReadMode, RecordReadResult, RecordSaveResult,
@@ -82,12 +82,13 @@ async fn c_get_files_path<T: tauri::Runtime>(
     app: AppHandle<T>,
     path: String,
     search_query: String,
+    sort: SortOrder,
 ) -> IPCGetFilesPath {
     let core = app.state::<CoreStateManager>();
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
     let mut schemas_cache = core.schemas_cache.lock().await;
-    get_files_by_path(conn, &mut schemas_cache, path, search_query).await
+    get_files_by_path(conn, &mut schemas_cache, path, search_query, sort).await
 }
 
 #[tauri::command]

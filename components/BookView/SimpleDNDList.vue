@@ -2,15 +2,17 @@
 import { Reorder } from 'motion-v';
 import { ref } from 'vue';
 
+type IItem = { id: string; label: string; isVisible: boolean };
+
 const props = defineProps<{
-  initialItems: { id: string; label: string; isVisible: boolean }[];
+  initialItems: IItem[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'update', items: { id: string; label: string; isVisible: boolean }[]): void;
+  (e: 'orderChange', items: IItem[]): void;
 }>();
 
-const internalList = ref<{ id: string; label: string; isVisible: boolean }[]>([]);
+const internalList = ref<IItem[]>([]);
 
 watch(
   props,
@@ -44,6 +46,8 @@ watch(
       </Reorder.Item>
     </Reorder.Group>
 
-    <Button variant="outline" @click="() => emit('update', internalList)"> Change Order </Button>
+    <Button variant="outline" @click="() => emit('orderChange', internalList)">
+      Change Order
+    </Button>
   </div>
 </template>

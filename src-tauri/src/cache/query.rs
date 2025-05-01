@@ -6,7 +6,7 @@ use ts_rs::TS;
 
 use crate::core::core::{DatabaseConnectionMutex, SchemasCacheMutex};
 use crate::schema::schema_cache::SchemasInMemoryCache;
-use crate::schema::types::{AttrValue, Schema};
+use crate::schema::types::{AttrValue, Schema, SchemaAttrType};
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
@@ -67,17 +67,40 @@ pub struct RecordListGetResult {
     pub records: Vec<RecordFromDb>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, TS)]
+#[ts(export)]
+pub struct SortOrder {
+    pub key: String,
+    pub descending: bool,
+}
+
 pub async fn get_files_by_path(
     conn: &mut SqliteConnection,
     schemas_cache: &mut SchemasInMemoryCache,
     path: String,
     search_query: String,
+    sort: SortOrder,
 ) -> Result<RecordListGetResult, ErrFR> {
     let schema = schemas_cache.get_schema_safe(&Path::new(&path))?;
 
-    let files = get_files_abstact(conn, format!(
-        "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') GROUP BY files.path",
-        path, search_query,
+    let sort_item = schema.schema.items.iter().find(|i| i.name == sort.key);
+
+    let sort_target = match sort_item {
+        Some(item) => match item.value {
+            SchemaAttrType::DatesPairCollection(_) => {
+                format!("files.attributes->'$.{}.value[0].started'", sort.key)
+            }
+            SchemaAttrType::DateCollection(_) => {
+                format!("files.attributes->'$.{}.value[0]'", sort.key)
+            }
+            _ => format!("files.attributes->'$.{}.value'", sort.key),
+        },
+        _ => "".to_string(),
+    };
+
+    let  files = get_files_abstact(conn, format!(
+        "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') ORDER BY {} {}, path",
+        path, search_query, sort_target, if sort.descending { "DESC" } else { "ASC" }
     ))
     .await?;
 
