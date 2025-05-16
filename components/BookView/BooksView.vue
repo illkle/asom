@@ -4,7 +4,7 @@ import { platform } from '@tauri-apps/plugin-os';
 
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { onKeyStroke, useElementSize } from '@vueuse/core';
-import { debounce } from 'lodash-es';
+import { cloneDeep, debounce } from 'lodash-es';
 import {
   ChevronDownIcon,
   CornerUpRightIcon,
@@ -34,7 +34,7 @@ const props = defineProps({
     required: true,
   },
   viewSettings: {
-    type: Object as PropType<Ref<IViewSettings>>,
+    type: Object as PropType<Ref<IViewSettings | undefined>>,
     required: true,
   },
   schema: {
@@ -69,7 +69,7 @@ const { files: q, filesMemo } = useFlesListV2({
   searchQuery: searchQuery,
   sort: computed(
     () =>
-      props.viewSettings.value.sorting ?? {
+      props.viewSettings.value?.sorting ?? {
         key: 'title',
         descending: false,
       },
@@ -77,13 +77,14 @@ const { files: q, filesMemo } = useFlesListV2({
 });
 
 const columnsAll = computed(() => {
-  const sortIndexes = props.viewSettings.value.columnOrder.reduce(
-    (acc, v, i) => {
-      acc[v] = i;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+  const sortIndexes =
+    props.viewSettings.value?.columnOrder.reduce(
+      (acc, v, i) => {
+        acc[v] = i;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ) ?? {};
 
   const cols = [];
 
@@ -110,8 +111,12 @@ const columnsAll = computed(() => {
 });
 
 const columnsVisible = computed(() => {
-  return columnsAll.value.filter((v) => props.viewSettings.value.columnVisibility[v.id] !== false);
+  return columnsAll.value.filter((v) => props.viewSettings.value?.columnVisibility[v.id] !== false);
 });
+
+const getSizeForColumn = (id: string, type: SchemaItem['value']['type']) => {
+  return props.viewSettings.value?.columnSizing?.[id] ?? baseSizeByType(type);
+};
 
 const baseSizeByType = (type: SchemaItem['value']['type']) => {
   switch (type) {
@@ -134,14 +139,15 @@ const rowSelection = ref<Record<string, boolean>>({});
 
 const isSelecting = ref<{ lastSelectedIndex: number | null } | null>(null);
 
-const injectScrollElementRef = inject<Ref<HTMLDivElement>>('scrollElementRef');
-const containerSize = useElementSize(injectScrollElementRef);
+const scrollElementRef = inject<Ref<HTMLDivElement>>('scrollElementRef');
+//const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
+const containerSize = useElementSize(scrollElementRef);
 
 const itemsForSorting = computed(() =>
   columnsAll.value.map((v) => ({
     id: v.id,
     label: v.label,
-    isVisible: props.viewSettings.value.columnVisibility[v.id] !== false,
+    isVisible: props.viewSettings.value?.columnVisibility[v.id] !== false,
   })),
 );
 
@@ -159,7 +165,7 @@ const rowVirtualizerOptions = computed(() => {
   return {
     count: rows.value.length,
     estimateSize: () => 37, //estimate row height for accurate scrollbar dragging
-    getScrollElement: () => injectScrollElementRef?.value as HTMLDivElement,
+    getScrollElement: () => scrollElementRef?.value as HTMLDivElement,
     overscan: 10,
   };
 });
@@ -266,85 +272,109 @@ const deleteSelected = async () => {
 };
 
 useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
+
+const startColumnsSizing = (e: MouseEvent, index: number) => {
+  const initialState = cloneDeep(props.viewSettings.value?.columnSizing ?? {});
+
+  const initialX = e.clientX;
+
+  const myId = columnsVisible.value[index].id;
+  const nextId = columnsVisible.value[index + 1].id;
+
+  const moveHandler = (e: MouseEvent) => {
+    const delta = e.clientX - initialX;
+
+    const ns = { ...initialState };
+
+    ns[myId] += delta;
+
+    emit('update:viewSettings', 'columnSizing', ns);
+  };
+
+  document.addEventListener('mousemove', moveHandler);
+  document.addEventListener('mouseup', () => {
+    document.removeEventListener('mousemove', moveHandler);
+  });
+};
 </script>
 
 <template>
-  <div class="w-full px-2 relative">
+  <div class="flex items-center py-2 gap-2 px-2 absolute w-full top-14 pr-4 bg-background h-12 z-2">
+    <Input v-model="searchQuery" />
+
+    <Toggle
+      :model-value="isSelecting !== null"
+      variant="outline"
+      @update:model-value="
+        (v) => {
+          if (!v) {
+            isSelecting = null;
+          } else {
+            isSelecting = { lastSelectedIndex: null };
+          }
+        }
+      "
+    >
+      <SquareDashedMousePointer :size="16" />
+    </Toggle>
+
+    <Dialog v-model:open="sortingDialogOpened">
+      <DialogContent>
+        <DialogTitle>Sort Columns</DialogTitle>
+        <DialogDescription> </DialogDescription>
+        <SimpleDNDList
+          :initial-items="itemsForSorting"
+          @order-change="
+            (update) => {
+              // @ts-ignore vue is being dumb for some reason
+              const mapped = update.map((v) => v.id);
+              emit('update:viewSettings', 'columnOrder', mapped);
+
+              sortingDialogOpened = false;
+            }
+          "
+        />
+      </DialogContent>
+    </Dialog>
+    <DropdownMenu>
+      <DropdownMenuTrigger as-child>
+        <Button variant="outline" class="ml-auto">
+          Columns <ChevronDownIcon class="ml-2 h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem @click="sortingDialogOpened = true">
+          <ListOrdered :size="16" /> Reorder
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuLabel>Toggle Visibility</DropdownMenuLabel>
+
+        <DropdownMenuCheckboxItem
+          v-for="column in itemsForSorting"
+          :key="column.id"
+          class="capitalize"
+          :model-value="column.isVisible"
+          @update:model-value="
+            (value) => {
+              emit('update:viewSettings', 'columnVisibility', {
+                ...props.viewSettings.value?.columnVisibility,
+                [column.id]: value,
+              });
+            }
+          "
+        >
+          {{ column.label }}
+        </DropdownMenuCheckboxItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+  <div class="w-full px-2 relative h-full">
     <div class="mx-auto">
       <div :style="{ height: `${totalSize}px` }" class="">
         <!-- Even though we're still using sematic table tags, we must use CSS grid and flexbox for dynamic row heights -->
         <table class="w-full caption-bottom text-sm grid">
-          <TableHead class="grid sticky top-0 z-10 bg-background h-fit p-0">
-            <div class="flex items-center py-2 gap-2">
-              <Input v-model="searchQuery" />
-
-              <Toggle
-                :model-value="isSelecting !== null"
-                variant="outline"
-                @update:model-value="
-                  (v) => {
-                    if (!v) {
-                      isSelecting = null;
-                    } else {
-                      isSelecting = { lastSelectedIndex: null };
-                    }
-                  }
-                "
-              >
-                <SquareDashedMousePointer :size="16" />
-              </Toggle>
-
-              <Dialog v-model:open="sortingDialogOpened">
-                <DialogContent>
-                  <DialogTitle>Sort Columns</DialogTitle>
-                  <DialogDescription> </DialogDescription>
-                  <SimpleDNDList
-                    :initial-items="itemsForSorting"
-                    @order-change="
-                      (update) => {
-                        // @ts-ignore vue is being dumb for some reason
-                        const mapped = update.map((v) => v.id);
-                        emit('update:viewSettings', 'columnOrder', mapped);
-
-                        sortingDialogOpened = false;
-                      }
-                    "
-                  />
-                </DialogContent>
-              </Dialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="ml-auto">
-                    Columns <ChevronDownIcon class="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem @click="sortingDialogOpened = true">
-                    <ListOrdered :size="16" /> Reorder
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuLabel>Toggle Visibility</DropdownMenuLabel>
-
-                  <DropdownMenuCheckboxItem
-                    v-for="column in itemsForSorting"
-                    :key="column.id"
-                    class="capitalize"
-                    :model-value="column.isVisible"
-                    @update:model-value="
-                      (value) => {
-                        emit('update:viewSettings', 'columnVisibility', {
-                          ...props.viewSettings.value.columnVisibility,
-                          [column.id]: value,
-                        });
-                      }
-                    "
-                  >
-                    {{ column.label }}
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+          <TableHead class="grid sticky top-12 z-10 bg-background h-fit p-0">
             <tr
               ref="tableContainerRef"
               class="mt-1 group transition-opacity duration-200"
@@ -359,14 +389,15 @@ useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
                 :colspan="1"
                 class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2 cursor-pointer select-none"
                 :style="{
-                  width: `${baseSizeByType(column.type)}px`,
+                  width: `${getSizeForColumn(column.id, column.type)}px`,
                 }"
                 @mousedown="
-                  () => {
-                    if (props.viewSettings.value.sorting?.key === column.id) {
+                  (e) => {
+                    if (e.button !== 0) return;
+                    if (props.viewSettings.value?.sorting?.key === column.id) {
                       emit('update:viewSettings', 'sorting', {
                         key: column.id,
-                        descending: !props.viewSettings.value.sorting?.descending,
+                        descending: !props.viewSettings.value?.sorting?.descending,
                       });
                     } else {
                       emit('update:viewSettings', 'sorting', {
@@ -377,10 +408,10 @@ useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
                   }
                 "
               >
-                <template v-if="props.viewSettings.value.sorting?.key === column.id">
+                <template v-if="props.viewSettings.value?.sorting?.key === column.id">
                   <MoveDown
                     :size="12"
-                    v-if="props.viewSettings.value.sorting.descending"
+                    v-if="props.viewSettings.value?.sorting.descending"
                     class="shrink-0"
                   />
                   <MoveUp :size="12" v-else class="shrink-0" />
@@ -390,8 +421,9 @@ useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
                 </div>
 
                 <div
-                  class="h-full w-2 bg-red-500 ml-auto cursor-col-resize"
+                  class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize"
                   v-if="index !== columnsVisible.length - 1"
+                  @mousedown.stop.prevent="(e) => startColumnsSizing(e, index)"
                 ></div>
 
                 <!--Todo resize-->
@@ -446,7 +478,7 @@ useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
                     class="h-9 px-2 whitespace-nowrap"
                     :style="{
                       display: 'flex',
-                      width: `${baseSizeByType(cell.type)}px`,
+                      width: `${getSizeForColumn(cell.id, cell.type)}px`,
                     }"
                   >
                     <BookItemDisplay :value="rows[vRow.index].attrs[cell.id]" :type="cell.si" />

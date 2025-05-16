@@ -1,28 +1,27 @@
 <template>
   <div v-if="schema" class="flex flex-col gap-4">
-    <div class="flex items-center gap-4">
+    <!-- Header -->
+    <div class="flex items-center gap-2">
       <Button variant="ghost" size="icon" @click="goBack">
         <ArrowLeftIcon class="w-4" />
       </Button>
-      <h1 class="font-serif text-3xl">{{ schema.name }}</h1>
+
+      <Input class="font-serif" v-model="schema.name" />
 
       <Button variant="outline" @click="save">Save</Button>
     </div>
 
-    <div class="max-w-[600px]">
-      <div>
-        <Input v-model="schema.name" />
-      </div>
+    <!-- Editor -->
 
-      <div class="mt-4">
-        <div class="grid grid-cols-[40px_3fr_1fr_40px] gap-x-2 gap-y-2">
-          <template v-for="(_, i) in schema.items" class="flex gap-2">
-            <SchemaEditorShemaItem v-model:model-value="schema.items[i]" @delete="deleteItem(i)" />
-          </template>
-          <Button @click="addNew" variant="outline" class="col-span-4 mt-2 w-full">Add</Button>
-        </div>
-        <div></div>
-      </div>
+    <div class="flex flex-col gap-x-2 gap-y-2 mt-4">
+      <SchemaEditorShemaItem
+        v-for="(_, i) in schema.items"
+        v-model:model-value="schema.items[i]"
+        :selected="selectedItemIndex === i"
+        @delete="deleteItem(i)"
+        @customize="selectedItemIndex = i"
+      />
+      <Button @click="addNew" variant="outline" class="col-span-4 mt-2 w-full">Add</Button>
     </div>
   </div>
 </template>
@@ -36,6 +35,8 @@ import { ArrowLeftIcon } from 'lucide-vue-next';
 import type { ErrFR, Schema } from '~/types';
 
 const route = useRoute();
+
+const selectedItemIndex = ref<number | null>(null);
 
 const goBack = () => {
   history.back();

@@ -10,6 +10,41 @@ const zSorting = z
 const zVisibilityState = z.record(z.string(), z.boolean());
 
 const zSizingState = z.record(z.string(), z.number());
+
+type ISizingState = Record<string, number>;
+type ComputedColumnSizes = Record<string, number>;
+
+export const getSizesForColumns = (spaceAwailable: number, columns: ISizingState) => {
+  const totalSize = Object.values(columns).reduce((acc, v) => acc + v, 0);
+
+  const unit = spaceAwailable / totalSize;
+
+  const s: ComputedColumnSizes = {};
+
+  for (const [index, c] of Object.entries(columns)) {
+    s[index] = c * unit;
+  }
+
+  return s;
+};
+
+export const adjustSizeForColumn = (
+  spaceAwailable: number,
+  columns: ISizingState,
+  add: number,
+  addTarget: string,
+  subtractTarget: string,
+) => {
+  const totalSize = Object.values(columns).reduce((acc, v) => acc + v, 0);
+  const unit = spaceAwailable / totalSize;
+
+  const unitsToAdd = add * unit;
+  columns[addTarget] += unitsToAdd;
+  columns[subtractTarget] -= unitsToAdd;
+
+  return columns;
+};
+
 const zOrderState = z.array(z.string());
 
 const zViewSettings = z.object({
