@@ -165,6 +165,8 @@ async fn handle_folder_add(
 pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     let core = app.state::<CoreStateManager>();
 
+    println!("event {:?}", event);
+
     for (index, path) in event.paths.iter().enumerate() {
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {

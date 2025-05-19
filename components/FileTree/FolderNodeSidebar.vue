@@ -14,7 +14,7 @@ import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 
 import path from 'path-browserify';
 import type { FolderNode } from '~/components/FileTree/filePathsToTree';
-import { useTabsStoreV2, type OpenNewOneParams } from '~/composables/stores/useTabsStoreV2';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps<{
   item: FlattenedItem<FolderNode>;
@@ -38,7 +38,6 @@ watchEffect(() => {
 });
 
 const ts = useTabsStoreV2();
-
 
 const hasChildren = computed(() => props.item.value.children.length > 0);
 
@@ -137,8 +136,12 @@ useAppearingInputFocuser('inputRefCreate');
               class="flex-1 w-full text-left justify-start"
               :class="hasChildren && 'rounded-l-none pl-1.5'"
               @click="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'here')"
-              @click.alt.exact="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')"
-              @click.middle.exact="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')"
+              @click.alt.exact="
+                ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')
+              "
+              @click.middle.exact="
+                ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'last')
+              "
             >
               <FolderIcon v-if="!hasChildren" :size="12" />
 
@@ -153,7 +156,13 @@ useAppearingInputFocuser('inputRefCreate');
         <ContextMenuItem @click="startRenaming"> Remame </ContextMenuItem>
         <ContextMenuItem @click="startCreating"> Create Folder </ContextMenuItem>
 
-        <ContextMenuItem @click="async () => await remove(item.value.rawPath, { recursive: true })">
+        <ContextMenuItem
+          @click="
+            async () => {
+              await remove(item.value.rawPath, { recursive: true });
+            }
+          "
+        >
           Delete Folder
         </ContextMenuItem>
       </ContextMenuContent>

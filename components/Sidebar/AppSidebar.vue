@@ -38,7 +38,23 @@
     </SidebarContent>
 
     <SidebarFooter>
-      <SidebarMenuButton @click="openGoodreadsImporter"> <WrenchIcon /> Tools </SidebarMenuButton>
+      <Collapsible defaultOpen class="group">
+        <CollapsibleContent>
+          <SidebarMenuButton @click="openGoodreadsImporter">
+            <ImportIcon /> Goodreads importer
+          </SidebarMenuButton>
+        </CollapsibleContent>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton>
+            <WrenchIcon /> Tools
+            <ChevronLeft
+              class="ml-auto group-data-[state=open]:rotate-90 transition-transform duration-200"
+              :size="12"
+            />
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+      </Collapsible>
+
       <Dialog v-model:open="settingsDialogOpened">
         <DialogContent>
           <SettingsPage />
@@ -52,7 +68,15 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, CogIcon, PlusIcon, WrenchIcon } from 'lucide-vue-next';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  CogIcon,
+  ImportIcon,
+  PlusIcon,
+  WrenchIcon,
+} from 'lucide-vue-next';
 import path from 'path-browserify';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
