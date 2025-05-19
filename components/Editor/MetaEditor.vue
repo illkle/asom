@@ -76,43 +76,6 @@ const attributesByKey = computed(() => {
     return acc;
   }, {});
 });
-
-/*
-///
-/// Cover Right click
-///
-
-
-const dragging = ref('');
-const forDrag = ref();
-
-const startDrag = (devt: DragEvent) => {
-
-  if (
-    devt.dataTransfer === null ||
-    !openedFile.value ||
-    'unsaved' in openedFile.value ||
-    !openedFile.value.name
-  ) {
-    return;
-  }
-
-  devt.dataTransfer.setData('itemPath', openedFile.value.path);
-  devt.dataTransfer.setDragImage(forDrag.value, 0, 0);
-  dragging.value = openedFile.value.name;
-
-  if (!store.openedTabs) return;
-  const toUpdateIndexes = store.openedTabs.reduce((acc: number[], opened, index) => {
-    if ('unsaved' in openedFile.value) return [];
-    if (opened.type === 'file' && opened.thing === openedFile.value?.path) {
-      acc.push(index);
-    }
-    return acc;
-  }, []);
-
-  devt.dataTransfer.setData('indexesToUpdate', JSON.stringify(toUpdateIndexes));
-
-};  */
 </script>
 
 <style scoped></style>

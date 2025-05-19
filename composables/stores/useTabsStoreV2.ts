@@ -61,7 +61,9 @@ const zPathCore = z.object({
 });
 
 export const zOpenedPath = zPathCore.extend({
-  scrollPosition: z.number(),
+  scrollPositionY: z.number(),
+  scrollPositionX: z.number(),
+
   details: z.object({
     searchQuery: z.string(),
   }),
@@ -73,7 +75,8 @@ const zFileCore = z.object({
 });
 
 export const zOpenedFile = zFileCore.extend({
-  scrollPosition: z.number(),
+  scrollPositionY: z.number(),
+  scrollPositionX: z.number(),
 });
 
 const zInnerPageCore = z.object({
@@ -84,7 +87,8 @@ const zInnerPageCore = z.object({
 const zCore = z.discriminatedUnion('_type', [zFileCore, zInnerPageCore, zPathCore]);
 
 export const zOpenedInnerPage = zInnerPageCore.extend({
-  scrollPosition: z.number(),
+  scrollPositionY: z.number(),
+  scrollPositionX: z.number(),
 });
 
 export const zOpened = z.discriminatedUnion('_type', [zOpenedFile, zOpenedInnerPage, zOpenedPath]);
@@ -364,7 +368,8 @@ export const useTabsStoreV2 = defineStore('tabs', {
         data = {
           _type: 'folder',
           _path: _path,
-          scrollPosition: 0,
+          scrollPositionY: 0,
+          scrollPositionX: 0,
           details: {
             searchQuery: '',
           },
@@ -373,13 +378,15 @@ export const useTabsStoreV2 = defineStore('tabs', {
         data = {
           _type: 'file',
           _path: _path,
-          scrollPosition: 0,
+          scrollPositionX: 0,
+          scrollPositionY: 0,
         };
       } else if (_type === 'innerPage') {
         data = {
           _type: 'innerPage',
           _path: _path,
-          scrollPosition: 0,
+          scrollPositionY: 0,
+          scrollPositionX: 0,
         };
       } else {
         throw new Error('Unknown type');
@@ -536,10 +543,11 @@ export const useNavigationBlock = (isBlocked: Ref<boolean>) => {
   return isBlocked;
 };
 
-export const useScrollRestorationOnMount = (condition: Ref<boolean>) => {
+export const useScrollRestorationOnMount = (
+  element: Ref<HTMLDivElement | null>,
+  condition: Ref<boolean>,
+) => {
   const store = useTabsStoreV2();
-
-  const scrollElementRef = inject<Ref<HTMLDivElement>>('scrollElementRef');
 
   const mounted = ref(false);
 
@@ -548,12 +556,18 @@ export const useScrollRestorationOnMount = (condition: Ref<boolean>) => {
   });
 
   watch([condition, mounted], ([v, v2]) => {
-    if (!v2 || !scrollElementRef || !v) return;
+    console.log('scroll res on mount');
 
-    if (!scrollElementRef.value) return;
+    if (!v2 || !element.value || !v) return;
+
+    if (!element.value) return;
 
     nextTick(() => {
-      scrollElementRef.value.scrollTo(0, store.openedItem?.scrollPosition ?? 0);
+      if (!element.value) return;
+      element.value.scrollTo(
+        store.openedItem?.scrollPositionX ?? 0,
+        store.openedItem?.scrollPositionY ?? 0,
+      );
     });
   });
 };
@@ -578,6 +592,7 @@ export const useScrollWatcher = (item: ShallowRef<HTMLDivElement | null>) => {
       ignored.value = false;
       return;
     }
-    tabsStore.openedItem.scrollPosition = (e.target as HTMLDivElement).scrollTop;
+    tabsStore.openedItem.scrollPositionY = (e.target as HTMLDivElement).scrollTop;
+    tabsStore.openedItem.scrollPositionX = (e.target as HTMLDivElement).scrollLeft;
   });
 };

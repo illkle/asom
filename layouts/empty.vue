@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen overflow-y-scroll overscroll-none pt-[2rem] bg-background">
+  <div class="h-screen overflow-y-scroll overscroll-none bg-background">
     <slot />
   </div>
 </template>

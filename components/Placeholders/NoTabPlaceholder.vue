@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col items-center justify-center pt-40">
-    <div>You have nothing opened.</div>
+  <div class="flex flex-col items-center justify-center h-full">
+    <div class="opacity-20">You have nothing opened</div>
   </div>
 </template>
 

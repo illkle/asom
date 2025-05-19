@@ -1,20 +1,14 @@
 <template>
   <SidebarProvider>
-    <AppSidebar v-if="appState.status === 'ok'" class="pt-[2rem] box-border" />
+    <AppSidebar v-if="appState.status === 'ok'" class="pt-[1.7rem] box-border" />
 
-    <main class="relative flex w-36 flex-1 flex-col h-screen box-border pt-[1rem]">
+    <main class="relative flex w-36 flex-1 flex-col h-screen max-h-screen box-border">
+      <div class="h-[1rem] shrink-0"></div>
       <!-- InitQ returned a root path, show app -->
       <template v-if="appState.status === 'ok'">
-        <div class="">
-          <TabsSelector />
-        </div>
-        <div
-          ref="scrollElementRef"
-          class="overscroll-none overflow-scroll scrollbarMod gutter-stable h-full bg-background transition-all duration-100"
-          :class="isFirstTab ? '' : 'rounded-tl-md'"
-        >
-          <slot />
-        </div>
+        <TabsSelector class="shrink-0" />
+
+        <slot />
       </template>
 
       <div v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
@@ -29,7 +23,7 @@
 import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
-import { useScrollWatcher, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const appState = useIsAppUsable();
 
@@ -38,11 +32,6 @@ const tabsStore = useTabsStoreV2();
 const isFirstTab = computed(() => {
   return tabsStore.openedTabs.length >= 1 && tabsStore.openedTabActiveIndex === 0;
 });
-
-const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
-provide('scrollElementRef', scrollElementRef);
-
-useScrollWatcher(scrollElementRef);
 </script>
 
 <style>

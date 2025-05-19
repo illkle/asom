@@ -1,35 +1,16 @@
 <template>
-  <div class="flex flex-col gap-2 mx-auto px-4 w-full py-10 max-w-5xl">
-    <NestedDragTestComponent />
+  <div class="h-screen border-red-500 border w-full flex flex-col">
+    <div class="h-16 bg-green-500"></div>
+    <div class="w-full border-blue-500 border overflow-auto overscroll-none">
+      <div class="h-[1000px] w-full bg-yellow-500"></div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { IDynamicViewGroup, ILayoutItem } from '~/components/DynamicView/helpers';
-
 definePageMeta({
   layout: 'empty',
 });
-
-const layout = ref<IDynamicViewGroup>({
-  id: 'root',
-  type: 'group',
-  style: { direction: 'row', gap: '0', align: 'start', justify: 'start' },
-  content: [
-    {
-      id: 'lol',
-      type: 'group',
-      style: { direction: 'row', gap: '16', align: 'start', justify: 'start' },
-      content: [{ type: 'item', id: '133' }],
-    },
-  ],
-});
-
-const availableItems = ref<ILayoutItem[]>([{ id: '133', type: 'item' }]);
-const dataRefs = {
-  layout,
-  availableItems,
-};
 </script>
 
 <style scoped>

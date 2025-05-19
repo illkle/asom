@@ -6,7 +6,6 @@
     :schema="schema.data"
     @update:view-settings="viewSettingsUpdater"
   />
-  <div v-else class="h-46 w-46 bg-red-500"></div>
 </template>
 
 <script setup lang="ts">

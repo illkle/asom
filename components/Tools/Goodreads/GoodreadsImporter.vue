@@ -1,121 +1,123 @@
 <template>
-  <div class="p-4 max-w-2xl mx-auto">
-    <h2 class="text-3xl font-serif">Goodreads importer</h2>
+  <div class="bg-background h-full overflow-y-auto gutter-stable scrollbarMod">
+    <div class="p-4 max-w-2xl mx-auto">
+      <h2 class="text-3xl font-serif">Goodreads importer</h2>
 
-    <div class="text-sm opacity-50">
-      To export your data:
-      <ol class="list-decimal pl-4">
-        <li>Login into Goodreads on the web</li>
-        <li>
-          Navigate to "My Boooks"(or to any sheves you have if you want to limit exported data)
-        </li>
-        <li>In floating element on the bottom of the page set "books per page" to 100</li>
-        <li>
-          Right click anywhere on the page and select "Save as". Save the file somewhere on your
-          computer.
-        </li>
-      </ol>
-    </div>
-
-    <div class="text-xs opacity-50 mt-2">Note that we do not have any deduping logic yet.</div>
-
-    <input type="file" id="file-input" class="opacity-0" @change="handleFileChange" />
-    <label
-      for="file-input"
-      class="text-sm opacity-50 w-full h-16 border border-gray-300 rounded-md flex items-center justify-center"
-    >
-      select page.html
-    </label>
-
-    <div class="mt-2">
-      Select one of your schemas to import into
-      <div class="mt-2 flex gap-2">
-        <Button
-          v-for="([schemaPath, schema], index) in schemasArray"
-          :key="schemaPath"
-          :variant="selectedSchemaIndex === index ? 'default' : 'outline'"
-          @click="selectedSchemaIndex = index"
-        >
-          {{ schema.name }}
-        </Button>
+      <div class="text-sm opacity-50">
+        To export your data:
+        <ol class="list-decimal pl-4">
+          <li>Login into Goodreads on the web</li>
+          <li>
+            Navigate to "My Boooks"(or to any sheves you have if you want to limit exported data)
+          </li>
+          <li>In floating element on the bottom of the page set "books per page" to 100</li>
+          <li>
+            Right click anywhere on the page and select "Save as". Save the file somewhere on your
+            computer.
+          </li>
+        </ol>
       </div>
-    </div>
 
-    <div
-      v-if="currentSchema"
-      class="grid grid-cols-3 mt-2 items-center gap-2 border rounded-md p-2"
-    >
-      <div>Title</div>
+      <div class="text-xs opacity-50 mt-2">Note that we do not have any deduping logic yet.</div>
 
-      <ArrowRightIcon />
-      <Select v-model="mappings.title" :options="awailableTextFields">
-        <SelectTrigger>{{ mappings.title || 'Select field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      <input type="file" id="file-input" class="opacity-0" @change="handleFileChange" />
+      <label
+        for="file-input"
+        class="text-sm opacity-50 w-full h-16 border border-gray-300 rounded-md flex items-center justify-center"
+      >
+        select page.html
+      </label>
 
-      <div>Author</div>
-      <ArrowRightIcon />
-      <Select v-model="mappings.author" :options="awailableTextFields">
-        <SelectTrigger>{{ mappings.author || 'Select field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
+      <div class="mt-2">
+        Select one of your schemas to import into
+        <div class="mt-2 flex gap-2">
+          <Button
+            v-for="([schemaPath, schema], index) in schemasArray"
+            :key="schemaPath"
+            :variant="selectedSchemaIndex === index ? 'default' : 'outline'"
+            @click="selectedSchemaIndex = index"
+          >
+            {{ schema.name }}
+          </Button>
+        </div>
+      </div>
 
-      <div>ISBN13</div>
-      <ArrowRightIcon />
-      <Select v-model="mappings.isbn13" :options="awailableNumberFields">
-        <SelectTrigger>{{ mappings.isbn13 || 'Select field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <div>Year</div>
-      <ArrowRightIcon />
-      <Select v-model="mappings.year" :options="awailableNumberFields">
-        <SelectTrigger>{{ mappings.year || 'Select field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <div>Rating</div>
-      <ArrowRightIcon />
-      <Select v-model="mappings.rating" :options="awailableNumberFields">
-        <SelectTrigger>{{ mappings.rating || 'Select field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-      <div>Read</div>
-      <ArrowRightIcon />
-      <Select v-model="mappings.read" :options="awailableDatePairFields">
-        <SelectTrigger>{{ mappings.read || 'Select DatesPairCollection field' }}</SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="field in awailableDatePairFields" :key="field" :value="field">
-            {{ field }}
-          </SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
+      <div
+        v-if="currentSchema"
+        class="grid grid-cols-3 mt-2 items-center gap-2 border rounded-md p-2"
+      >
+        <div>Title</div>
 
-    <Button @click="importBooks" class="mt-2 w-full">Import books</Button>
+        <ArrowRightIcon />
+        <Select v-model="mappings.title" :options="awailableTextFields">
+          <SelectTrigger>{{ mappings.title || 'Select field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-    <div>Found {{ books.length }} books</div>
-    <div>
-      <div v-for="book in books" :key="book.title">
-        {{ book.title }}
+        <div>Author</div>
+        <ArrowRightIcon />
+        <Select v-model="mappings.author" :options="awailableTextFields">
+          <SelectTrigger>{{ mappings.author || 'Select field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableTextFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        <div>ISBN13</div>
+        <ArrowRightIcon />
+        <Select v-model="mappings.isbn13" :options="awailableNumberFields">
+          <SelectTrigger>{{ mappings.isbn13 || 'Select field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div>Year</div>
+        <ArrowRightIcon />
+        <Select v-model="mappings.year" :options="awailableNumberFields">
+          <SelectTrigger>{{ mappings.year || 'Select field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div>Rating</div>
+        <ArrowRightIcon />
+        <Select v-model="mappings.rating" :options="awailableNumberFields">
+          <SelectTrigger>{{ mappings.rating || 'Select field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableNumberFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div>Read</div>
+        <ArrowRightIcon />
+        <Select v-model="mappings.read" :options="awailableDatePairFields">
+          <SelectTrigger>{{ mappings.read || 'Select DatesPairCollection field' }}</SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="field in awailableDatePairFields" :key="field" :value="field">
+              {{ field }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button @click="importBooks" class="mt-2 w-full">Import books</Button>
+
+      <div>Found {{ books.length }} books</div>
+      <div>
+        <div v-for="book in books" :key="book.title">
+          {{ book.title }}
+        </div>
       </div>
     </div>
   </div>

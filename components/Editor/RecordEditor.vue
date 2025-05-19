@@ -1,135 +1,148 @@
 <template>
-  <div class="mx-auto h-full flex flex-col w-full max-w-2xl pb-4">
-    <template v-if="!editMode">
-      <BreadcrumbList class="flex gap-2 flex-nowrap shrink mt-2">
-        <template v-if="!breadcrumbItems.all">
-          <BreadcrumbItem
-            class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-            :class="'shrink cursor-pointer'"
-            @click="ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })"
-          >
-            {{ breadcrumbItems.start[0].label }}
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem> ... </BreadcrumbItem>
-          <template v-for="(item, i) in breadcrumbItems.end">
-            <BreadcrumbSeparator />
-
-            <BreadcrumbItem
-              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
-              :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-              @click="
-                i !== breadcrumbItems.end.length - 1 &&
-                ts.openNewThingFast({ _type: 'folder', _path: item.path })
-              "
-            >
-              {{ item.label }}
-            </BreadcrumbItem>
-          </template>
-        </template>
-
-        <template v-if="breadcrumbItems.all">
-          <template v-for="(item, i) in breadcrumbItems.all">
-            <BreadcrumbSeparator v-if="i > 1" />
-
+  <div
+    ref="scrollElement"
+    class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable"
+  >
+    <div class="max-w-2xl mx-auto">
+      <template v-if="!editMode">
+        <BreadcrumbList
+          class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"
+        >
+          <template v-if="!breadcrumbItems.all">
             <BreadcrumbItem
               class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-              :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+              :class="'shrink cursor-pointer'"
               @click="
-                i !== breadcrumbItems.all.length - 1 &&
-                ts.openNewThingFast({ _type: 'folder', _path: item.path })
+                ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })
               "
             >
-              {{ item.label }}
+              {{ breadcrumbItems.start[0].label }}
             </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem> ... </BreadcrumbItem>
+            <template v-for="(item, i) in breadcrumbItems.end">
+              <BreadcrumbSeparator />
+
+              <BreadcrumbItem
+                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
+                :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+                @click="
+                  i !== breadcrumbItems.end.length - 1 &&
+                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
+                "
+              >
+                {{ item.label }}
+              </BreadcrumbItem>
+            </template>
           </template>
-        </template>
 
-        <div class="grow"></div>
-        <DropdownMenu class="ml-auto">
-          <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="icon">
-              <EllipsisVerticalIcon :size="16" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem @click="editMode = true"> <EditIcon /> Edit Layout </DropdownMenuItem>
-            <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
-            <DropdownMenuItem @click="deleteDialog = true">
-              <Trash2Icon /> Delete
-            </DropdownMenuItem>
+          <template v-if="breadcrumbItems.all">
+            <template v-for="(item, i) in breadcrumbItems.all">
+              <BreadcrumbSeparator v-if="i > 1" />
 
-            <DropdownMenuItem
-              @click="viewSettingsUpdater(!viewSettingsQ.data.value?.labelsHidden, 'labelsHidden')"
-            >
-              <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </BreadcrumbList>
-    </template>
+              <BreadcrumbItem
+                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+                :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+                @click="
+                  i !== breadcrumbItems.all.length - 1 &&
+                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
+                "
+              >
+                {{ item.label }}
+              </BreadcrumbItem>
+            </template>
+          </template>
 
-    <Dialog v-model:open="renameDialog">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Rename File</DialogTitle>
-        </DialogHeader>
+          <div class="grow"></div>
+          <DropdownMenu class="ml-auto">
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" size="icon">
+                <EllipsisVerticalIcon :size="14" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem @click="editMode = true">
+                <EditIcon /> Edit Layout
+              </DropdownMenuItem>
+              <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
+              <DropdownMenuItem @click="deleteDialog = true">
+                <Trash2Icon /> Delete
+              </DropdownMenuItem>
 
-        <div class="flex gap-2 items-center font-mono">
-          <Input v-model="newName" autofocus /> .md
-        </div>
+              <DropdownMenuItem
+                @click="
+                  viewSettingsUpdater('labelsHidden', !viewSettingsQ.data.value?.labelsHidden)
+                "
+              >
+                <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </BreadcrumbList>
+      </template>
 
-        <DialogFooter class="flex gap-2">
-          <DialogClose as-child>
-            <Button variant="outline" class="grow">Cancel</Button>
-          </DialogClose>
-          <Button class="grow" @click="onRename(newName)">Rename</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <Dialog v-model:open="renameDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename File</DialogTitle>
+          </DialogHeader>
 
-    <Dialog v-model:open="deleteDialog">
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Delete</DialogTitle>
-        </DialogHeader>
-        <DialogDescription> Are you sure you want to delete this item? </DialogDescription>
-        <DialogFooter class="flex gap-2">
-          <DialogClose as-child>
-            <Button variant="outline" class="grow">Cancel</Button>
-          </DialogClose>
-          <Button variant="destructive" class="grow" @click="onRemove">Delete</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div class="flex gap-2 items-center font-mono">
+            <Input v-model="newName" autofocus /> .md
+          </div>
 
-    <EditorMetaEditor
-      v-if="editableProxy && schema && viewLayoutQ.data.value"
-      v-model:opened-file="editableProxy.record"
-      :view-layout="viewLayoutQ.data.value"
-      :hide-labels="viewSettingsQ.data.value?.labelsHidden"
-      @update:layout="
-        (v) => {
-          updateViewLayout(v);
-          editMode = false;
-        }
-      "
-      @discard="
-        () => {
-          console.log('discard');
-          editMode = false;
-        }
-      "
-      :edit-mode="editMode"
-      :schema="schema.schema"
-      class="py-2"
-    />
+          <DialogFooter class="flex gap-2">
+            <DialogClose as-child>
+              <Button variant="outline" class="grow">Cancel</Button>
+            </DialogClose>
+            <Button class="grow" @click="onRename(newName)">Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-    <div
-      ref="editorWrapper"
-      class="editorRoot editorStyling grow pt-2 border-t"
-      :class="colorMode.value === 'dark' && 'dark'"
-    ></div>
+      <Dialog v-model:open="deleteDialog">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete</DialogTitle>
+          </DialogHeader>
+          <DialogDescription> Are you sure you want to delete this item? </DialogDescription>
+          <DialogFooter class="flex gap-2">
+            <DialogClose as-child>
+              <Button variant="outline" class="grow">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" class="grow" @click="onRemove">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <EditorMetaEditor
+        v-if="editableProxy && schema && viewLayoutQ.data.value"
+        v-model:opened-file="editableProxy.record"
+        :view-layout="viewLayoutQ.data.value"
+        :hide-labels="viewSettingsQ.data.value?.labelsHidden"
+        @update:layout="
+          (v) => {
+            updateViewLayout(v);
+            editMode = false;
+          }
+        "
+        @discard="
+          () => {
+            console.log('discard');
+            editMode = false;
+          }
+        "
+        :edit-mode="editMode"
+        :schema="schema.schema"
+        class="py-2"
+      />
+
+      <div
+        ref="editorWrapper"
+        class="editorRoot editorStyling grow pt-2 border-t"
+        :class="colorMode.value === 'dark' && 'dark'"
+      ></div>
+    </div>
   </div>
 </template>
 
@@ -141,6 +154,7 @@ import type { PropType } from 'vue';
 
 import {
   useScrollRestorationOnMount,
+  useScrollWatcher,
   useTabsStoreV2,
   type IOpenedFile,
 } from '~/composables/stores/useTabsStoreV2';
@@ -206,7 +220,12 @@ const {
 
 const schema = computed(() => fileQ.data.value?.schema);
 
-useScrollRestorationOnMount(computed(() => !!fileQ.data.value));
+const scrollElement = useTemplateRef('scrollElement');
+useScrollWatcher(scrollElement);
+useScrollRestorationOnMount(
+  scrollElement,
+  computed(() => !!fileQ.data.value),
+);
 
 const ts = useTabsStoreV2();
 

@@ -3,7 +3,7 @@ import { remove } from '@tauri-apps/plugin-fs';
 import { platform } from '@tauri-apps/plugin-os';
 
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { onKeyStroke, useElementSize } from '@vueuse/core';
+import { onKeyStroke } from '@vueuse/core';
 import { cloneDeep, debounce } from 'lodash-es';
 import {
   ChevronDownIcon,
@@ -19,6 +19,7 @@ import { ref, type ShallowRef } from 'vue';
 import {
   useNavigationBlock,
   useScrollRestorationOnMount,
+  useScrollWatcher,
   useTabsStoreV2,
   type IOpenedPath,
 } from '~/composables/stores/useTabsStoreV2';
@@ -139,9 +140,12 @@ const rowSelection = ref<Record<string, boolean>>({});
 
 const isSelecting = ref<{ lastSelectedIndex: number | null } | null>(null);
 
-const scrollElementRef = inject<Ref<HTMLDivElement>>('scrollElementRef');
-//const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
-const containerSize = useElementSize(scrollElementRef);
+const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
+useScrollWatcher(scrollElementRef);
+useScrollRestorationOnMount(
+  scrollElementRef,
+  computed(() => !!scrollElementRef.value),
+);
 
 const itemsForSorting = computed(() =>
   columnsAll.value.map((v) => ({
@@ -166,7 +170,7 @@ const rowVirtualizerOptions = computed(() => {
     count: rows.value.length,
     estimateSize: () => 37, //estimate row height for accurate scrollbar dragging
     getScrollElement: () => scrollElementRef?.value as HTMLDivElement,
-    overscan: 10,
+    overscan: 5,
   };
 });
 
@@ -174,16 +178,6 @@ const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
-
-function measureElement(el?: Element) {
-  if (!el) {
-    return;
-  }
-
-  rowVirtualizer.value.measureElement(el);
-
-  return undefined;
-}
 
 const ts = useTabsStoreV2();
 
@@ -271,8 +265,6 @@ const deleteSelected = async () => {
   rowSelection.value = {};
 };
 
-useScrollRestorationOnMount(computed(() => !!tableContainerRef.value));
-
 const startColumnsSizing = (e: MouseEvent, index: number) => {
   const initialState = cloneDeep(props.viewSettings.value?.columnSizing ?? {});
 
@@ -299,7 +291,7 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
 </script>
 
 <template>
-  <div class="flex items-center py-2 gap-2 px-2 absolute w-full top-14 pr-4 bg-background h-12 z-2">
+  <div class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2">
     <Input v-model="searchQuery" />
 
     <Toggle
@@ -369,188 +361,187 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
       </DropdownMenuContent>
     </DropdownMenu>
   </div>
-  <div class="w-full px-2 relative h-full">
-    <div class="mx-auto">
-      <div :style="{ height: `${totalSize}px` }" class="">
-        <!-- Even though we're still using sematic table tags, we must use CSS grid and flexbox for dynamic row heights -->
-        <table class="w-full caption-bottom text-sm grid">
-          <TableHead class="grid sticky top-12 z-10 bg-background h-fit p-0">
-            <tr
-              ref="tableContainerRef"
-              class="mt-1 group transition-opacity duration-200"
-              :style="{ display: 'flex', width: '100%' }"
-              :class="{
-                'opacity-50': !q.data.value,
-              }"
-            >
-              <TableHeader
-                v-for="(column, index) in columnsVisible"
-                :key="column.id"
-                :colspan="1"
-                class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2 cursor-pointer select-none"
-                :style="{
-                  width: `${getSizeForColumn(column.id, column.type)}px`,
-                }"
-                @mousedown="
-                  (e) => {
-                    if (e.button !== 0) return;
-                    if (props.viewSettings.value?.sorting?.key === column.id) {
-                      emit('update:viewSettings', 'sorting', {
-                        key: column.id,
-                        descending: !props.viewSettings.value?.sorting?.descending,
-                      });
-                    } else {
-                      emit('update:viewSettings', 'sorting', {
-                        key: column.id,
-                        descending: false,
-                      });
-                    }
-                  }
-                "
-              >
-                <template v-if="props.viewSettings.value?.sorting?.key === column.id">
-                  <MoveDown
-                    :size="12"
-                    v-if="props.viewSettings.value?.sorting.descending"
-                    class="shrink-0"
-                  />
-                  <MoveUp :size="12" v-else class="shrink-0" />
-                </template>
-                <div class="overflow-hidden text-ellipsis flex gap-2 items-center">
-                  {{ column.label }}
-                </div>
-
-                <div
-                  class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize"
-                  v-if="index !== columnsVisible.length - 1"
-                  @mousedown.stop.prevent="(e) => startColumnsSizing(e, index)"
-                ></div>
-
-                <!--Todo resize-->
-              </TableHeader>
-            </tr>
-          </TableHead>
-          <ContextMenu
-            v-model:open="dropdownOpened"
-            @update:open="
-              (v) => {
-                if (v) {
-                  dropdownRowLock = hoveringRowIndex;
+  <div
+    ref="scrollElementRef"
+    class="w-full overflow-auto bg-background overscroll-none h-full scrollbarMod gutter-stable"
+  >
+    <table
+      class="w-full px-2 caption-bottom text-sm relative"
+      :style="{ height: `${totalSize}px` }"
+    >
+      <TableHead class="grid sticky top-0 z-10 bg-background h-fit p-0">
+        <tr
+          ref="tableContainerRef"
+          class="mt-1 group transition-opacity duration-200"
+          :style="{ display: 'flex', width: '100%' }"
+          :class="{
+            'opacity-50': !q.data.value,
+          }"
+        >
+          <TableHeader
+            v-for="(column, index) in columnsVisible"
+            :key="column.id"
+            :colspan="1"
+            class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2 cursor-pointer select-none"
+            :style="{
+              width: `${getSizeForColumn(column.id, column.type)}px`,
+            }"
+            @mousedown="
+              (e) => {
+                if (e.button !== 0) return;
+                if (props.viewSettings.value?.sorting?.key === column.id) {
+                  emit('update:viewSettings', 'sorting', {
+                    key: column.id,
+                    descending: !props.viewSettings.value?.sorting?.descending,
+                  });
+                } else {
+                  emit('update:viewSettings', 'sorting', {
+                    key: column.id,
+                    descending: false,
+                  });
                 }
               }
             "
           >
-            <ContextMenuTrigger>
-              <tbody
-                data-slot="table-body"
-                class="[&_tr:last-child]:border-0"
+            <template v-if="props.viewSettings.value?.sorting?.key === column.id">
+              <MoveDown
+                :size="12"
+                v-if="props.viewSettings.value?.sorting.descending"
+                class="shrink-0"
+              />
+              <MoveUp :size="12" v-else class="shrink-0" />
+            </template>
+            <div class="overflow-hidden text-ellipsis flex gap-2 items-center">
+              {{ column.label }}
+            </div>
+
+            <div
+              class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize"
+              v-if="index !== columnsVisible.length - 1"
+              @mousedown.stop.prevent="(e) => startColumnsSizing(e, index)"
+            ></div>
+          </TableHeader>
+        </tr>
+      </TableHead>
+      <ContextMenu
+        v-model:open="dropdownOpened"
+        @update:open="
+          (v) => {
+            if (v) {
+              dropdownRowLock = hoveringRowIndex;
+            }
+          }
+        "
+      >
+        <ContextMenuTrigger>
+          <tbody
+            data-slot="table-body"
+            class="[&_tr:last-child]:border-0"
+            :style="{
+              height: `${totalSize}px`,
+              position: 'relative',
+            }"
+            @mouseleave="hoveringRowIndex = null"
+          >
+            <tr
+              v-for="vRow in virtualRows"
+              :data-index="vRow.index"
+              :key="vRow.index"
+              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
+              :class="{
+                'bg-muted hover:bg-muted/80': rowSelection[rows[vRow.index].path ?? ''],
+                'cursor-pointer': !isSelecting,
+                'cursor-copy': isSelecting,
+              }"
+              :style="{
+                display: 'flex',
+                position: 'absolute',
+                height: `${vRow.size}px`,
+                transform: `translateY(${vRow.start}px)`,
+                width: '100%',
+              }"
+              @pointerdown="(e) => handlePointerDownOnRow(vRow.index, e)"
+              @mouseover="hoveringRowIndex = vRow.index"
+            >
+              <td
+                data-slot="table-cell"
+                v-for="cell in columnsVisible"
+                :key="cell.id"
+                class="h-9 px-2 whitespace-nowrap"
                 :style="{
-                  display: 'grid',
-                  height: `${totalSize}px`, //tells scrollbar how big the table is
-                  position: 'relative', //needed for absolute positioning of rows
+                  display: 'flex',
+                  flexShrink: 0,
+                  width: `${getSizeForColumn(cell.id, cell.type)}px`,
                 }"
-                @mouseleave="hoveringRowIndex = null"
               >
-                <tr
-                  v-for="vRow in virtualRows"
-                  :data-index="vRow.index /* needed for dynamic row height measurement*/"
-                  :ref="measureElement /*measure dynamic row height*/"
-                  :key="(rows[vRow.index].path ?? '') + vRow.index"
-                  class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
-                  :class="{
-                    'bg-muted hover:bg-muted/80': rowSelection[rows[vRow.index].path ?? ''],
-                    'cursor-pointer': !isSelecting,
-                    'cursor-copy': isSelecting,
-                  }"
-                  :style="{
-                    display: 'flex',
-                    position: 'absolute',
-                    transform: `translateY(${vRow.start}px)`, //this should always be a `style` as it changes on scroll
-                    width: '100%',
-                  }"
-                  @pointerdown="(e) => handlePointerDownOnRow(vRow.index, e)"
-                  @mouseover="hoveringRowIndex = vRow.index"
-                >
-                  <td
-                    data-slot="table-cell"
-                    v-for="cell in columnsVisible"
-                    :key="cell.id"
-                    class="h-9 px-2 whitespace-nowrap"
-                    :style="{
-                      display: 'flex',
-                      width: `${getSizeForColumn(cell.id, cell.type)}px`,
-                    }"
-                  >
-                    <BookItemDisplay :value="rows[vRow.index].attrs[cell.id]" :type="cell.si" />
-                  </td>
-                </tr>
-              </tbody>
-            </ContextMenuTrigger>
-            <ContextMenuContent v-if="dropdownRowLock !== null">
-              <ContextMenuItem
-                @click="
-                  () => {
-                    if (typeof dropdownRowLock !== 'number') return;
+                <BookItemDisplay :value="rows[vRow.index].attrs[cell.id]" :type="cell.si" />
+              </td>
+            </tr>
+          </tbody>
+        </ContextMenuTrigger>
+        <ContextMenuContent v-if="dropdownRowLock !== null">
+          <ContextMenuItem
+            @click="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
 
-                    ts.openNewThingFast(
-                      { _type: 'file', _path: rows[dropdownRowLock].path ?? '' },
-                      'lastUnfocused',
-                    );
-                  }
-                "
-              >
-                <CornerUpRightIcon :size="16" /> Open In New Tab
-              </ContextMenuItem>
+                ts.openNewThingFast(
+                  { _type: 'file', _path: rows[dropdownRowLock].path ?? '' },
+                  'lastUnfocused',
+                );
+              }
+            "
+          >
+            <CornerUpRightIcon :size="16" /> Open In New Tab
+          </ContextMenuItem>
 
-              <template v-if="!isSelecting">
-                <ContextMenuItem
-                  @click="
-                    () => {
-                      if (typeof dropdownRowLock !== 'number') return;
-                      isSelecting = { lastSelectedIndex: dropdownRowLock };
-                      rowSelection[rows[dropdownRowLock].path ?? ''] = true;
-                    }
-                  "
-                >
-                  <SquareDashedMousePointer :size="16" /> Select
-                </ContextMenuItem>
-                <ContextMenuItem
-                  @click="
-                    () => {
-                      if (typeof dropdownRowLock !== 'number') return;
-                      remove(rows[dropdownRowLock].path ?? '');
-                    }
-                  "
-                >
-                  <TrashIcon :size="16" />
-                  Delete
-                </ContextMenuItem>
-              </template>
+          <template v-if="!isSelecting">
+            <ContextMenuItem
+              @click="
+                () => {
+                  if (typeof dropdownRowLock !== 'number') return;
+                  isSelecting = { lastSelectedIndex: dropdownRowLock };
+                  rowSelection[rows[dropdownRowLock].path ?? ''] = true;
+                }
+              "
+            >
+              <SquareDashedMousePointer :size="16" /> Select
+            </ContextMenuItem>
+            <ContextMenuItem
+              @click="
+                () => {
+                  if (typeof dropdownRowLock !== 'number') return;
+                  remove(rows[dropdownRowLock].path ?? '');
+                }
+              "
+            >
+              <TrashIcon :size="16" />
+              Delete
+            </ContextMenuItem>
+          </template>
 
-              <template v-else>
-                <ContextMenuSeparator />
-                <ContextMenuLabel>
-                  {{ Object.values(rowSelection).filter((v) => v).length }} selected
-                </ContextMenuLabel>
-                <ContextMenuItem
-                  @click="
-                    () => {
-                      isSelecting = null;
-                      rowSelection = {};
-                    }
-                  "
-                >
-                  <XIcon :size="16" /> Clear selection
-                </ContextMenuItem>
-                <ContextMenuItem @click="deleteSelected">
-                  <TrashIcon :size="16" />
-                  Delete
-                </ContextMenuItem>
-              </template>
-            </ContextMenuContent>
-          </ContextMenu>
-        </table>
-      </div>
-    </div>
+          <template v-else>
+            <ContextMenuSeparator />
+            <ContextMenuLabel>
+              {{ Object.values(rowSelection).filter((v) => v).length }} selected
+            </ContextMenuLabel>
+            <ContextMenuItem
+              @click="
+                () => {
+                  isSelecting = null;
+                  rowSelection = {};
+                }
+              "
+            >
+              <XIcon :size="16" /> Clear selection
+            </ContextMenuItem>
+            <ContextMenuItem @click="deleteSelected">
+              <TrashIcon :size="16" />
+              Delete
+            </ContextMenuItem>
+          </template>
+        </ContextMenuContent>
+      </ContextMenu>
+    </table>
   </div>
 </template>
