@@ -173,10 +173,6 @@ pub struct NumberSettings {
     // Stars only
     #[ts(optional)]
     pub stars_count: Option<u8>,
-
-    // Input(default) only
-    #[ts(optional)]
-    pub input_size: Option<InputSize>,
 }
 
 impl Default for NumberSettings {
@@ -190,7 +186,6 @@ impl Default for NumberSettings {
             style: None,
             decimal_places: None,
             stars_count: None,
-            input_size: None,
         }
     }
 }

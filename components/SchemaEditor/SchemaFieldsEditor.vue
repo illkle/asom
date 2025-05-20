@@ -1,14 +1,19 @@
 <template>
-  <div v-if="schema" class="flex flex-col gap-4">
+  <div v-if="schema" class="flex flex-col gap-4 max-w-4xl w-full mx-auto">
     <!-- Header -->
-    <div class="flex items-center gap-2">
-      <Button variant="ghost" size="icon" @click="goBack">
-        <ArrowLeftIcon class="w-4" />
-      </Button>
+    <div class="sticky top-0 pt-8 z-10 pb-2 rounded-b-md bg-background">
+      <div class="flex justify-between items-center gap-2">
+        <h2 class="text-3xl font-serif">Edit schema</h2>
+        <div class="text-sm text-muted-foreground text-center">
+          {{ route.query.path }}
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-4">
+        <Input class="font-serif" v-model="schema.name" />
+        <Button variant="destructive" @click="goBack"> Discard </Button>
 
-      <Input class="font-serif" v-model="schema.name" />
-
-      <Button variant="outline" @click="save">Save</Button>
+        <Button variant="outline" @click="save">Save</Button>
+      </div>
     </div>
 
     <!-- Editor -->
@@ -31,7 +36,6 @@ import { isOurError, useRustErrorNotification } from '~/composables/useRustError
 
 import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
 
-import { ArrowLeftIcon } from 'lucide-vue-next';
 import type { ErrFR, Schema } from '~/types';
 
 const route = useRoute();

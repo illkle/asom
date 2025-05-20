@@ -44,6 +44,7 @@ const imageName = defineModel<string | null>();
 const props = defineProps<{
   name: string;
   hideLabel?: boolean;
+  disabled?: boolean;
 }>();
 
 const rootPath = useRootPath();
@@ -57,6 +58,7 @@ const imagePath = computedAsync(async () => {
 });
 
 const changeImageHandler = async () => {
+  if (props.disabled) return;
   if (!rootPath.data.value) return;
 
   const result = await open({

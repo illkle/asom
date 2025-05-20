@@ -39,6 +39,16 @@ export const AttrValueKeys: AttrValue['type'][] = [
   'StringVec',
 ] as const;
 
+export const SchemaItemKeys: SchemaItem['value']['type'][] = [
+  'Text',
+  'TextCollection',
+  'Number',
+  'Date',
+  'DateCollection',
+  'DatesPairCollection',
+  'Image',
+] as const;
+
 export type {
   AttrValue,
   DatePair,

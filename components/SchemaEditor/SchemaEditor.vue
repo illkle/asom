@@ -1,7 +1,5 @@
 <template>
-  <div class="px-4 pb-4"></div>
-
-  <div class="mx-auto max-w-[600px]">
+  <div class="mx-auto max-w-4xl w-full">
     <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
       <Button @click="navigateTo('/', { replace: true })" variant="outline">Save </Button>
@@ -69,6 +67,10 @@
         <Button :disabled="!newFolderName" @click="createNewFolder"> Create </Button>
       </DialogContent>
     </Dialog>
+
+    <div class="mt-4 text-xs text-muted-foreground">
+      Right click to create or delete schema for a folder
+    </div>
   </div>
 </template>
 

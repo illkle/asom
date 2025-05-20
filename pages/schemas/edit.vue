@@ -1,6 +1,6 @@
 <template>
   <div class="w-full p-8 pt-0">
-    <SchemaEditorSchemaFields />
+    <SchemaEditorSchemaFieldsEditor />
   </div>
 </template>
 

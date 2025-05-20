@@ -1,6 +1,6 @@
 <template>
   <slot name="header" :group="group" />
-  <div :style="getStyle(group)">
+  <div class="w-full" :style="getStyle(group)">
     <template v-for="(subcategory, index) in group.content">
       <template v-if="subcategory.type === 'item'">
         <slot :data="subcategory" :group="group" :index="index" />

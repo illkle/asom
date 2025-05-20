@@ -1,5 +1,5 @@
 <template>
-  <motion.div layout class="">
+  <motion.div layout class="w-full">
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
       <motion.div layout="preserve-aspect" class="flex justify-between items-center pl-2 border-b">
@@ -61,7 +61,7 @@
             :priority="props.level"
             :disabled="props.disabled"
             :parentIds="[...props.parentIds]"
-            :class="[p.type === 'item' ? '' : '', 'rounded-md']"
+            :class="[p.type === 'item' ? '' : '', 'rounded-md w-full']"
             :drag-class="[
               'data-[is-dragging-me=true]:bg-background/50',
               'rounded-md cursor-grab data-[is-dragging-me=true]:border-muted-foreground transition-colors duration-300',

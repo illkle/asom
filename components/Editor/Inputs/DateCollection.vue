@@ -5,13 +5,24 @@
       <div
         v-for="(date, index) in modelValue"
         :key="index"
-        class="flex w-fit items-center justify-between gap-2"
+        class="flex w-fit items-center justify-between"
       >
         <DateInput
           :model-value="date"
           @update:model-value="(v) => updateDate(index, v)"
+          class="rounded-r-none"
           :disabled="disabled"
         />
+
+        <Button
+          variant="outline"
+          size="icon"
+          class="rounded-l-none border-l-0"
+          :disabled="disabled"
+          @click="removeDate(index)"
+        >
+          <XIcon class="w-4 opacity-50" />
+        </Button>
       </div>
       <Button variant="outline" size="sm" class="" @click="addNewDate" :disabled="disabled">
         <PlusIcon :size="16" /> Add Date
@@ -22,7 +33,7 @@
 
 <script lang="ts" setup>
 import { format, parse } from 'date-fns';
-import { PlusIcon } from 'lucide-vue-next';
+import { PlusIcon, XIcon } from 'lucide-vue-next';
 import CommonLabel from './CommonLabel.vue';
 import DateInput from './Date.vue';
 
@@ -32,26 +43,31 @@ const props = defineProps<{
   hideLabel?: boolean;
 }>();
 
-const datePairs = defineModel<string[] | null>();
+const dates = defineModel<string[] | null>();
 
 const addNewDate = () => {
-  if (!datePairs.value) {
-    datePairs.value = [format(new Date(), 'yyyy-MM-dd')];
+  if (!dates.value) {
+    dates.value = [format(new Date(), 'yyyy-MM-dd')];
     return;
   }
-  datePairs.value.push(format(new Date(), 'yyyy-MM-dd'));
+  dates.value.push(format(new Date(), 'yyyy-MM-dd'));
+};
+
+const removeDate = (index: number) => {
+  if (!dates.value) return;
+  dates.value.splice(index, 1);
 };
 
 const updateDate = (index: number, date: string | null) => {
-  if (!datePairs.value) return;
+  if (!dates.value) return;
 
   if (date) {
-    datePairs.value[index] = date;
+    dates.value[index] = date;
   } else {
-    datePairs.value.splice(index, 1);
+    dates.value.splice(index, 1);
   }
 
-  datePairs.value.sort(
+  dates.value.sort(
     (a, b) =>
       parse(a, 'yyyy-MM-dd', new Date()).getTime() - parse(b, 'yyyy-MM-dd', new Date()).getTime(),
   );

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="attr">
+  <div v-if="attr" class="w-full">
     <TextInput
       v-if="schemaItem.value.type === 'Text' && attr.type === 'String'"
       v-model="attr.value"

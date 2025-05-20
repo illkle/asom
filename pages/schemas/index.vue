@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full p-8 pt-0">
+  <div class="w-full p-8">
     <SchemaEditor />
   </div>
 </template>

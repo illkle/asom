@@ -12,5 +12,4 @@ export type NumberSettings = {
   decimalPlaces?: number;
   style?: NumberStyle;
   starsCount?: number;
-  inputSize?: InputSize;
 };

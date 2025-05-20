@@ -81,7 +81,6 @@ export const useFlesListV2 = ({
   };
 
   const processEvents = (e: FileListEvent[]) => {
-    console.log('processEvents', e);
     e.forEach(processEvent);
   };
 

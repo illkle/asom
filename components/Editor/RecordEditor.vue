@@ -3,7 +3,7 @@
     ref="scrollElement"
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable"
   >
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-2xl mx-auto w-full">
       <template v-if="!editMode">
         <BreadcrumbList
           class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"

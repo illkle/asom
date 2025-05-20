@@ -5,10 +5,22 @@
     </div>
     <div class="flex w-full flex-col gap-2">
       <template v-if="item.value.type === 'Text'">
-        <h5>Display Name</h5>
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
         <Input v-model="item.value.settings.displayName" />
 
-        <h5>Font</h5>
+        <h5 class="text-xs text-muted-foreground">Size</h5>
+        <Select v-model:model-value="item.value.settings.size" class="w-full">
+          <SelectTrigger class="w-full">
+            {{ item.value.settings?.size || 'Default' }}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="S">S</SelectItem>
+            <SelectItem value="M">M</SelectItem>
+            <SelectItem value="L">L</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <h5 class="text-xs text-muted-foreground">Font</h5>
         <Select v-model:model-value="item.value.settings.font" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings?.font || 'Default' }}
@@ -19,7 +31,7 @@
           </SelectContent>
         </Select>
 
-        <h5>Weight</h5>
+        <h5 class="text-xs text-muted-foreground">Weight</h5>
         <Select v-model:model-value="item.value.settings.weight" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings.weight || 'Default' }}
@@ -39,10 +51,22 @@
       </template>
 
       <template v-else-if="item.value.type === 'Number'">
-        <h5>Display Name</h5>
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
         <Input v-model="item.value.settings.displayName" />
 
-        <h5>Min value</h5>
+        <h5 class="text-xs text-muted-foreground">Size</h5>
+        <Select v-model:model-value="item.value.settings.size" class="w-full">
+          <SelectTrigger class="w-full">
+            {{ item.value.settings?.size || 'Default' }}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="S">S</SelectItem>
+            <SelectItem value="M">M</SelectItem>
+            <SelectItem value="L">L</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <h5 class="text-xs text-muted-foreground">Min value</h5>
         <NumberField
           :max="item.value.settings.max"
           :model-value="item.value.settings.min"
@@ -56,12 +80,11 @@
         >
           <NumberFieldContent>
             <NumberFieldDecrement />
-            <NumberFieldInput v-model:number="item.value.settings.min" />
+            <NumberFieldInput />
             <NumberFieldIncrement />
           </NumberFieldContent>
         </NumberField>
-        {{ item.value.settings.min }}
-        <h5>Max value</h5>
+        <h5 class="text-xs text-muted-foreground">Max value</h5>
         <NumberField
           :min="item.value.settings.min"
           :model-value="item.value.settings.max"
@@ -75,12 +98,12 @@
         >
           <NumberFieldContent>
             <NumberFieldDecrement />
-            <NumberFieldInput v-model:number="item.value.settings.min" />
+            <NumberFieldInput />
             <NumberFieldIncrement />
           </NumberFieldContent>
         </NumberField>
 
-        <h5>Style</h5>
+        <h5 class="text-xs text-muted-foreground">Style</h5>
         <Select v-model:model-value="item.value.settings.style" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings.style || 'Default' }}
@@ -92,36 +115,52 @@
           </SelectContent>
         </Select>
 
-        <h5>Decimal places</h5>
-        <NumberField
-          :min="0"
-          :model-value="item.value.settings.decimalPlaces"
-          @update:model-value="
-            (v) => {
-              if (item.value.type !== 'Number') return;
-              item.value.settings.decimalPlaces =
-                typeof v === 'number' && !isNaN(v) ? v : undefined;
-            }
-          "
-          class="w-fit"
-        >
-          <NumberFieldContent>
-            <NumberFieldDecrement />
-            <NumberFieldInput v-model:number="item.value.settings.min" />
-            <NumberFieldIncrement />
-          </NumberFieldContent>
-        </NumberField>
-        <span v-if="item.value.settings.style === 'Stars'" class="text-sm text-muted-foreground">
-          In Stars mode decimal places act as subdivisions instead. So setting this to 1 will allow
-          for "2 and a half star", value of 2 will allow for "2 and three quaters" etc.
-        </span>
+        <template v-if="item.value.settings.style !== 'Stars'">
+          <h5 class="text-xs text-muted-foreground">Decimal places</h5>
+          <NumberField
+            :min="0"
+            :model-value="item.value.settings.decimalPlaces"
+            @update:model-value="
+              (v) => {
+                if (item.value.type !== 'Number') return;
+                item.value.settings.decimalPlaces =
+                  typeof v === 'number' && !isNaN(v) ? v : undefined;
+              }
+            "
+            class="w-fit"
+          >
+            <NumberFieldContent>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
+        </template>
+        <template v-else>
+          <h5 class="text-xs text-muted-foreground">Stars count</h5>
+          <NumberField
+            :min="1"
+            :model-value="item.value.settings.starsCount"
+            @update:model-value="item.value.settings.starsCount = $event"
+          >
+            <NumberFieldContent>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldContent>
+          </NumberField>
+          <div class="text-xs text-muted-foreground">
+            Note that min and max values still matter. And must correspond to number of stars,
+            unless you want to select intermediate values.
+          </div>
+        </template>
       </template>
 
       <template v-else-if="item.value.type === 'TextCollection'">
-        <h5>Display Name</h5>
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
         <Input v-model="item.value.settings.displayName" />
 
-        <h5>Size</h5>
+        <h5 class="text-xs text-muted-foreground">Size</h5>
         <Select v-model:model-value="item.value.settings.size" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings.size || 'Default' }}
@@ -133,7 +172,7 @@
           </SelectContent>
         </Select>
 
-        <h5>Font</h5>
+        <h5 class="text-xs text-muted-foreground">Font</h5>
         <Select v-model:model-value="item.value.settings.font" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings?.font || 'Default' }}
@@ -144,7 +183,7 @@
           </SelectContent>
         </Select>
 
-        <h5>Weight</h5>
+        <h5 class="text-xs text-muted-foreground">Weight</h5>
         <Select v-model:model-value="item.value.settings.weight" class="w-full">
           <SelectTrigger class="w-full">
             {{ item.value.settings.weight || 'Default' }}
@@ -156,7 +195,7 @@
           </SelectContent>
         </Select>
 
-        <h5>Prefix</h5>
+        <h5 class="text-xs text-muted-foreground">Prefix</h5>
         <Input v-model="item.value.settings.prefix" />
       </template>
     </div>

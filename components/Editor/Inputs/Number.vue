@@ -10,7 +10,7 @@
     :disabled="disabled"
     @update:model-value="(v) => $emit('update:modelValue', v)"
   />
-  <div v-else-if="settings.style === 'Slider'" class="flex items-center gap-2">
+  <div v-else-if="settings.style === 'Slider'" class="flex items-center gap-2 w-full">
     <Slider
       :model-value="[modelValue ?? settings.min ?? 0]"
       :min="settings.min"

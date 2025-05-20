@@ -95,7 +95,7 @@ pub async fn get_files_by_path(
             }
             _ => format!("files.attributes->'$.{}.value'", sort.key),
         },
-        _ => "".to_string(),
+        _ => "path".to_string(),
     };
 
     let  files = get_files_abstact(conn, format!(
