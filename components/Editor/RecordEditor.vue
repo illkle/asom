@@ -139,7 +139,7 @@
 
       <div
         ref="editorWrapper"
-        class="editorRoot editorStyling grow pt-2 border-t"
+        class="editorRoot editorStyling grow pt-2 border-t min-h-64 "
         :class="colorMode.value === 'dark' && 'dark'"
       ></div>
     </div>

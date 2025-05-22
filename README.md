@@ -11,10 +11,10 @@ Tracking your opinions about diffrerent things is not only fun but also helps wi
 - Schema is a file that defines what properties exist on each record inside. For example for book that would be author, title, year, read dates, rating, etc.
 - Then each record(book\movie\whatever) is a separate markdown file. Attributes defined in schema are stored in frontmatter. asom provides a UI to view, search and edit those files
 
-You can probably make make the same setup with obisidian+dataview, but I wanter something with more native UX.
+(yes, you can replicate the same workflow in Obsidian, or use both at the same time)
 
 ### Current state
 
-updated: 24 March 2025
+updated: 23 may 2025
 
-Not ready at all and early WIP
+Close to being MVP feature complete, needs polish, bugfixes and rewriting messy rust part.
