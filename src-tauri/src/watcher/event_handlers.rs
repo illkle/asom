@@ -242,7 +242,7 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
         match res {
             Ok(events) => {
                 for event in events {
-                    emit_event(app, event);
+                    emit_event(app, event).await;
                 }
             }
             Err(e) => {

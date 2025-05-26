@@ -1,3 +1,9 @@
+use governor::{
+    clock::{DefaultClock, QuantaClock, QuantaInstant},
+    middleware::NoOpMiddleware,
+    state::{InMemoryState, NotKeyed},
+    Quota, RateLimiter,
+};
 use serde_json::Value;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
@@ -17,7 +23,12 @@ use crate::{
 
 use tokio::sync::Mutex;
 
-use std::{path::Path, time::Duration};
+use std::{
+    num::NonZeroU32,
+    path::Path,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
@@ -30,6 +41,14 @@ pub struct CoreStateManager {
     root_path: Mutex<Option<String>>,
     cached_root_path: Mutex<Option<String>>,
     watcher: Mutex<GlobalWatcher>,
+
+    /*
+    This is a rate limiter for emitting file\folder events to frontend. Rust has no issue with 1k+ events in but, but IPC is a bottleneck and can completely lock frontend.
+    Threfore if we get ratelimited, we just send a single "revalidate everything" event.
+     */
+    pub emit_rate_limit:
+        Arc<RateLimiter<NotKeyed, InMemoryState, QuantaClock, NoOpMiddleware<QuantaInstant>>>,
+    pub last_rate_overflow: Mutex<SystemTime>,
     pub schemas_cache: SchemasCacheMutex,
 
     pub database_conn: DatabaseConnectionMutex,
@@ -44,6 +63,10 @@ impl CoreStateManager {
             watcher: Mutex::new(GlobalWatcher::new().unwrap()),
             schemas_cache: Mutex::new(SchemasInMemoryCache::new()),
             database_conn: Mutex::new(DatabaseConnection::new()),
+            emit_rate_limit: Arc::new(RateLimiter::direct(Quota::per_second(
+                NonZeroU32::new(30).unwrap(),
+            ))),
+            last_rate_overflow: Mutex::new(SystemTime::now()),
         }
     }
 
@@ -110,7 +133,6 @@ impl CoreStateManager {
                 MonitorConfig {
                     app: app_handle,
                     command_buffer_size: 5000,
-                    log_to_stdout: false,
                 },
             )
             .await;

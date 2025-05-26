@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { openPath } from '@tauri-apps/plugin-opener';
+import { platform } from '@tauri-apps/plugin-os';
 import { ChevronDown, FolderIcon, PlusIcon } from 'lucide-vue-next';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
@@ -94,6 +96,20 @@ const createFolder = async () => {
 useAppearingInputFocuser('inputRefRename');
 
 useAppearingInputFocuser('inputRefCreate');
+
+const currentPlatform = platform();
+
+const fileManagerName = computed(() => {
+  if (currentPlatform === 'macos') {
+    return 'Finder';
+  }
+
+  if (currentPlatform === 'windows') {
+    return 'Explorer';
+  }
+
+  return 'System File Manager';
+});
 </script>
 
 <template>
@@ -155,6 +171,10 @@ useAppearingInputFocuser('inputRefCreate');
       <ContextMenuContent>
         <ContextMenuItem @click="startRenaming"> Remame </ContextMenuItem>
         <ContextMenuItem @click="startCreating"> Create Folder </ContextMenuItem>
+
+        <ContextMenuItem @click="() => openPath(item.value.rawPath)">
+          Show in {{ fileManagerName }}
+        </ContextMenuItem>
 
         <ContextMenuItem
           @click="

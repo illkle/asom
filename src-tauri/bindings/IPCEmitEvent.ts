@@ -12,4 +12,5 @@ export type IPCEmitEvent =
   | { type: 'FolderAdd'; data: FolderEventEmit }
   | { type: 'ErrorHappened'; data: ErrFR }
   | { type: 'SchemasUpdated'; data: { [key in string]?: Schema } }
-  | { type: 'SchemaUpdated'; data: Schema };
+  | { type: 'SchemaUpdated'; data: Schema }
+  | { type: 'EventOverflow'; data: number };

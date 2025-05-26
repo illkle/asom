@@ -24,7 +24,8 @@ impl GlobalWatcher {
             if let Ok(event) = res {
                 match sender_clone.send(event) {
                     Ok(_) => (),
-                    Err(_) => {
+                    Err(err) => {
+                        println!("Error sending event: {:?}", err);
                         dropped_events_clone.fetch_add(1, Ordering::SeqCst);
                         println!(
                             "Dropped event due to full channel. Total dropped: {}",

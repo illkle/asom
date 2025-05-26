@@ -78,5 +78,9 @@ impl ErrFR {
 
 // This will show a notification on frontend, regardless of what is opened. Prefer returning error from invoke if possible.
 pub fn send_err_to_frontend<T: tauri::Runtime>(app: &AppHandle<T>, e: &ErrFR) {
-    emit_event(app, IPCEmitEvent::ErrorHappened(e.clone()));
+    let app_clone = app.clone();
+    let e_clone = e.clone();
+    tokio::task::spawn(async move {
+        emit_event(&app_clone, IPCEmitEvent::ErrorHappened(e_clone)).await;
+    });
 }

@@ -189,6 +189,12 @@ export const useGlobalInvalidators = () => {
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas'] });
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'folders'] });
   });
+
+  useListenToEvent('EventOverflow', async ({ c }) => {
+    setTimeout(async () => {
+      await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value)] });
+    }, c ?? 200);
+  });
 };
 
 export const useFolderInvalidator = () => {

@@ -229,7 +229,12 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
 }
 
 pub fn run() {
-    create_app(tauri::Builder::default().plugin(tauri_plugin_os::init())).run(|_, _| {});
+    create_app(
+        tauri::Builder::default()
+            .plugin(tauri_plugin_opener::init())
+            .plugin(tauri_plugin_os::init()),
+    )
+    .run(|_, _| {});
 }
 
 pub fn create_mock_app() -> tauri::App<MockRuntime> {

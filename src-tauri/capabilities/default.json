@@ -41,6 +41,47 @@
     "sql:default",
     "sql:allow-execute",
     "store:default",
-    "os:default"
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "/",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "/**",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "**/.*",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "**/.*/*",
+          "requireLiteralLeadingDot": false
+        }
+      ]
+    },
+    {
+      "identifier": "opener:allow-reveal-item-in-dir",
+      "allow": [
+        {
+          "path": "/",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "/**",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "**/.*",
+          "requireLiteralLeadingDot": false
+        },
+        {
+          "path": "**/.*/*",
+          "requireLiteralLeadingDot": false
+        }
+      ]
+    }
   ]
 }
