@@ -126,6 +126,7 @@
             editMode = false;
           }
         "
+        @edit-mode="editMode = true"
         @discard="
           () => {
             console.log('discard');
@@ -139,7 +140,7 @@
 
       <div
         ref="editorWrapper"
-        class="editorRoot editorStyling grow pt-2 border-t min-h-64 "
+        class="editorRoot editorStyling grow pt-2 border-t min-h-64"
         :class="colorMode.value === 'dark' && 'dark'"
       ></div>
     </div>

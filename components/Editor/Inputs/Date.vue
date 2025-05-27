@@ -55,7 +55,21 @@ const isOpened = ref(false);
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">
-      <Calendar v-model="dateModel" initial-focus />
+      <Calendar
+        v-model="dateModel"
+        initial-focus
+        :is-date-disabled="
+          (date) => {
+            if (start) {
+              if (date < start) return true;
+            }
+            if (end) {
+              if (date > end) return true;
+            }
+            return false;
+          }
+        "
+      />
     </PopoverContent>
   </Popover>
 </template>

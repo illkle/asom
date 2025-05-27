@@ -168,6 +168,14 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     println!("event {:?}", event);
 
     for (index, path) in event.paths.iter().enumerate() {
+        let p = path.to_path_buf();
+
+        let sc = core.schemas_cache.lock().await;
+        if sc.get_schema(&p).is_none() {
+            continue;
+        }
+        drop(sc);
+
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {
                 (CreateKind::File, Some(ext)) => handle_file_add(&core, &path, ext).await,

@@ -1,5 +1,5 @@
 use governor::{
-    clock::{DefaultClock, QuantaClock, QuantaInstant},
+    clock::{QuantaClock, QuantaInstant},
     middleware::NoOpMiddleware,
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,

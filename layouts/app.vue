@@ -13,7 +13,9 @@
 
       <div v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
         <!-- loading\no root\error -->
-        <InitProcess />
+        <div class="bg-background rounded-md p-4">
+          <InitProcess />
+        </div>
       </div>
     </main>
   </SidebarProvider>

@@ -74,7 +74,7 @@ const mapPair = (v: DatePair[] | null) => {
   return v
     .map((v) =>
       v.started || v.finished
-        ? format(parse(v.finished || v.started || '', 'yyyy-MM-dd', new Date()), 'MMM yyyy')
+        ? format(parse(v.finished || v.started || '', 'yyyy-MM-dd', new Date()), 'yyyy MMM')
         : '',
     )
     .join(', ');

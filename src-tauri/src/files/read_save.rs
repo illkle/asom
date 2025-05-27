@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::Path;
 
@@ -145,6 +145,6 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
 
 pub fn transform_attr_values_to_on_disk(
     attrs: HashMap<String, AttrValue>,
-) -> HashMap<String, AttrValueOnDisk> {
+) -> BTreeMap<String, AttrValueOnDisk> {
     attrs.into_iter().map(|(k, v)| (k, v.into())).collect()
 }

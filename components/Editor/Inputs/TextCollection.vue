@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerDiv" class="relative flex flex-wrap items-stretch gap-1">
+  <div ref="containerDiv" class="relative flex flex-wrap items-stretch gap-1 select-none">
     <CommonLabel
       v-if="!hideLabel"
       :class="
@@ -41,6 +41,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useEventListener } from '@vueuse/core';
 import { PlusIcon } from 'lucide-vue-next';
 import { nextTick, ref } from 'vue';
 import ContentEditable from '~/components/uiExtra/ContentEditable.vue';
@@ -55,6 +56,10 @@ const props = defineProps<{
   disabled?: boolean;
   hideLabel?: boolean;
 }>();
+
+useEventListener(document, 'mousedown', (e) => {
+  console.log(e.target);
+});
 
 const prefix = computed(() => (props.settings?.prefix ? `'${props.settings?.prefix}'` : undefined));
 

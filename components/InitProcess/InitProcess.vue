@@ -2,9 +2,7 @@
   <div v-if="appState.status === 'noRootPath'" class="flex h-full flex-col justify-center p-10">
     <div class="text-3xl font-serif">To begin please set working directory</div>
     <div class="text-regular mt-2">Your files & settings will be saved there.</div>
-    <Button variant="outline" class="mt-4" @click="selectAndSetRootPath">
-      Set Working Directory
-    </Button>
+    <Button class="mt-4" @click="selectAndSetRootPath"> Set Working Directory </Button>
   </div>
 
   <div
@@ -12,20 +10,29 @@
     class="flex h-full flex-col justify-center p-10"
   >
     <h2 class="text-3xl font-serif">You do not have any schemas yet</h2>
-    <div class="text-sm mt-2">Schema defines what data is tracked on your entries</div>
+    <span class="text-xs ml-auto text-muted-foreground">or all of them are empty</span>
+    <div class="text-sm mt-4">Schema defines what data is tracked on your entries</div>
 
     <div class="mt-4">
-      <h2 class="text-xl font-serif">Default schemas</h2>
-      <div v-if="defaultSchemasQ.data.value" class="flex gap-2 justify-between mt-2">
-        <Button
+      <h2 class="text-xl font-serif">Create schemas from presets</h2>
+      <div v-if="defaultSchemasQ.data.value" class="flex flex-col gap-2 justify-between mt-2">
+        <div class="grid grid-cols-[1fr_1fr] items-center gap-2 justify-start px-1 text-xs">
+          <div>Preset</div>
+          <div>Custom Folder name</div>
+        </div>
+        <div
           v-for="schema in defaultSchemasQ.data.value"
           :key="schema.name"
-          :variant="selectedDefaults[schema.name] ? 'default' : 'outline'"
-          class="w-full"
-          @click="selectedDefaults[schema.name] = !selectedDefaults[schema.name]"
+          class="grid grid-cols-[1fr_1fr] items-center gap-2 justify-start"
         >
-          {{ schema.name }}
-        </Button>
+          <div class="flex items-center gap-2">
+            <Checkbox :id="schema.name" v-model="selectedDefaults[schema.name]" />
+
+            <label :for="schema.name" class="text-md">{{ schema.name }}</label>
+          </div>
+
+          <Input v-model="defautPath[schema.name]" />
+        </div>
       </div>
 
       <Button
@@ -108,6 +115,7 @@ const appState = useIsAppUsable();
 const initQ = useRootPath();
 
 const selectedDefaults = ref<Record<string, boolean>>({});
+const defautPath = ref<Record<string, string>>({});
 
 const defaultSchemasQ = useDefaultSchemas();
 
@@ -125,7 +133,7 @@ const createDefaultSchemas = useMutation({
     if (!initQ.data.value) throw new Error('No root path');
 
     for (const schema of schemasToCreate) {
-      const folder = path.join(initQ.data.value, schema.name);
+      const folder = path.join(initQ.data.value, defautPath.value[schema.name] ?? schema.name);
       await mkdir(folder, { recursive: true });
       await c_save_schema(folder, schema);
     }

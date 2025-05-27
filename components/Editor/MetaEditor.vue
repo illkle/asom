@@ -25,6 +25,15 @@
       </DynamicViewDynamicConfiguration>
     </template>
 
+    <div
+      v-else-if="viewLayout.content.length === 0 && !editMode"
+      class="mx-auto mt-4 w-fit flex flex-col gap-2"
+    >
+      <div class="text-sm text-muted-foreground">All schema items are hidden in layout.</div>
+
+      <Button variant="outline" @click="emit('editMode')">Edit layout</Button>
+    </div>
+
     <DynamicViewRenderDynamic v-else :group="viewLayout">
       <template #default="{ data }">
         <EditorAttributesRouter
@@ -64,6 +73,7 @@ const p = defineProps({
 const emit = defineEmits<{
   (e: 'update:layout', layout: IDynamicViewGroup): void;
   (e: 'discard'): void;
+  (e: 'editMode'): void;
 }>();
 
 const openedFile = defineModel<RecordFromDb>('openedFile', {

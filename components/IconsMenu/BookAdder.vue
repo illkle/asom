@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model:open="newFileOpened">
+  <Dialog v-model:open="newFileOpened" @update:open="newFileName = ''">
     <DialogTrigger class="w-full" as-child>
       <slot />
     </DialogTrigger>

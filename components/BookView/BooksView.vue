@@ -132,7 +132,7 @@ const baseSizeByType = (type: SchemaItem['value']['type']) => {
     case 'DatesPairCollection':
       return 150;
     default:
-      return 50;
+      return 100;
   }
 };
 
@@ -271,14 +271,15 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
   const initialX = e.clientX;
 
   const myId = columnsVisible.value[index].id;
-  const nextId = columnsVisible.value[index + 1].id;
+
+  const myInitialSize = getSizeForColumn(myId, columnsVisible.value[index].type);
 
   const moveHandler = (e: MouseEvent) => {
     const delta = e.clientX - initialX;
 
     const ns = { ...initialState };
 
-    ns[myId] += delta;
+    ns[myId] = myInitialSize + delta;
 
     emit('update:viewSettings', 'columnSizing', ns);
   };
@@ -416,7 +417,7 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
             </div>
 
             <div
-              class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize"
+              class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize shrink-0"
               v-if="index !== columnsVisible.length - 1"
               @mousedown.stop.prevent="(e) => startColumnsSizing(e, index)"
             ></div>

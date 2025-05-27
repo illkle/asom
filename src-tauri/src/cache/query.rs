@@ -88,7 +88,7 @@ pub async fn get_files_by_path(
     let sort_target = match sort_item {
         Some(item) => match item.value {
             SchemaAttrType::DatesPairCollection(_) => {
-                format!("files.attributes->'$.{}.value[0].started'", sort.key)
+                format!("files.attributes->'$.{}.value[0].finished'", sort.key)
             }
             SchemaAttrType::DateCollection(_) => {
                 format!("files.attributes->'$.{}.value[0]'", sort.key)
@@ -99,7 +99,7 @@ pub async fn get_files_by_path(
     };
 
     let  files = get_files_abstact(conn, format!(
-        "WHERE files.path LIKE concat('%', '{}', '%') AND files.attributes LIKE concat('%', '{}', '%') ORDER BY {} {}, path",
+        "WHERE files.path LIKE concat('%', '{}', '%') AND LOWER(files.attributes) LIKE concat('%', LOWER('{}'), '%') COLLATE NOCASE ORDER BY {} {}, path",
         path, search_query, sort_target, if sort.descending { "DESC" } else { "ASC" }
     ))
     .await?;
