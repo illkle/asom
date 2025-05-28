@@ -1,5 +1,9 @@
 use pretty_assertions::assert_eq;
-use std::{path::PathBuf, thread::sleep, time::Duration};
+use std::{
+    path::{PathBuf, MAIN_SEPARATOR},
+    thread::sleep,
+    time::Duration,
+};
 
 use tauri::Manager;
 
@@ -804,7 +808,10 @@ async fn test_folder_schema_status() {
             FolderOnDisk {
                 name: "books".to_string(),
                 path: test_dir.clone().join("books").to_string_lossy().to_string(),
-                path_relative: PathBuf::from("/books").to_string_lossy().to_string(),
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: bks_s.clone(),
@@ -817,7 +824,9 @@ async fn test_folder_schema_status() {
                     .join("favorites")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/books/favorites")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books")
+                    .join("favorites")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -832,7 +841,9 @@ async fn test_folder_schema_status() {
                     .join("audiobooks")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/books/audiobooks")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books")
+                    .join("audiobooks")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -846,7 +857,10 @@ async fn test_folder_schema_status() {
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/movies").to_string_lossy().to_string(),
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("movies")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: mvs_s,
@@ -858,7 +872,10 @@ async fn test_folder_schema_status() {
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/noschema").to_string_lossy().to_string(),
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("noschema")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -871,7 +888,9 @@ async fn test_folder_schema_status() {
                     .join("nestno")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/noschema/nestno")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("noschema")
+                    .join("nestno")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: false,
@@ -957,7 +976,8 @@ async fn test_folder_schema_status() {
                     .join("books_renamed")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/books_renamed")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books_renamed")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -972,7 +992,9 @@ async fn test_folder_schema_status() {
                     .join("favorites")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/books_renamed/favorites")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books_renamed")
+                    .join("favorites")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -987,7 +1009,9 @@ async fn test_folder_schema_status() {
                     .join("audiobooks_renamed")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/books_renamed/audiobooks_renamed")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("books_renamed")
+                    .join("audiobooks_renamed")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: true,
@@ -1001,7 +1025,10 @@ async fn test_folder_schema_status() {
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/movies").to_string_lossy().to_string(),
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("movies")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: mvs_s,
@@ -1013,7 +1040,10 @@ async fn test_folder_schema_status() {
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/noschema").to_string_lossy().to_string(),
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("noschema")
+                    .to_string_lossy()
+                    .to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
@@ -1026,7 +1056,9 @@ async fn test_folder_schema_status() {
                     .join("nestno")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from("/noschema/nestno")
+                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                    .join("noschema")
+                    .join("nestno")
                     .to_string_lossy()
                     .to_string(),
                 has_schema: false,
