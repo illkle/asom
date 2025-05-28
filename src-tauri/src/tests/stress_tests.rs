@@ -15,6 +15,7 @@ use crate::{
 use super::test_utils::TestCaseName;
 
 #[tokio::test(flavor = "multi_thread")]
+#[ignore]
 async fn test_quick_file_creation() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();

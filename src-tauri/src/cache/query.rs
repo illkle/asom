@@ -28,9 +28,10 @@ pub async fn get_files_abstact(
         where_clause
     );
 
-    let res = sqlx::query(&q).fetch_all(&mut *db).await.map_err(|e| {
-        ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q))
-    })?;
+    let res = sqlx::query(&q)
+        .fetch_all(&mut *db)
+        .await
+        .map_err(|e| ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q)))?;
 
     let result_iter = res.iter().map(|r| {
         let attrs_raw = r.get("attributes");
@@ -153,7 +154,8 @@ pub async fn get_all_folders(
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
-                    .as_ref().is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .as_ref()
+                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
                     s.file_path.to_string_lossy().to_string()
                 }),
@@ -207,7 +209,8 @@ pub async fn get_all_folders_by_schema(
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
-                    .as_ref().is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .as_ref()
+                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
                     s.file_path.to_string_lossy().to_string()
                 }),

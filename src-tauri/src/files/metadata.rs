@@ -26,9 +26,7 @@ pub fn get_default_metadata(schema_type: SchemaAttrType) -> AttrValue {
         SchemaAttrType::TextCollection(_) | SchemaAttrType::DateCollection(_) => {
             AttrValue::StringVec(None)
         }
-        SchemaAttrType::DatesPairCollection(_) => {
-            AttrValue::DatePairVec(None)
-        }
+        SchemaAttrType::DatesPairCollection(_) => AttrValue::DatePairVec(None),
     }
 }
 
@@ -103,9 +101,11 @@ pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResul
 
                                     Some(DatePair {
                                         started: started
-                                            .and_then(|v| v.as_str()).map(|v| v.to_string()),
+                                            .and_then(|v| v.as_str())
+                                            .map(|v| v.to_string()),
                                         finished: finished
-                                            .and_then(|v| v.as_str()).map(|v| v.to_string()),
+                                            .and_then(|v| v.as_str())
+                                            .map(|v| v.to_string()),
                                     })
                                 }
                                 None => None,

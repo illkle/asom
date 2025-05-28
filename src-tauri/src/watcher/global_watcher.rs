@@ -49,8 +49,7 @@ impl GlobalWatcher {
             self.watcher.unwatch(Path::new(&current_path))?;
         }
 
-        self
-            .watcher
+        self.watcher
             .watch(Path::new(path), RecursiveMode::Recursive)?;
 
         *self.current_path.lock().await = Some(path.to_string());

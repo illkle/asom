@@ -235,9 +235,9 @@ async fn test_basic_file_ops() {
         let res = files.unwrap();
 
         res.len() == 2
-            && res.iter().any(|f| {
-                f.attrs["author"] == AttrValue::String(Some("Tester Tester".to_string()))
-            })
+            && res
+                .iter()
+                .any(|f| f.attrs["author"] == AttrValue::String(Some("Tester Tester".to_string())))
     };
 
     let result = wait_for_condition_async(

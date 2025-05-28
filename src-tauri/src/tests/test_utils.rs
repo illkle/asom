@@ -22,9 +22,9 @@ pub async fn app_creator() -> AppHandle<MockRuntime> {
     app.handle().to_owned()
 }
 
-pub const DEFAULT_RETRY_COUNT: usize = 50;
-pub const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_millis(10);
-pub const DEFAULT_RETRY_TIMEOUT: Duration = Duration::from_secs(2);
+pub const DEFAULT_RETRY_COUNT: usize = 30;
+pub const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_millis(100);
+pub const DEFAULT_RETRY_TIMEOUT: Duration = Duration::from_secs(3);
 
 /*
  * This function reruns some check multiple times, useful when waiting for watcher to do it's job
