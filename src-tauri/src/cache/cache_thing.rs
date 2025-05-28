@@ -65,7 +65,7 @@ pub async fn remove_file_from_cache(
     let mut db = dbm.lock().await;
     let conn = db.get_conn().await;
 
-    sqlx::query(&format!("DELETE FROM files WHERE path=?1",))
+    sqlx::query("DELETE FROM files WHERE path=?1")
         .bind(path.to_string_lossy().to_string())
         .execute(conn)
         .await
@@ -85,7 +85,7 @@ pub async fn cache_files_folders_schemas(
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
-                    match cache_file(schemas_cache, dbm, &entry.path()).await {
+                    match cache_file(schemas_cache, dbm, entry.path()).await {
                         Ok(_) => (),
                         Err(e) => {
                             err = err.sub(e.info(&entry.file_name().to_string_lossy()));
@@ -102,7 +102,7 @@ pub async fn cache_files_folders_schemas(
                 let mut schemas_cache = schemas_cache.lock().await;
                 let _ = schemas_cache.cache_schema(entry.path().into()).await;
             }
-            match cache_folder(dbm, &entry.path()).await {
+            match cache_folder(dbm, entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
                     err = err.sub(e);
@@ -124,11 +124,7 @@ pub async fn cache_folder(dbm: &DatabaseConnectionMutex, path: &Path) -> Result<
     let mut db = dbm.lock().await;
     let conn = db.get_conn().await;
 
-    sqlx::query(
-       &format!(
-            "INSERT INTO folders (path, name) VALUES (?1, ?2) ON CONFLICT(path) DO UPDATE SET name=excluded.name"
-        )
-    )
+    sqlx::query("INSERT INTO folders (path, name) VALUES (?1, ?2) ON CONFLICT(path) DO UPDATE SET name=excluded.name")
     .bind(path.to_string_lossy().to_string())
     .bind(folder_name)
     .execute(conn)
@@ -144,13 +140,11 @@ pub async fn remove_folder_from_cache(
     conn: &mut SqliteConnection,
     path: &Path,
 ) -> Result<(), ErrFR> {
-    sqlx::query(&format!(
-        "DELETE FROM folders WHERE path LIKE concat(?1, '%')",
-    ))
-    .bind(path.to_string_lossy().to_string())
-    .execute(conn)
-    .await
-    .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
+    sqlx::query("DELETE FROM folders WHERE path LIKE concat(?1, '%')")
+        .bind(path.to_string_lossy().to_string())
+        .execute(conn)
+        .await
+        .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 
     Ok(())
 }
@@ -159,13 +153,11 @@ pub async fn remove_files_in_folder_rom_cache(
     conn: &mut SqliteConnection,
     path: &Path,
 ) -> Result<(), ErrFR> {
-    sqlx::query(&format!(
-        "DELETE FROM files WHERE path LIKE concat(?1, '%')",
-    ))
-    .bind(path.to_string_lossy().to_string())
-    .execute(conn)
-    .await
-    .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
+    sqlx::query("DELETE FROM files WHERE path LIKE concat(?1, '%')")
+        .bind(path.to_string_lossy().to_string())
+        .execute(conn)
+        .await
+        .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 
     Ok(())
 }

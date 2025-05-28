@@ -75,7 +75,7 @@ pub fn get_file_content(file_path: &str, read_mode: &FileReadMode) -> io::Result
     }
 
     Ok(FileContent {
-        front_matter: front_matter,
-        content: content,
+        front_matter,
+        content,
     })
 }

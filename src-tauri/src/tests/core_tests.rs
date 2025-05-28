@@ -104,16 +104,16 @@ async fn test_basic_file_ops() {
 
         let files = get_files_abstact(conn, "".to_string()).await;
 
-        if !files.is_ok() {
+        if files.is_err() {
             return false;
         }
 
         let res = files.unwrap();
 
-        return res.len() == 1
+        res.len() == 1
             && !res.iter().any(|f| {
                 f.attrs["author"] == AttrValue::String(Some("Adler, Mortimer J.".to_string()))
-            });
+            })
     };
 
     let result = wait_for_condition_async(
@@ -141,16 +141,16 @@ async fn test_basic_file_ops() {
 
         let files = get_files_abstact(conn, "".to_string()).await;
 
-        if !files.is_ok() {
+        if files.is_err() {
             return false;
         }
 
         let res = files.unwrap();
 
-        return res.len() == 2
+        res.len() == 2
             && res.iter().any(|f| {
                 f.attrs["author"] == AttrValue::String(Some("Adler, Mortimer J.".to_string()))
-            });
+            })
     };
 
     let result = wait_for_condition_async(
@@ -188,13 +188,13 @@ async fn test_basic_file_ops() {
 
         let files = get_files_abstact(conn, "".to_string()).await;
 
-        if !files.is_ok() {
+        if files.is_err() {
             return false;
         }
 
         let res = files.unwrap();
 
-        return res.len() == 2 && res.iter().any(|f| f.path == Some(sp.clone()));
+        res.len() == 2 && res.iter().any(|f| f.path == Some(sp.clone()))
     };
 
     let result = wait_for_condition_async(
@@ -228,16 +228,16 @@ async fn test_basic_file_ops() {
 
         let files = get_files_abstact(conn, "".to_string()).await;
 
-        if !files.is_ok() {
+        if files.is_err() {
             return false;
         }
 
         let res = files.unwrap();
 
-        return res.len() == 2
+        res.len() == 2
             && res.iter().any(|f| {
                 f.attrs["author"] == AttrValue::String(Some("Tester Tester".to_string()))
-            });
+            })
     };
 
     let result = wait_for_condition_async(
@@ -265,17 +265,17 @@ async fn test_basic_file_ops() {
 
         let files = get_files_abstact(conn, "".to_string()).await;
 
-        if !files.is_ok() {
+        if files.is_err() {
             return false;
         }
 
         let res = files.unwrap();
 
-        return res.len() == 3
+        res.len() == 3
             && res.iter().any(|f| {
                 f.attrs["author"] == AttrValue::String(Some("KKKKKKKKK".to_string()))
                     && f.attrs["year"] == AttrValue::Integer(Some(2025.0))
-            });
+            })
     };
 
     let result = wait_for_condition_async(
@@ -330,12 +330,12 @@ async fn test_basic_folder_ops() {
             &core.schemas_cache,
         )
         .await;
-        if !folders_result.is_ok() {
+        if folders_result.is_err() {
             return false;
         }
 
         let folders = folders_result.unwrap();
-        return folders.folders.iter().any(|f| f.name == "articles");
+        folders.folders.iter().any(|f| f.name == "articles")
     };
 
     let result = wait_for_condition_async(
@@ -361,12 +361,12 @@ async fn test_basic_folder_ops() {
             &core.schemas_cache,
         )
         .await;
-        if !folders_result.is_ok() {
+        if folders_result.is_err() {
             return false;
         }
 
         let folders = folders_result.unwrap();
-        return folders.folders.iter().any(|f| f.name == "articles_renamed");
+        folders.folders.iter().any(|f| f.name == "articles_renamed")
     };
 
     sleep(Duration::from_secs(1));
@@ -396,12 +396,12 @@ async fn test_basic_folder_ops() {
             &core.schemas_cache,
         )
         .await;
-        if !folders_result.is_ok() {
+        if folders_result.is_err() {
             return false;
         }
 
         let folders = folders_result.unwrap();
-        return !folders.folders.iter().any(|f| f.name == "articles_renamed");
+        !folders.folders.iter().any(|f| f.name == "articles_renamed")
     };
 
     let result = wait_for_condition_async(
@@ -431,13 +431,13 @@ async fn test_basic_folder_ops() {
             &core.schemas_cache,
         )
         .await;
-        if !folders_result.is_ok() {
+        if folders_result.is_err() {
             return false;
         }
 
         let folders = folders_result.unwrap();
-        return folders.folders.iter().any(|f| f.name == "papers")
-            && folders.folders.iter().any(|f| f.name == "research");
+        folders.folders.iter().any(|f| f.name == "papers")
+            && folders.folders.iter().any(|f| f.name == "research")
     };
 
     let result = wait_for_condition_async(
@@ -523,7 +523,7 @@ async fn test_schema_ops() {
     let after_rename = || async {
         let schemas_cache = core.schemas_cache.lock().await;
         let schemas = schemas_cache.get_schemas_list().await;
-        return schemas.len() == 0;
+        schemas.is_empty()
     };
 
     let result = wait_for_condition_async(
@@ -552,7 +552,7 @@ async fn test_schema_ops() {
         let schema_for_favs =
             schemas_cache.get_schema(&test_dir.clone().join("books").join("favorites"));
 
-        return schemas.len() == 1 && schema_for_favs.is_some();
+        schemas.len() == 1 && schema_for_favs.is_some()
     };
 
     let result = wait_for_condition_async(
@@ -614,7 +614,7 @@ async fn test_nested_ops() {
         )
         .await;
 
-        if !files.is_ok() || !folders.is_ok() {
+        if files.is_err() || folders.is_err() {
             return false;
         }
 
@@ -625,13 +625,13 @@ async fn test_nested_ops() {
         println!("folders: {:?}", folders.folders.len());
         println!("schemas: {:?}", schemas.len());
 
-        return files.len() == 4
+        files.len() == 4
             && folders.folders.len() == 7
             && schemas.len() == 3
             && books_schema.is_some()
             && movies_schema.is_some()
             && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks")
-            && schema_for_book.is_some_and(|s| s.schema.name == "books");
+            && schema_for_book.is_some_and(|s| s.schema.name == "books")
     };
 
     let result = wait_for_condition_async(
@@ -688,10 +688,10 @@ async fn test_nested_ops() {
                 .join("How to Read a Book.md"),
         );
 
-        return books_schema.is_some()
+        books_schema.is_some()
             && audiobooks_schema.is_some()
             && schema_for_book.is_some_and(|s| s.schema.name == "books")
-            && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks");
+            && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks")
     };
 
     let result = wait_for_condition_async(
@@ -726,14 +726,14 @@ async fn test_nested_ops() {
         )
         .await;
 
-        if !files.is_ok() || !folders.is_ok() {
+        if files.is_err() || folders.is_err() {
             return false;
         }
 
         let files = files.unwrap();
         let folders = folders.unwrap();
 
-        return schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 7;
+        schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 7
     };
 
     let result = wait_for_condition_async(

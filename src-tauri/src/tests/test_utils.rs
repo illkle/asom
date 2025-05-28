@@ -103,7 +103,7 @@ pub async fn prepare_test_case(
     )
     .unwrap();
 
-    let init_result = core.init(&app).await;
+    let init_result = core.init(app).await;
     assert!(init_result.is_ok());
 
     // Wait init to start monitor process
@@ -114,7 +114,7 @@ pub async fn prepare_test_case(
 
     core.database_conn.lock().await.test_only_init().await;
 
-    let prepare_cache_result = core.prepare_cache(&app).await;
+    let prepare_cache_result = core.prepare_cache(app).await;
     assert!(prepare_cache_result.is_ok());
 
     let watch_path_result = core.watch_path().await;

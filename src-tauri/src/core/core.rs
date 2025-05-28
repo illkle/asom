@@ -109,10 +109,7 @@ impl CoreStateManager {
     }
 
     pub async fn cached_root_path(&self) -> Option<String> {
-        match self.cached_root_path.lock().await.as_ref() {
-            Some(path) => Some(path.clone()),
-            None => None,
-        }
+        self.cached_root_path.lock().await.as_ref().map(|path| path.clone())
     }
 
     pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
@@ -151,9 +148,9 @@ impl CoreStateManager {
         &self,
         app: &AppHandle<T>,
     ) -> Result<(), ErrFR> {
-        let rp = self.load_root_path_from_store(&app).await?;
+        let rp = self.load_root_path_from_store(app).await?;
 
-        if let None = rp {
+        if rp.is_none() {
             return Ok(());
         }
 
@@ -167,7 +164,7 @@ impl CoreStateManager {
             }
         }
 
-        self.prepare_cache(&app).await?;
+        self.prepare_cache(app).await?;
         self.watch_path().await?;
 
         *cur_cached_root_path = rp;
@@ -185,14 +182,10 @@ impl CoreStateManager {
                 .raw(e)
         })?;
 
-        match cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, &Path::new(&rp))
-            .await
-        {
-            Err(e) => {
-                // We don't return error here because user can have a few problematic files, which is ok
-                send_err_to_frontend(&app, &e);
-            }
-            Ok(_) => (),
+        if let Err(e) = cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, Path::new(&rp))
+            .await {
+            // We don't return error here because user can have a few problematic files, which is ok
+            send_err_to_frontend(app, &e);
         }
 
         Ok(())

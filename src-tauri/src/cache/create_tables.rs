@@ -12,17 +12,13 @@ pub async fn create_db_tables(dbm: &DatabaseConnectionMutex) -> Result<(), sqlx:
         .execute(&mut *conn)
         .await?;
 
-    sqlx::query(&format!(
-        "CREATE TABLE files (path TEXT PRIMARY KEY, modified TEXT, attributes TEXT CHECK(json_valid(attributes)))",
-    ))
+    sqlx::query("CREATE TABLE files (path TEXT PRIMARY KEY, modified TEXT, attributes TEXT CHECK(json_valid(attributes)))")
     .execute(&mut *conn)
     .await?;
 
-    sqlx::query(&format!(
-        "CREATE TABLE folders (path TEXT PRIMARY KEY, name TEXT);",
-    ))
-    .execute(&mut *conn)
-    .await?;
+    sqlx::query("CREATE TABLE folders (path TEXT PRIMARY KEY, name TEXT);")
+        .execute(&mut *conn)
+        .await?;
 
     Ok(())
 }

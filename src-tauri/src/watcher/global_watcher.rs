@@ -49,13 +49,13 @@ impl GlobalWatcher {
             self.watcher.unwatch(Path::new(&current_path))?;
         }
 
-        let res = self
+        self
             .watcher
             .watch(Path::new(path), RecursiveMode::Recursive)?;
 
         *self.current_path.lock().await = Some(path.to_string());
 
-        Ok(res)
+        Ok(())
     }
 
     pub async fn subscribe_to_events(&self) -> broadcast::Receiver<Event> {

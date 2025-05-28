@@ -9,7 +9,7 @@ use crate::schema::schema_cache::SchemasInMemoryCache;
 use crate::schema::types::{AttrValue, Schema, SchemaAttrType};
 use crate::utils::errorhandling::ErrFR;
 
-#[derive(Serialize, Deserialize, Clone, Debug, TS)]
+#[derive(Serialize, Deserialize, Clone, Debug, TS, Default)]
 #[ts(export)]
 pub struct RecordFromDb {
     pub path: Option<String>,
@@ -17,17 +17,6 @@ pub struct RecordFromDb {
     pub markdown: Option<String>,
 
     pub attrs: HashMap<String, AttrValue>,
-}
-
-impl Default for RecordFromDb {
-    fn default() -> RecordFromDb {
-        RecordFromDb {
-            attrs: HashMap::new(),
-            modified: None,
-            path: None,
-            markdown: None,
-        }
-    }
 }
 
 pub async fn get_files_abstact(
@@ -40,7 +29,7 @@ pub async fn get_files_abstact(
     );
 
     let res = sqlx::query(&q).fetch_all(&mut *db).await.map_err(|e| {
-        ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e.to_string(), q))
+        ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q))
     })?;
 
     let result_iter = res.iter().map(|r| {
@@ -49,12 +38,12 @@ pub async fn get_files_abstact(
         let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
             .map_err(|e| ErrFR::new("Error when parsing attributes").raw(e));
 
-        return RecordFromDb {
+        RecordFromDb {
             path: r.get("path"),
             modified: r.get("modified"),
             attrs: attrs.unwrap(),
             markdown: None,
-        };
+        }
     });
 
     Ok(result_iter.collect())
@@ -81,7 +70,7 @@ pub async fn get_files_by_path(
     search_query: String,
     sort: SortOrder,
 ) -> Result<RecordListGetResult, ErrFR> {
-    let schema = schemas_cache.get_schema_safe(&Path::new(&path))?;
+    let schema = schemas_cache.get_schema_safe(Path::new(&path))?;
 
     let sort_item = schema.schema.items.iter().find(|i| i.name == sort.key);
 
@@ -104,10 +93,10 @@ pub async fn get_files_by_path(
     ))
     .await?;
 
-    return Ok(RecordListGetResult {
+    Ok(RecordListGetResult {
         schema: schema.schema,
         records: files,
-    });
+    })
 }
 
 pub async fn get_all_tags(conn: &mut SqliteConnection) -> Result<Vec<String>, sqlx::Error> {
@@ -145,7 +134,7 @@ pub async fn get_all_folders(
     let mut db = dcm.lock().await;
     let conn = db.get_conn().await;
 
-    let res = sqlx::query(&format!("SELECT * FROM folders",))
+    let res = sqlx::query("SELECT * FROM folders")
         .fetch_all(conn)
         .await
         .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
@@ -157,15 +146,14 @@ pub async fn get_all_folders(
         .iter()
         .map(|r| {
             let pstring: String = r.get("path");
-            let sch = scm.get_schema(&Path::new(&pstring));
+            let sch = scm.get_schema(Path::new(&pstring));
             FolderOnDisk {
                 path: pstring.clone(),
                 path_relative: pstring.clone().replace(&root_path, ""),
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
-                    .as_ref()
-                    .map_or(false, |s| s.owner_folder == Path::new(&pstring)),
+                    .as_ref().is_some_and(|s| s.owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
                     s.file_path.to_string_lossy().to_string()
                 }),
@@ -194,7 +182,7 @@ pub async fn get_all_folders_by_schema(
 
     let res = sqlx::query(&format!(
         "SELECT * FROM folders WHERE path LIKE concat('{}', '%')",
-        schema_folder.to_string_lossy().to_string()
+        schema_folder.to_string_lossy()
     ))
     .fetch_all(conn)
     .await
@@ -205,11 +193,9 @@ pub async fn get_all_folders_by_schema(
         .iter()
         .filter_map(|r| {
             let pstring: String = r.get("path");
-            let sch = schemas_cache.get_schema(&Path::new(&pstring));
+            let sch = schemas_cache.get_schema(Path::new(&pstring));
 
-            if sch.is_none() {
-                return None;
-            }
+            sch.as_ref()?;
 
             if sch.as_ref().unwrap().owner_folder != schema_folder {
                 return None;
@@ -221,8 +207,7 @@ pub async fn get_all_folders_by_schema(
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
-                    .as_ref()
-                    .map_or(false, |s| s.owner_folder == Path::new(&pstring)),
+                    .as_ref().is_some_and(|s| s.owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
                     s.file_path.to_string_lossy().to_string()
                 }),

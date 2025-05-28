@@ -83,39 +83,30 @@ pub enum SchemaAttrType {
 */
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[derive(Default)]
 pub enum SettingsTypeText {
+    #[default]
     Text,
 }
 
-impl Default for SettingsTypeText {
-    fn default() -> Self {
-        SettingsTypeText::Text
-    }
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[derive(Default)]
 pub enum SettingsTypeNumber {
+    #[default]
     Num,
 }
 
-impl Default for SettingsTypeNumber {
-    fn default() -> Self {
-        SettingsTypeNumber::Num
-    }
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[derive(Default)]
 pub enum SettingsTypeTextCollection {
+    #[default]
     TextCollection,
 }
 
-impl Default for SettingsTypeTextCollection {
-    fn default() -> Self {
-        SettingsTypeTextCollection::TextCollection
-    }
-}
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]

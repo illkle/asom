@@ -12,29 +12,29 @@ pub fn get_default_metadata(schema_type: SchemaAttrType) -> AttrValue {
     match schema_type {
         // Empty
         SchemaAttrType::Text(_) | SchemaAttrType::Image(_) | SchemaAttrType::Date(_) => {
-            return AttrValue::String(None);
+            AttrValue::String(None)
         }
         SchemaAttrType::Number(number_settings) => {
             if number_settings.decimal_places.is_some()
                 && number_settings.decimal_places.unwrap() > 0
             {
-                return AttrValue::Float(None);
+                AttrValue::Float(None)
             } else {
-                return AttrValue::Integer(None);
+                AttrValue::Integer(None)
             }
         }
         SchemaAttrType::TextCollection(_) | SchemaAttrType::DateCollection(_) => {
-            return AttrValue::StringVec(None);
+            AttrValue::StringVec(None)
         }
         SchemaAttrType::DatesPairCollection(_) => {
-            return AttrValue::DatePairVec(None);
+            AttrValue::DatePairVec(None)
         }
     }
 }
 
 pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResult {
     let parsed_meta: Result<HashMap<String, serde_yml::Value>, serde_yml::Error> =
-        serde_yml::from_str(&front_matter);
+        serde_yml::from_str(front_matter);
 
     match parsed_meta {
         Ok(parse_res) => {
@@ -74,10 +74,7 @@ pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResul
                     ) => {
                         let arr: Vec<String> = vec
                             .iter()
-                            .filter_map(|v| match v.as_str() {
-                                Some(s) => Some(s.to_string()),
-                                None => None,
-                            })
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
                             .collect();
 
                         file_meta.insert(
@@ -106,11 +103,9 @@ pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResul
 
                                     Some(DatePair {
                                         started: started
-                                            .and_then(|v| v.as_str())
-                                            .and_then(|v| Some(v.to_string())),
+                                            .and_then(|v| v.as_str()).map(|v| v.to_string()),
                                         finished: finished
-                                            .and_then(|v| v.as_str())
-                                            .and_then(|v| Some(v.to_string())),
+                                            .and_then(|v| v.as_str()).map(|v| v.to_string()),
                                     })
                                 }
                                 None => None,

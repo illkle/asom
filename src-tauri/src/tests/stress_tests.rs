@@ -75,7 +75,7 @@ async fn test_quick_file_creation() {
         let res = files.unwrap();
 
         println!("Final files count: {}", res.len());
-        return res.len() == initial_file_count;
+        res.len() == initial_file_count
     };
 
     let res = wait_for_condition_async(

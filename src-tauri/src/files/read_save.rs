@@ -38,20 +38,20 @@ pub async fn read_file_by_path(
     })?;
 
     let schemas_cache = scm.lock().await;
-    let files_schema = match schemas_cache.get_schema(&Path::new(path_str)) {
+    let files_schema = match schemas_cache.get_schema(Path::new(path_str)) {
         Some(v) => v,
         None => return Err(ErrFR::new("Schema not found").raw(path_str)),
     };
     drop(schemas_cache);
 
     let p = path_str.to_string();
-    let content = get_file_content(&path_str, &read_mode);
+    let content = get_file_content(path_str, &read_mode);
 
     match content {
         Ok(c) => {
             let parsed_meta = parse_metadata(&c.front_matter, &files_schema.schema);
 
-            return Ok(RecordReadResult {
+            Ok(RecordReadResult {
                 record: RecordFromDb {
                     path: Some(p),
                     markdown: match read_mode {
@@ -64,10 +64,10 @@ pub async fn read_file_by_path(
                 },
                 parsing_error: parsed_meta.parsing_error,
                 schema: files_schema,
-            });
+            })
         }
         Err(e) => {
-            return Err(ErrFR::new("Error reading file")
+            Err(ErrFR::new("Error reading file")
                 .raw(e)
                 .action_c(ErrFRActionCode::FileReadRetry, "Retry"))
         }
@@ -91,24 +91,21 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
     };
 
     if !forced {
-        match record.modified {
-            Some(v) => {
-                let modified_before = match get_file_modified_time(&path.clone().as_str()) {
-                    Ok(v) => v,
-                    Err(e) => return Err(ErrFR::new(
-                        "Unable to get modified date from file on disk",
-                    )
-                    .info("Retry only if you are sure there is no important data in file on disk")
-                    .action_c(ErrFRActionCode::FileSaveRetryForced, "Save anyway")
-                    .raw(e)),
-                };
+        if let Some(v) = record.modified {
+            let modified_before = match get_file_modified_time(path.clone().as_str()) {
+                Ok(v) => v,
+                Err(e) => return Err(ErrFR::new(
+                    "Unable to get modified date from file on disk",
+                )
+                .info("Retry only if you are sure there is no important data in file on disk")
+                .action_c(ErrFRActionCode::FileSaveRetryForced, "Save anyway")
+                .raw(e)),
+            };
 
-                if v != modified_before {
-                    return Err(ErrFR::new("File was modified by something else")
-                        .action_c(ErrFRActionCode::FileSaveRetryForced, "Overwrite"));
-                }
+            if v != modified_before {
+                return Err(ErrFR::new("File was modified by something else")
+                    .action_c(ErrFRActionCode::FileSaveRetryForced, "Overwrite"));
             }
-            None => (),
         }
     }
 
@@ -130,13 +127,10 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
             .action_c(ErrFRActionCode::FileSaveRetry, "Retry")
     })?;
 
-    match get_file_modified_time(&path.clone().as_str()) {
-        Ok(v) => Ok(RecordSaveResult {
-            path: path,
-            modified: v,
-        }),
+    match get_file_modified_time(path.clone().as_str()) {
+        Ok(v) => Ok(RecordSaveResult { path, modified: v }),
         Err(e) => {
-            return Err(ErrFR::new("Error getting update file modification date")
+            Err(ErrFR::new("Error getting update file modification date")
                 .info("File should be saved. Expect to get a warning next time you save this file")
                 .raw(e))
         }

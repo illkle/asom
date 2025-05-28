@@ -50,7 +50,6 @@ pub async fn emit_event<T: tauri::Runtime>(app: &AppHandle<T>, data: IPCEmitEven
 
     match can_emit {
         Ok(_) => {
-            println!("emitting event NOT RATE LIMITED",);
             let event_name = get_event_name(&data);
             app.emit(&event_name, data).unwrap();
         }
@@ -58,10 +57,8 @@ pub async fn emit_event<T: tauri::Runtime>(app: &AppHandle<T>, data: IPCEmitEven
             let mut last_overflow = state.last_rate_overflow.lock().await;
 
             if last_overflow.elapsed().unwrap() < Duration::from_millis(OVERFLOW_IGNORE_MS.into()) {
-                println!("ignoring event because of rate limit",);
                 return;
             }
-            println!("sending overflow event",);
             *last_overflow = SystemTime::now();
             drop(last_overflow);
 

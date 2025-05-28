@@ -183,12 +183,10 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     let core = app.state::<CoreStateManager>();
 
     for (index, path) in event.paths.iter().enumerate() {
-        let p = path.to_path_buf();
-
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {
-                (CreateKind::File, Some(ext)) => handle_file_add(&core, &path, ext).await,
-                (CreateKind::Folder, _) => handle_folder_add(&core, &path).await,
+                (CreateKind::File, Some(ext)) => handle_file_add(&core, path, ext).await,
+                (CreateKind::Folder, _) => handle_folder_add(&core, path).await,
                 k => {
                     println!("unknown create event {:?}", k);
                     Ok(vec![])
@@ -211,26 +209,26 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                     (RenameMode::From, _, _, _, _, _) => handle_folder_remove(&core, path).await,
                     // rename to file with extension
                     (RenameMode::To, _, Some(ext), true, _, _) => {
-                        handle_file_add(&core, &path, ext).await
+                        handle_file_add(&core, path, ext).await
                     }
                     // rename to folder
-                    (RenameMode::To, _, _, _, true, _) => handle_folder_add(&core, &path).await,
+                    (RenameMode::To, _, _, _, true, _) => handle_folder_add(&core, path).await,
                     (RenameMode::Both, _, Some(ext), _, _, 0) => {
-                        handle_file_remove(&core, &path, ext).await
+                        handle_file_remove(&core, path, ext).await
                     }
-                    (RenameMode::Both, _, _, _, _, 0) => handle_folder_remove(&core, &path).await,
+                    (RenameMode::Both, _, _, _, _, 0) => handle_folder_remove(&core, path).await,
                     (RenameMode::Both, _, Some(ext), true, _, 1) => {
-                        handle_file_add(&core, &path, ext).await
+                        handle_file_add(&core, path, ext).await
                     }
-                    (RenameMode::Both, _, _, _, true, 1) => handle_folder_add(&core, &path).await,
+                    (RenameMode::Both, _, _, _, true, 1) => handle_folder_add(&core, path).await,
                     // finder on mac calls with RenameMode::Any
-                    (_, Ok(false), None, _, _, _) => handle_folder_remove(&core, &path).await,
+                    (_, Ok(false), None, _, _, _) => handle_folder_remove(&core, path).await,
                     (_, Ok(false), Some(ext), _, _, _) => {
-                        handle_file_remove(&core, &path, ext).await
+                        handle_file_remove(&core, path, ext).await
                     }
-                    (_, Ok(true), None, _, true, _) => handle_folder_add(&core, &path).await,
+                    (_, Ok(true), None, _, true, _) => handle_folder_add(&core, path).await,
                     (_, Ok(true), Some(ext), true, _, _) => {
-                        handle_file_add(&core, &path, ext).await
+                        handle_file_add(&core, path, ext).await
                     }
                     (a, b, c, d, e, f) => {
                         println!(
@@ -242,15 +240,15 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                 },
                 // Data is always file
                 ModifyKind::Data(_) => match (path.extension(), path.exists()) {
-                    (Some(ext), true) => handle_file_update(&core, &path, ext).await,
+                    (Some(ext), true) => handle_file_update(&core, path, ext).await,
                     // We ignore for non existing files to prevent trying to update renamed file by it's old path
                     _ => Ok(vec![]),
                 },
                 _ => Ok(vec![]),
             },
             EventKind::Remove(kind) => match (kind, path.extension()) {
-                (RemoveKind::File, Some(ext)) => handle_file_remove(&core, &path, ext).await,
-                (RemoveKind::Folder, _) => handle_folder_remove(&core, &path).await,
+                (RemoveKind::File, Some(ext)) => handle_file_remove(&core, path, ext).await,
+                (RemoveKind::Folder, _) => handle_folder_remove(&core, path).await,
                 _ => Ok(vec![]),
             },
             _ => Ok(vec![]),
