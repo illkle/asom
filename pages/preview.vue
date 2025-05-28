@@ -1,7 +1,5 @@
 <template>
   <div class="flex flex-col gap-2 mx-auto px-4 w-full py-10 max-w-5xl">
-    <TestComponent />
-
     <h1>Area for testing components.</h1>
     <div class="text-sm">Can be launched without tauri via <code>npm run dev:preview</code>.</div>
 
