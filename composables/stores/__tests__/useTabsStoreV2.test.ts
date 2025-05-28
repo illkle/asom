@@ -6,14 +6,17 @@ import {
   useTabsStoreV2,
   zOpenedFile,
   zOpenedPath,
+  type IOpenedFile,
+  type IOpenedPath,
 } from '../useTabsStoreV2';
 
 const mockFileID = (id: string) => {
   return zOpenedFile.parse({
     _type: 'file',
     _path: `/path/to/file${id}.txt`,
-    scrollPosition: 0,
-  });
+    scrollPositionY: 0,
+    scrollPositionX: 0,
+  } satisfies IOpenedFile);
 };
 
 const mockPath = (path: string, type: 'file' | 'folder' = 'file') => {
@@ -24,14 +27,16 @@ const mockPath = (path: string, type: 'file' | 'folder' = 'file') => {
       details: {
         searchQuery: '',
       },
-      scrollPosition: 0,
-    });
+      scrollPositionY: 0,
+      scrollPositionX: 0,
+    } satisfies IOpenedPath);
   }
   return zOpenedFile.parse({
     _type: type,
     _path: path,
-    scrollPosition: 0,
-  });
+    scrollPositionY: 0,
+    scrollPositionX: 0,
+  } satisfies IOpenedFile);
 };
 
 const logDegug = (store: ReturnType<typeof useTabsStoreV2>, info?: string) => {
@@ -568,7 +573,7 @@ describe('spliceKeepingPointer', () => {
     const newPointer = spliceKeepingPointer(array, pointer, 1);
 
     expect(array).toEqual([1, 3, 4, 5]);
-    expect(array[newPointer]).toBe(4);
+    expect(array[newPointer.pointer]).toBe(4);
   });
 
   it('should remove an element and keep pointer unchanged when pointer is before removed element', () => {
@@ -580,7 +585,7 @@ describe('spliceKeepingPointer', () => {
     const newPointer = spliceKeepingPointer(array, pointer, 3);
 
     expect(array).toEqual([1, 2, 3, 5]);
-    expect(array[newPointer]).toBe(2);
+    expect(array[newPointer.pointer]).toBe(2);
   });
 
   it('should handle removal of target element when its in the middle', () => {
@@ -591,7 +596,7 @@ describe('spliceKeepingPointer', () => {
     const newPointer = spliceKeepingPointer(array, pointer, pointer);
 
     expect(array).toEqual([1, 2, 4, 5]);
-    expect(array[newPointer]).toBe(2);
+    expect(array[newPointer.pointer]).toBe(2);
   });
 
   it('should handle removal of target element when its first', () => {
@@ -602,7 +607,7 @@ describe('spliceKeepingPointer', () => {
     const newPointer = spliceKeepingPointer(array, pointer, pointer);
 
     expect(array).toEqual([2, 3, 4, 5]);
-    expect(array[newPointer]).toBe(2);
+    expect(array[newPointer.pointer]).toBe(2);
   });
 
   it('should handle removal of target element when its last', () => {
@@ -613,7 +618,7 @@ describe('spliceKeepingPointer', () => {
     const newPointer = spliceKeepingPointer(array, pointer, pointer);
 
     expect(array).toEqual([1, 2, 3, 4]);
-    expect(array[newPointer]).toBe(4);
+    expect(array[newPointer.pointer]).toBe(4);
   });
 });
 

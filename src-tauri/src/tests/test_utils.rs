@@ -22,7 +22,7 @@ pub async fn app_creator() -> AppHandle<MockRuntime> {
     app.handle().to_owned()
 }
 
-pub const DEFAULT_RETRY_COUNT: usize = 20;
+pub const DEFAULT_RETRY_COUNT: usize = 50;
 pub const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_millis(10);
 pub const DEFAULT_RETRY_TIMEOUT: Duration = Duration::from_secs(2);
 

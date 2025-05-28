@@ -6,7 +6,7 @@ author: 'Ahrens, Sönke'
 year: 2017
 myRating: 0
 read: []
-ISBN13: 0
+ISBN: ''
 ---
 
 Integer ut est sit amet nunc hendrerit ullamcorper. Praesent ullamcorper augue sed est tempor, ac facilisis ex elementum. Proin eget dui orci. Vestibulum cursus pharetra lacus, sed molestie elit faucibus at. Cras nec quam purus. Vestibulum sed felis ut felis finibus eleifend in ut est. Curabitur sit amet sapien iaculis, aliquam eros vel, mollis dolor. Nam ultrices semper ex sit amet placerat. Nulla sed laoreet sapien, sed rutrum diam. Nunc at tincidunt felis, id porttitor est.

@@ -140,8 +140,6 @@ watch(
       return v[1].name.toLowerCase().includes('book');
     });
 
-    console.log(bookSchema);
-
     if (bookSchema === -1) return;
 
     nextTick(() => {
@@ -158,7 +156,7 @@ const selectedSchemaIndex = ref<number | null>(null);
 const mappings = ref<Record<keyof GoodreadsParsedBook, string | undefined>>({
   title: undefined,
   author: undefined,
-  isbn13: undefined,
+  isbn: undefined,
   year: undefined,
   rating: undefined,
   read: undefined,
@@ -253,10 +251,10 @@ const importBooks = async () => {
       };
     }
 
-    if (mappings.value.isbn13) {
-      attrs[mappings.value.isbn13] = {
-        type: 'Integer',
-        value: book.isbn13 ?? null,
+    if (mappings.value.isbn) {
+      attrs[mappings.value.isbn] = {
+        type: 'String',
+        value: book.isbn ?? null,
       };
     }
 
@@ -319,9 +317,9 @@ const mappingKeys: {
     fields: awailableTextFields,
   },
   {
-    key: 'isbn13',
+    key: 'isbn',
     label: 'ISBN13',
-    fields: awailableNumberFields,
+    fields: awailableTextFields,
   },
   {
     key: 'year',

@@ -69,6 +69,24 @@ const sampleImage = ref('');
 
 const item = defineModel<SchemaItem>({ required: true });
 
+const lastType = ref<SchemaItem['value']['type'] | null>(null);
+
+watch(
+  item.value.value,
+  (newVal) => {
+    if (lastType.value === null) {
+      lastType.value = newVal.type;
+      return;
+    }
+
+    if (lastType.value !== newVal.type) {
+      lastType.value = newVal.type;
+      item.value.value.settings = {};
+    }
+  },
+  { deep: true, immediate: true },
+);
+
 const value = ref<AttrValue>({
   type: 'String',
   value: '',
@@ -119,74 +137,8 @@ watch(
   (v) => {
     value.value = getValByType(v.value.type);
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
-
-const attvalue = computed<AttrValue>({
-  get: () => {
-    switch (item.value.value.type) {
-      case 'Date':
-        return {
-          type: 'String',
-          value: sampleDate.value,
-        } as AttrValue;
-      case 'Text':
-        return {
-          type: 'String',
-          value: sampleText.value,
-        } as AttrValue;
-      case 'TextCollection':
-        return {
-          type: 'StringVec',
-          value: sampleTextCollection.value,
-        } as AttrValue;
-      case 'Number':
-        return {
-          type: 'Float',
-          value: sampleNumber.value,
-        } as AttrValue;
-      case 'DateCollection':
-        return {
-          type: 'StringVec',
-          value: sampleDateCollection.value,
-        } as AttrValue;
-      case 'DatesPairCollection':
-        return {
-          type: 'DatePairVec',
-          value: sampleDatesPairCollection.value,
-        } as AttrValue;
-      case 'Image':
-        return {
-          type: 'String',
-          value: sampleImage.value,
-        } as AttrValue;
-    }
-  },
-  set: (value: AttrValue) => {
-    switch (item.value.value.type) {
-      case 'Date':
-        sampleDate.value = value.value as string;
-        break;
-      case 'Text':
-        sampleText.value = value.value as string;
-      case 'TextCollection':
-        sampleTextCollection.value = value.value as string[];
-        break;
-      case 'Number':
-        sampleNumber.value = value.value as number;
-        break;
-      case 'DateCollection':
-        sampleDateCollection.value = value.value as string[];
-        break;
-      case 'DatesPairCollection':
-        sampleDatesPairCollection.value = value.value as DatePair[];
-        break;
-      case 'Image':
-        sampleImage.value = value.value as string;
-        break;
-    }
-  },
-});
 
 const editing = ref(false);
 

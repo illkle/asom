@@ -59,11 +59,10 @@ pub fn default_book_schema() -> SchemaItems {
             value: SchemaAttrType::Image(EmptySettings {}),
         },
         SchemaItem {
-            name: "ISBN13".to_owned(),
-            value: SchemaAttrType::Number(NumberSettings {
+            name: "ISBN".to_owned(),
+            value: SchemaAttrType::Text(TextSettings {
                 size: Some(InputSize::S),
-                min: Some(0.0),
-                ..NumberSettings::default()
+                ..TextSettings::default()
             }),
         },
     ]

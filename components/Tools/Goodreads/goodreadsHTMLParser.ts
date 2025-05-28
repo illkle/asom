@@ -88,7 +88,7 @@ const getYear = (rootElement: Element) => {
 export type GoodreadsParsedBook = {
   title: string;
   author: string;
-  isbn13: number;
+  isbn: string;
   year?: number;
   rating: number;
   read: DatePair[];
@@ -98,7 +98,7 @@ const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBoo
   const book: GoodreadsParsedBook = {
     title: grabSimpleValue(rootElement, 'title'),
     author: grabSimpleValue(rootElement, 'author'),
-    isbn13: Number(grabSimpleValue(rootElement, 'isbn13')),
+    isbn: grabSimpleValue(rootElement, 'isbn13'),
     year: getYear(rootElement),
     rating: rootElement.getElementsByClassName('field rating')[0].getElementsByClassName('star on')
       .length,

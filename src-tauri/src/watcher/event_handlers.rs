@@ -16,6 +16,11 @@ use crate::emitter::{emit_event, IPCEmitEvent};
 use crate::utils::errorhandling::{send_err_to_frontend, ErrFR};
 use ts_rs::TS;
 
+async fn schema_exists(core: &CoreStateManager, path: &Path) -> bool {
+    let sc = core.schemas_cache.lock().await;
+    sc.get_schema(path).is_some()
+}
+
 async fn handle_file_remove(
     core: &CoreStateManager,
     path: &Path,
@@ -55,10 +60,16 @@ async fn handle_file_add(
     ext: &OsStr,
 ) -> Result<Vec<IPCEmitEvent>, ErrFR> {
     match ext.to_str() {
-        Some("md") => match cache_file(&core.schemas_cache, &core.database_conn, path).await {
-            Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),
-            Err(e) => Err(e),
-        },
+        Some("md") => {
+            if !schema_exists(core, path).await {
+                return Ok(vec![]);
+            }
+
+            match cache_file(&core.schemas_cache, &core.database_conn, path).await {
+                Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),
+                Err(e) => Err(e),
+            }
+        }
         Some("yaml") => {
             let mut schemas_cache = core.schemas_cache.lock().await;
 
@@ -85,10 +96,16 @@ async fn handle_file_update(
     }
 
     match ext.to_str() {
-        Some("md") => match cache_file(&core.schemas_cache, &core.database_conn, path).await {
-            Ok(v) => Ok(vec![IPCEmitEvent::FileUpdate(v)]),
-            Err(e) => Err(e),
-        },
+        Some("md") => {
+            if !schema_exists(core, path).await {
+                return Ok(vec![]);
+            }
+
+            match cache_file(&core.schemas_cache, &core.database_conn, path).await {
+                Ok(v) => Ok(vec![IPCEmitEvent::FileUpdate(v)]),
+                Err(e) => Err(e),
+            }
+        }
         Some("yaml") => {
             let mut schemas_cache = core.schemas_cache.lock().await;
 
@@ -165,16 +182,8 @@ async fn handle_folder_add(
 pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     let core = app.state::<CoreStateManager>();
 
-    println!("event {:?}", event);
-
     for (index, path) in event.paths.iter().enumerate() {
         let p = path.to_path_buf();
-
-        let sc = core.schemas_cache.lock().await;
-        if sc.get_schema(&p).is_none() {
-            continue;
-        }
-        drop(sc);
 
         let res = match event.kind {
             EventKind::Create(kind) => match (kind, path.extension()) {

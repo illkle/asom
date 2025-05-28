@@ -51,8 +51,7 @@ items:
       settings: {}
   - name: ISBN13
     value:
-      type: Number
+      type: Text
       settings:
-        settingsType: Num
+        settingsType: Text
         size: S
-        min: 0.0

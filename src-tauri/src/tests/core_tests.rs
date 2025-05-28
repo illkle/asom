@@ -320,7 +320,7 @@ async fn test_basic_folder_ops() {
     /*
      * Creating a new folder
      */
-    let new_folder_path = test_dir.clone().join("articles");
+    let new_folder_path = test_dir.clone().join("books").join("articles");
     std::fs::create_dir(&new_folder_path).unwrap();
 
     let after_create = || async {
@@ -351,7 +351,7 @@ async fn test_basic_folder_ops() {
     /*
      * Renaming a folder
      */
-    let renamed_folder_path = test_dir.clone().join("articles_renamed");
+    let renamed_folder_path = test_dir.clone().join("books").join("articles_renamed");
     std::fs::rename(&new_folder_path, &renamed_folder_path).unwrap();
 
     let after_rename = || async {
@@ -417,7 +417,11 @@ async fn test_basic_folder_ops() {
     /*
      * Create a nested folder structure
      */
-    let nested_folder_path = test_dir.clone().join("papers").join("research");
+    let nested_folder_path = test_dir
+        .clone()
+        .join("books")
+        .join("papers")
+        .join("research");
     std::fs::create_dir_all(&nested_folder_path).unwrap();
 
     let after_nested_create = || async {
