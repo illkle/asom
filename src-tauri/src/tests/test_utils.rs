@@ -5,7 +5,7 @@ use std::{
 
 use tauri::{test::MockRuntime, AppHandle, Manager};
 
-use crate::{core::core::CoreStateManager, create_mock_app};
+use crate::{core::core_state::CoreStateManager, create_mock_app};
 
 use std::{
     env::current_dir,

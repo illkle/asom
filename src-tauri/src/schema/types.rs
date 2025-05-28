@@ -33,6 +33,7 @@ pub enum AttrValue {
     /**
      * 1. Integer and float are split for better readability of frontmatter. Year: 2025.0 looks stupid
      * 2. Integer is stored as f64 becuase i64 can theoretically convert to bigint after getting to js, which is incovenitent.
+     *
      * Both those issues might be solved in a more optimal way in the future.
      */
     Integer(Option<f64>),
@@ -89,7 +90,6 @@ pub enum SettingsTypeText {
     Text,
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[derive(Default)]
@@ -98,7 +98,6 @@ pub enum SettingsTypeNumber {
     Num,
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[derive(Default)]
@@ -106,7 +105,6 @@ pub enum SettingsTypeTextCollection {
     #[default]
     TextCollection,
 }
-
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]

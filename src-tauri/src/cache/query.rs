@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use ts_rs::TS;
 
-use crate::core::core::{DatabaseConnectionMutex, SchemasCacheMutex};
+use crate::core::core_state::{DatabaseConnectionMutex, SchemasCacheMutex};
 use crate::schema::schema_cache::SchemasInMemoryCache;
 use crate::schema::types::{AttrValue, Schema, SchemaAttrType};
 use crate::utils::errorhandling::ErrFR;
@@ -22,7 +22,7 @@ pub struct RecordFromDb {
 pub async fn get_files_abstact(
     db: &mut SqliteConnection,
     where_clause: String,
-) -> Result<Vec<RecordFromDb>, ErrFR> {
+) -> Result<Vec<RecordFromDb>, Box<ErrFR>> {
     let q = format!(
         "SELECT path, modified, attributes FROM files {}",
         where_clause
@@ -69,7 +69,7 @@ pub async fn get_files_by_path(
     path: String,
     search_query: String,
     sort: SortOrder,
-) -> Result<RecordListGetResult, ErrFR> {
+) -> Result<RecordListGetResult, Box<ErrFR>> {
     let schema = schemas_cache.get_schema_safe(Path::new(&path))?;
 
     let sort_item = schema.schema.items.iter().find(|i| i.name == sort.key);
@@ -130,7 +130,7 @@ pub async fn get_all_folders(
     root_path: String,
     dcm: &DatabaseConnectionMutex,
     scm: &SchemasCacheMutex,
-) -> Result<FolderListGetResult, ErrFR> {
+) -> Result<FolderListGetResult, Box<ErrFR>> {
     let mut db = dcm.lock().await;
     let conn = db.get_conn().await;
 
@@ -169,7 +169,7 @@ pub async fn get_all_folders_by_schema(
     dcm: &DatabaseConnectionMutex,
     scm: &SchemasCacheMutex,
     schema_path: String,
-) -> Result<FolderListGetResult, ErrFR> {
+) -> Result<FolderListGetResult, Box<ErrFR>> {
     let schema_p = Path::new(&schema_path);
 
     let schema_folder = match schema_p.is_file() {

@@ -10,7 +10,7 @@ use crate::cache::cache_thing::{
     cache_file, cache_files_folders_schemas, remove_file_from_cache,
     remove_files_in_folder_rom_cache, remove_folder_from_cache,
 };
-use crate::core::core::CoreStateManager;
+use crate::core::core_state::CoreStateManager;
 use crate::emitter::{emit_event, IPCEmitEvent};
 
 use crate::utils::errorhandling::{send_err_to_frontend, ErrFR};
@@ -25,7 +25,7 @@ async fn handle_file_remove(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     match ext.to_str() {
         Some("md") => match remove_file_from_cache(&core.database_conn, path).await {
             Ok(_) => Ok(vec![IPCEmitEvent::FileRemove(
@@ -38,7 +38,7 @@ async fn handle_file_remove(
 
             let path_parent = match path.parent() {
                 Some(v) => v,
-                None => return Err(ErrFR::new("Failed to get parent of schema.yaml")),
+                None => return Err(Box::new(ErrFR::new("Failed to get parent of schema.yaml"))),
             };
 
             match schemas_cache.remove_schema(path_parent.to_path_buf()).await {
@@ -58,7 +58,7 @@ async fn handle_file_add(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     match ext.to_str() {
         Some("md") => {
             if !schema_exists(core, path).await {
@@ -90,7 +90,7 @@ async fn handle_file_update(
     core: &CoreStateManager,
     path: &Path,
     ext: &OsStr,
-) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     if !path.exists() {
         return Ok(vec![]);
     }
@@ -133,7 +133,7 @@ pub struct FolderEventEmit {
 async fn handle_folder_remove(
     core: &CoreStateManager,
     path: &Path,
-) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     let mut db = core.database_conn.lock().await;
     let conn = db.get_conn().await;
 
@@ -161,7 +161,7 @@ async fn handle_folder_remove(
 async fn handle_folder_add(
     core: &CoreStateManager,
     path: &Path,
-) -> Result<Vec<IPCEmitEvent>, ErrFR> {
+) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     match cache_files_folders_schemas(&core.schemas_cache, &core.database_conn, path).await {
         Err(e) => Err(e),
         Ok(_) => {
@@ -227,9 +227,7 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                         handle_file_remove(&core, path, ext).await
                     }
                     (_, Ok(true), None, _, true, _) => handle_folder_add(&core, path).await,
-                    (_, Ok(true), Some(ext), true, _, _) => {
-                        handle_file_add(&core, path, ext).await
-                    }
+                    (_, Ok(true), Some(ext), true, _, _) => handle_file_add(&core, path, ext).await,
                     (a, b, c, d, e, f) => {
                         println!(
                             "unknown rename event {:?} {:?} {:?} {} {} {}",

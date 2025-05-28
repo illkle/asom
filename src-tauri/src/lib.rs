@@ -8,7 +8,7 @@ mod tests;
 mod utils;
 mod watcher;
 
-use core::core::CoreStateManager;
+use core::core_state::CoreStateManager;
 use std::{collections::HashMap, path::PathBuf};
 
 use cache::query::{
@@ -30,19 +30,19 @@ use utils::errorhandling::ErrFR;
   Define types and pack them into IPCResponces, which gets exported to TS types
 */
 
-type IPCInit = Result<Option<String>, ErrFR>;
-type IPCGetFilesPath = Result<RecordListGetResult, ErrFR>;
-type IPCGetRootPath = Result<Option<String>, ErrFR>;
-type IPCGetAllTags = Result<Vec<String>, ErrFR>;
-type IPCGetAllFolders = Result<FolderListGetResult, ErrFR>;
-type IPCGetAllFoldersBySchema = Result<FolderListGetResult, ErrFR>;
-type IPCReadFileByPath = Result<RecordReadResult, ErrFR>;
-type IPCGetSchemas = Result<HashMap<String, Schema>, ErrFR>;
-type IPCLoadSchema = Result<Schema, ErrFR>;
-type IPCSaveSchema = Result<Schema, ErrFR>;
-type IPCSaveFile = Result<RecordSaveResult, ErrFR>;
-type IPCGetDefaultSchemas = Result<Vec<Schema>, ErrFR>;
-type IPCResolveSchemaPath = Result<Option<SchemaResult>, ErrFR>;
+type IPCInit = Result<Option<String>, Box<ErrFR>>;
+type IPCGetFilesPath = Result<RecordListGetResult, Box<ErrFR>>;
+type IPCGetRootPath = Result<Option<String>, Box<ErrFR>>;
+type IPCGetAllTags = Result<Vec<String>, Box<ErrFR>>;
+type IPCGetAllFolders = Result<FolderListGetResult, Box<ErrFR>>;
+type IPCGetAllFoldersBySchema = Result<FolderListGetResult, Box<ErrFR>>;
+type IPCReadFileByPath = Result<RecordReadResult, Box<ErrFR>>;
+type IPCGetSchemas = Result<HashMap<String, Schema>, Box<ErrFR>>;
+type IPCLoadSchema = Result<Schema, Box<ErrFR>>;
+type IPCSaveSchema = Result<Schema, Box<ErrFR>>;
+type IPCSaveFile = Result<RecordSaveResult, Box<ErrFR>>;
+type IPCGetDefaultSchemas = Result<Vec<Schema>, Box<ErrFR>>;
+type IPCResolveSchemaPath = Result<Option<SchemaResult>, Box<ErrFR>>;
 #[derive(TS)]
 #[ts(export)]
 #[allow(dead_code)]
@@ -98,7 +98,7 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
     let conn = db.get_conn().await;
     get_all_tags(conn)
         .await
-        .map_err(|e| ErrFR::new("Error when getting all tags").raw(e))
+        .map_err(|e| Box::new(ErrFR::new("Error when getting all tags").raw(e)))
 }
 
 #[tauri::command]
@@ -151,7 +151,7 @@ async fn c_load_schema<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IP
     let mut cache = core.schemas_cache.lock().await;
     match cache.cache_schema(PathBuf::from(&path)).await {
         Ok(Some(v)) => Ok(v),
-        Ok(None) => Err(ErrFR::new("Schema not found").info(&path)),
+        Ok(None) => Err(Box::new(ErrFR::new("Schema not found").info(&path))),
         Err(e) => Err(e),
     }
 }

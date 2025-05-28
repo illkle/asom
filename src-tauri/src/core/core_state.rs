@@ -79,11 +79,13 @@ impl CoreStateManager {
     pub async fn load_root_path_from_store<T: tauri::Runtime>(
         &self,
         app: &AppHandle<T>,
-    ) -> Result<Option<String>, ErrFR> {
+    ) -> Result<Option<String>, Box<ErrFR>> {
         let store = match app.store("root_path.txt") {
             Ok(store) => store,
             Err(e) => {
-                return Err(ErrFR::new("Error getting store").raw(e.to_string()));
+                return Err(Box::new(
+                    ErrFR::new("Error getting store").raw(e.to_string()),
+                ));
             }
         };
 
@@ -100,19 +102,23 @@ impl CoreStateManager {
         }
     }
 
-    pub async fn root_path_safe(&self) -> Result<String, ErrFR> {
+    pub async fn root_path_safe(&self) -> Result<String, Box<ErrFR>> {
         self.root_path
             .lock()
             .await
             .clone()
-            .ok_or(ErrFR::new("Root path is not set"))
+            .ok_or(Box::new(ErrFR::new("Root path is not set")))
     }
 
     pub async fn cached_root_path(&self) -> Option<String> {
-        self.cached_root_path.lock().await.as_ref().map(|path| path.clone())
+        self.cached_root_path
+            .lock()
+            .await
+            .as_ref()
+            .map(|path| path.clone())
     }
 
-    pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
+    pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), Box<ErrFR>> {
         let mut init_done = self.init_done.lock().await;
         if *init_done {
             return Ok(());
@@ -147,7 +153,7 @@ impl CoreStateManager {
     pub async fn init_cache_on_root<T: tauri::Runtime>(
         &self,
         app: &AppHandle<T>,
-    ) -> Result<(), ErrFR> {
+    ) -> Result<(), Box<ErrFR>> {
         let rp = self.load_root_path_from_store(app).await?;
 
         if rp.is_none() {
@@ -172,7 +178,10 @@ impl CoreStateManager {
         Ok(())
     }
 
-    pub async fn prepare_cache<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), ErrFR> {
+    pub async fn prepare_cache<T: tauri::Runtime>(
+        &self,
+        app: &AppHandle<T>,
+    ) -> Result<(), Box<ErrFR>> {
         let rp = self.root_path_safe().await?;
 
         self.schemas_cache.lock().await.clear_cache();
@@ -182,25 +191,29 @@ impl CoreStateManager {
                 .raw(e)
         })?;
 
-        if let Err(e) = cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, Path::new(&rp))
-            .await {
+        if let Err(e) =
+            cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, Path::new(&rp))
+                .await
+        {
             // We don't return error here because user can have a few problematic files, which is ok
-            send_err_to_frontend(app, &e);
+            send_err_to_frontend(app, &Box::new(e));
         }
 
         Ok(())
     }
 
-    pub async fn watch_path(&self) -> Result<(), ErrFR> {
+    pub async fn watch_path(&self) -> Result<(), Box<ErrFR>> {
         let rp = self.root_path_safe().await?;
 
         println!("Watching path: {}", rp);
 
         let mut watcher = self.watcher.lock().await;
         watcher.watch_path(&rp).await.map_err(|e| {
-            ErrFR::new("Error starting watcher")
-                .info("Try restarting app")
-                .raw(e)
+            Box::new(
+                ErrFR::new("Error starting watcher")
+                    .info("Try restarting app")
+                    .raw(e),
+            )
         })
     }
 }

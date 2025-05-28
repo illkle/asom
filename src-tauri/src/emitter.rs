@@ -8,7 +8,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 
 use crate::{
-    cache::query::RecordFromDb, core::core::CoreStateManager, schema::types::Schema,
+    cache::query::RecordFromDb, core::core_state::CoreStateManager, schema::types::Schema,
     utils::errorhandling::ErrFR, watcher::event_handlers::FolderEventEmit,
 };
 

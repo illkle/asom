@@ -1,4 +1,4 @@
-use crate::core::core::DatabaseConnectionMutex;
+use crate::core::core_state::DatabaseConnectionMutex;
 
 pub async fn create_db_tables(dbm: &DatabaseConnectionMutex) -> Result<(), sqlx::Error> {
     let mut db = dbm.lock().await;

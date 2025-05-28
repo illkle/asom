@@ -5,7 +5,7 @@ use std::path::Path;
 use ts_rs::TS;
 
 use crate::cache::query::RecordFromDb;
-use crate::core::core::SchemasCacheMutex;
+use crate::core::core_state::SchemasCacheMutex;
 use crate::schema::schema_cache::SchemaResult;
 use crate::schema::types::{AttrValue, AttrValueOnDisk};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
@@ -30,7 +30,7 @@ pub async fn read_file_by_path(
     scm: &SchemasCacheMutex,
     path_str: &str,
     read_mode: FileReadMode,
-) -> Result<RecordReadResult, ErrFR> {
+) -> Result<RecordReadResult, Box<ErrFR>> {
     let file_modified = get_file_modified_time(path_str).map_err(|e| {
         ErrFR::new("Error reading file")
             .raw(e)
@@ -40,7 +40,7 @@ pub async fn read_file_by_path(
     let schemas_cache = scm.lock().await;
     let files_schema = match schemas_cache.get_schema(Path::new(path_str)) {
         Some(v) => v,
-        None => return Err(ErrFR::new("Schema not found").raw(path_str)),
+        None => return Err(Box::new(ErrFR::new("Schema not found").raw(path_str))),
     };
     drop(schemas_cache);
 
@@ -60,17 +60,16 @@ pub async fn read_file_by_path(
                     },
                     modified: Some(file_modified),
                     attrs: parsed_meta.metadata,
-                    ..Default::default()
                 },
                 parsing_error: parsed_meta.parsing_error,
                 schema: files_schema,
             })
         }
-        Err(e) => {
-            Err(ErrFR::new("Error reading file")
+        Err(e) => Err(Box::new(
+            ErrFR::new("Error reading file")
                 .raw(e)
-                .action_c(ErrFRActionCode::FileReadRetry, "Retry"))
-        }
+                .action_c(ErrFRActionCode::FileReadRetry, "Retry"),
+        )),
     }
 }
 
@@ -81,12 +80,13 @@ pub struct RecordSaveResult {
     pub modified: String,
 }
 
-pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult, ErrFR> {
+pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult, Box<ErrFR>> {
     let path = match record.path {
         Some(v) => v,
         None => {
-            return Err(ErrFR::new("No path in record")
-                .info("This is likely a frontend bug. Copy unsaved content and restart the app"))
+            return Err(Box::new(ErrFR::new("No path in record").info(
+                "This is likely a frontend bug. Copy unsaved content and restart the app",
+            )));
         }
     };
 
@@ -94,17 +94,21 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
         if let Some(v) = record.modified {
             let modified_before = match get_file_modified_time(path.clone().as_str()) {
                 Ok(v) => v,
-                Err(e) => return Err(ErrFR::new(
-                    "Unable to get modified date from file on disk",
-                )
-                .info("Retry only if you are sure there is no important data in file on disk")
-                .action_c(ErrFRActionCode::FileSaveRetryForced, "Save anyway")
-                .raw(e)),
+                Err(e) => return Err(Box::new(
+                    ErrFR::new("Unable to get modified date from file on disk")
+                        .info(
+                            "Retry only if you are sure there is no important data in file on disk",
+                        )
+                        .action_c(ErrFRActionCode::FileSaveRetryForced, "Save anyway")
+                        .raw(e),
+                )),
             };
 
             if v != modified_before {
-                return Err(ErrFR::new("File was modified by something else")
-                    .action_c(ErrFRActionCode::FileSaveRetryForced, "Overwrite"));
+                return Err(Box::new(
+                    ErrFR::new("File was modified by something else")
+                        .action_c(ErrFRActionCode::FileSaveRetryForced, "Overwrite"),
+                ));
             }
         }
     }
@@ -129,11 +133,11 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
 
     match get_file_modified_time(path.clone().as_str()) {
         Ok(v) => Ok(RecordSaveResult { path, modified: v }),
-        Err(e) => {
-            Err(ErrFR::new("Error getting update file modification date")
+        Err(e) => Err(Box::new(
+            ErrFR::new("Error getting update file modification date")
                 .info("File should be saved. Expect to get a warning next time you save this file")
-                .raw(e))
-        }
+                .raw(e),
+        )),
     }
 }
 

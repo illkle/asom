@@ -4,7 +4,7 @@ use tauri::Manager;
 
 use crate::{
     cache::query::{get_files_abstact, RecordFromDb},
-    core::core::CoreStateManager,
+    core::core_state::CoreStateManager,
     files::read_save::save_file,
     tests::test_utils::{
         app_creator, cleanup_test_case, prepare_test_case, wait_for_condition_async,

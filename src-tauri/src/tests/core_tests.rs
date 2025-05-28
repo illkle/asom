@@ -5,7 +5,7 @@ use tauri::Manager;
 
 use crate::{
     cache::query::{get_all_folders, get_files_abstact, FolderListGetResult, FolderOnDisk},
-    core::core::CoreStateManager,
+    core::core_state::CoreStateManager,
     schema::types::AttrValue,
     tests::test_utils::{
         app_creator, cleanup_test_case, prepare_test_case, wait_for_condition_async,
