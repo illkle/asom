@@ -37,9 +37,15 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Run cargo test
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest
+          locked: true
+
+      - name: Run cargo nextest
         working-directory: src-tauri
-        run: cargo test --verbose
+        run: cargo nextest run -E 'not test(~export_bindings_)'
 
       - name: Run cargo clippy
         working-directory: src-tauri

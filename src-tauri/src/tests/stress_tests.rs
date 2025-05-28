@@ -8,14 +8,13 @@ use crate::{
     files::read_save::save_file,
     tests::test_utils::{
         app_creator, cleanup_test_case, prepare_test_case, wait_for_condition_async,
-        DEFAULT_RETRY_COUNT, DEFAULT_RETRY_INTERVAL, DEFAULT_RETRY_TIMEOUT,
+        DEFAULT_RETRY_COUNT,
     },
 };
 
 use super::test_utils::TestCaseName;
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore]
 async fn test_quick_file_creation() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
@@ -47,7 +46,7 @@ async fn test_quick_file_creation() {
     std::fs::create_dir_all(sub_folder.clone()).unwrap();
 
     let mut initial_file_count = 2;
-    for i in 0..1000 {
+    for i in 0..500 {
         let record = RecordFromDb {
             path: Some(
                 sub_folder
@@ -79,13 +78,7 @@ async fn test_quick_file_creation() {
         res.len() == initial_file_count
     };
 
-    let res = wait_for_condition_async(
-        final_state_check,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let res = wait_for_condition_async(final_state_check, DEFAULT_RETRY_COUNT).await;
 
     assert!(res, "Final files count is not correct, expected");
 

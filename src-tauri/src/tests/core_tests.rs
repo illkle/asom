@@ -13,7 +13,7 @@ use crate::{
     schema::types::AttrValue,
     tests::test_utils::{
         app_creator, cleanup_test_case, prepare_test_case, wait_for_condition_async,
-        DEFAULT_RETRY_COUNT, DEFAULT_RETRY_INTERVAL, DEFAULT_RETRY_TIMEOUT,
+        DEFAULT_RETRY_COUNT,
     },
 };
 
@@ -120,13 +120,7 @@ async fn test_basic_file_ops() {
             })
     };
 
-    let result = wait_for_condition_async(
-        after_delete_check,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_delete_check, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Deleted file was not removed from cache db");
 
@@ -157,13 +151,7 @@ async fn test_basic_file_ops() {
             })
     };
 
-    let result = wait_for_condition_async(
-        after_move_back,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_move_back, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "File moved back did not appear in cache db");
 
@@ -201,13 +189,7 @@ async fn test_basic_file_ops() {
         res.len() == 2 && res.iter().any(|f| f.path == Some(sp.clone()))
     };
 
-    let result = wait_for_condition_async(
-        after_rename,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_rename, DEFAULT_RETRY_COUNT).await;
 
     assert!(
         result,
@@ -244,13 +226,7 @@ async fn test_basic_file_ops() {
                 .any(|f| f.attrs["author"] == AttrValue::String(Some("Tester Tester".to_string())))
     };
 
-    let result = wait_for_condition_async(
-        after_update,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_update, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "File content was not updated in cache db");
 
@@ -282,13 +258,7 @@ async fn test_basic_file_ops() {
             })
     };
 
-    let result = wait_for_condition_async(
-        after_create,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_create, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Created file was not added to cache db");
 
@@ -342,13 +312,7 @@ async fn test_basic_folder_ops() {
         folders.folders.iter().any(|f| f.name == "articles")
     };
 
-    let result = wait_for_condition_async(
-        after_create,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_create, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Created folder was not added to cache db");
 
@@ -373,15 +337,7 @@ async fn test_basic_folder_ops() {
         folders.folders.iter().any(|f| f.name == "articles_renamed")
     };
 
-    sleep(Duration::from_secs(1));
-
-    let result = wait_for_condition_async(
-        after_rename,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_rename, DEFAULT_RETRY_COUNT).await;
 
     assert!(
         result,
@@ -408,13 +364,7 @@ async fn test_basic_folder_ops() {
         !folders.folders.iter().any(|f| f.name == "articles_renamed")
     };
 
-    let result = wait_for_condition_async(
-        after_delete,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_delete, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Deleted folder was not removed from cache db");
 
@@ -444,13 +394,7 @@ async fn test_basic_folder_ops() {
             && folders.folders.iter().any(|f| f.name == "research")
     };
 
-    let result = wait_for_condition_async(
-        after_nested_create,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_nested_create, DEFAULT_RETRY_COUNT).await;
 
     assert!(
         result,
@@ -530,13 +474,7 @@ async fn test_schema_ops() {
         schemas.is_empty()
     };
 
-    let result = wait_for_condition_async(
-        after_rename,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_rename, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Schema was not removed from cache after renaming");
 
@@ -559,13 +497,7 @@ async fn test_schema_ops() {
         schemas.len() == 1 && schema_for_favs.is_some()
     };
 
-    let result = wait_for_condition_async(
-        after_rename_back,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_rename_back, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Schema was not added back to cache after renaming");
 
@@ -638,13 +570,7 @@ async fn test_nested_ops() {
             && schema_for_book.is_some_and(|s| s.schema.name == "books")
     };
 
-    let result = wait_for_condition_async(
-        initial_state_check,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(initial_state_check, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Initial state was parsed incorrectly");
 
@@ -698,13 +624,7 @@ async fn test_nested_ops() {
             && schema_for_audiobook.is_some_and(|s| s.schema.name == "audiobooks")
     };
 
-    let result = wait_for_condition_async(
-        after_rename_schemas,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(after_rename_schemas, DEFAULT_RETRY_COUNT).await;
 
     assert!(
         result,
@@ -740,13 +660,7 @@ async fn test_nested_ops() {
         schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 7
     };
 
-    let result = wait_for_condition_async(
-        afrer_rename_counts,
-        DEFAULT_RETRY_COUNT,
-        DEFAULT_RETRY_INTERVAL,
-        DEFAULT_RETRY_TIMEOUT,
-    )
-    .await;
+    let result = wait_for_condition_async(afrer_rename_counts, DEFAULT_RETRY_COUNT).await;
 
     assert!(result, "Items count is not correct after nested renaming");
 

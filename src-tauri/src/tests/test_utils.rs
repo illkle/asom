@@ -1,7 +1,4 @@
-use std::{
-    thread::sleep,
-    time::{Duration, Instant},
-};
+use std::{thread::sleep, time::Duration};
 
 use tauri::{test::MockRuntime, AppHandle, Manager};
 
@@ -22,36 +19,26 @@ pub async fn app_creator() -> AppHandle<MockRuntime> {
     app.handle().to_owned()
 }
 
-pub const DEFAULT_RETRY_COUNT: usize = 30;
-pub const DEFAULT_RETRY_INTERVAL: Duration = Duration::from_millis(100);
-pub const DEFAULT_RETRY_TIMEOUT: Duration = Duration::from_secs(3);
+pub const DEFAULT_RETRY_COUNT: usize = 10;
 
 /*
  * This function reruns some check multiple times, useful when waiting for watcher to do it's job
  * WARNING: Calling condition_fn the way this does might not release mutexes automatically, it's better to drop them explicitly at the end
  */
-pub async fn wait_for_condition_async<F, Fut>(
-    condition_fn: F,
-    max_attempts: usize,
-    interval: Duration,
-    timeout: Duration,
-) -> bool
+pub async fn wait_for_condition_async<F, Fut>(condition_fn: F, max_attempts: usize) -> bool
 where
     F: Fn() -> Fut,
     Fut: std::future::Future<Output = bool>,
 {
-    let start = Instant::now();
+    let mut current_wait = Duration::from_millis(25);
 
     for _ in 0..max_attempts {
         if condition_fn().await {
             return true;
         }
 
-        if start.elapsed() >= timeout {
-            return false;
-        }
-
-        tokio::time::sleep(interval).await;
+        tokio::time::sleep(current_wait).await;
+        current_wait *= 2;
     }
 
     false
@@ -73,8 +60,16 @@ impl TestCaseName {
     }
 }
 
-const BASIC_CASE_PATH: &str = "src/tests/cases/";
-const WORKING_PATH: &str = "src/tests/tests_working_dir/";
+pub fn get_basic_case_path() -> PathBuf {
+    Path::new("").join("src").join("tests").join("cases")
+}
+
+pub fn get_working_path() -> PathBuf {
+    Path::new("")
+        .join("src")
+        .join("tests")
+        .join("tests_working_dir")
+}
 
 pub async fn prepare_test_case(
     app: &AppHandle<MockRuntime>,
@@ -85,13 +80,13 @@ pub async fn prepare_test_case(
     let current_dir = current_dir().unwrap();
 
     let test_case_source = Path::new(&current_dir)
-        .join(BASIC_CASE_PATH)
+        .join(get_basic_case_path())
         .join(test_case_name.get_path());
 
     let test_case_uuid = Uuid::new_v4();
 
     let test_dir = Path::new(&current_dir)
-        .join(WORKING_PATH)
+        .join(get_working_path())
         .join(test_case_uuid.to_string());
 
     std::fs::create_dir_all(&test_dir).unwrap();

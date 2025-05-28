@@ -33,9 +33,7 @@ pub async fn run_monitor<T: tauri::Runtime>(
                 select! {
                     Ok(event) = event_rx.recv() => {
                         let app = app.clone();
-                        tokio::task::spawn(async move {
                             handle_event(event, &app).await;
-                        });
                     }
 
                     Some(MonitorCommand::Shutdown) = cmd_rx.recv() => {
