@@ -19,7 +19,7 @@ pub async fn app_creator() -> AppHandle<MockRuntime> {
     app.handle().to_owned()
 }
 
-pub const DEFAULT_RETRY_COUNT: usize = 10;
+pub const DEFAULT_RETRY_COUNT: usize = 5;
 
 /*
  * This function reruns some check multiple times, useful when waiting for watcher to do it's job

@@ -277,6 +277,7 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                 }
             }
             Err(e) => {
+                println!("handle_event error: {:?}", e);
                 send_err_to_frontend(app, &e);
             }
         }

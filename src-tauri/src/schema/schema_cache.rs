@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::{
     collections::HashMap,
+    ffi::OsStr,
     fs::{create_dir_all, read_to_string, write},
     path::PathBuf,
     str,
@@ -27,6 +28,48 @@ pub struct SchemaResult {
     pub schema: Schema,
 }
 
+const INTERNAL_FOLDER_NAME: &str = ".asom";
+const SCHEMA_FILE_NAME: &str = "schema.yaml";
+
+fn locate_schema_and_folder(path: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
+    let is_dir_safe_for_deleted = match path.exists() {
+        true => path.is_dir(),
+        false => path.extension().is_none(),
+    };
+
+    let schema_file_path = match (is_dir_safe_for_deleted, path.file_name()) {
+        (true, Some(name)) if name == OsStr::new(INTERNAL_FOLDER_NAME) => {
+            path.join(SCHEMA_FILE_NAME)
+        }
+        (false, Some(name)) if name == OsStr::new(SCHEMA_FILE_NAME) => path.to_path_buf(),
+        (true, _) => path.join(INTERNAL_FOLDER_NAME).join(SCHEMA_FILE_NAME),
+        (_, None) => {
+            return Err(Box::new(ErrFR::new("Unable to get basename from schema path")
+                .info(&format!(
+                    "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
+                    &path.to_string_lossy()
+                ))));
+        }
+        (_, _) => {
+            return Err(Box::new(ErrFR::new(
+                format!("Schema file must be named {}", SCHEMA_FILE_NAME,).as_str(),
+            )));
+        }
+    };
+    let folder_path =
+        schema_file_path
+            .parent()
+            .and_then(|p| p.parent())
+            .ok_or_else(|| {
+                Box::new(ErrFR::new(
+                "Unable to get parent from schema path. This is unexpected, please report bug.",
+            )
+            .info(&schema_file_path.to_string_lossy()))
+            })?;
+
+    Ok((schema_file_path.clone(), folder_path.to_path_buf()))
+}
+
 impl SchemasInMemoryCache {
     pub fn new() -> Self {
         Self {
@@ -45,7 +88,10 @@ impl SchemasInMemoryCache {
     pub fn get_schema(&self, path: &Path) -> Option<SchemaResult> {
         if let Some(value) = self.map.get(path) {
             return Some(SchemaResult {
-                file_path: path.to_path_buf().join("schema.yaml"),
+                file_path: path
+                    .to_path_buf()
+                    .join(INTERNAL_FOLDER_NAME)
+                    .join(SCHEMA_FILE_NAME),
                 owner_folder: path.to_path_buf(),
                 schema: value.clone(),
             });
@@ -55,7 +101,10 @@ impl SchemasInMemoryCache {
         while let Some(parent) = current.parent() {
             if let Some(value) = self.map.get(parent) {
                 return Some(SchemaResult {
-                    file_path: parent.to_path_buf().join("schema.yaml"),
+                    file_path: parent
+                        .to_path_buf()
+                        .join(INTERNAL_FOLDER_NAME)
+                        .join(SCHEMA_FILE_NAME),
                     owner_folder: parent.to_path_buf(),
                     schema: value.clone(),
                 });
@@ -92,27 +141,7 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Option<Schema>, Box<ErrFR>> {
-        let schema_file_path = match path.is_dir() {
-            true => path.join("schema.yaml"),
-            false => match path.file_name() {
-                Some(v) => {
-                    if v == "schema.yaml" {
-                        path
-                    } else {
-                        return Err(Box::new(ErrFR::new(
-                            "Schema file must be named schema.yaml",
-                        )));
-                    }
-                }
-                None => {
-                    return Err(Box::new(ErrFR::new("Unable to get basename from schema path")
-                        .info(&format!(
-                            "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
-                            &path.clone().to_string_lossy()
-                        ))));
-                }
-            },
-        };
+        let (schema_file_path, folder_path) = locate_schema_and_folder(&path)?;
 
         if !schema_file_path.exists() {
             return Ok(None);
@@ -130,27 +159,23 @@ impl SchemasInMemoryCache {
                 .raw(e)
         })?;
 
-        let folder_path = match schema_file_path.parent() {
-            Some(v) => v,
-            None => {
-                return Err(Box::new(ErrFR::new(
-                    "Unable to get parent from schema path. This is unexpected, please report bug.",
-                )
-                .info(&schema_file_path.clone().to_string_lossy())));
-            }
-        };
-
-        self.insert(folder_path.into(), sch.clone());
+        self.insert(folder_path, sch.clone());
 
         Ok(Some(sch))
     }
 
     pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), Box<ErrFR>> {
-        self.map.remove(&path);
+        println!("remove_schema {:?}", path);
+        let (_, folder_path) = locate_schema_and_folder(&path)?;
+
+        println!("remove_schema folder_path {:?}", folder_path);
+
+        self.map.remove(&folder_path);
         Ok(())
     }
 
     pub async fn remove_schemas_with_children(&mut self, path: PathBuf) -> Result<(), Box<ErrFR>> {
+        println!("remove_schemas_with_children {:?}", path);
         let paths_to_remove: Vec<PathBuf> = self
             .iter()
             .filter(|(p, _)| p.starts_with(&path))
@@ -173,29 +198,27 @@ impl SchemasInMemoryCache {
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
-        // When passing folder it MUST exist on disk, otherwise this will not work
-        let schema_path = match schema_or_folder_path.is_dir() {
-            true => schema_or_folder_path.join("schema.yaml"),
-            false => schema_or_folder_path.to_path_buf(),
-        };
+        let (schema_path, folder_path) = locate_schema_and_folder(schema_or_folder_path)?;
 
-        let folder_path = schema_path.parent().unwrap();
+        let asom_folder_path = folder_path.join(INTERNAL_FOLDER_NAME);
 
-        if !folder_path.exists() {
-            create_dir_all(folder_path).map_err(|e| {
+        if !asom_folder_path.exists() {
+            create_dir_all(&asom_folder_path).map_err(|e| {
                 ErrFR::new("Error creating directory")
                     .info("Could not create schema folder")
                     .raw(e)
             })?;
         }
 
+        println!("schema_path {:?}", schema_path);
+
         write(schema_path.clone(), serialized).map_err(|e| {
             ErrFR::new("Error writing to disk")
-                .info("File was not saved")
+                .info("Schema was not saved")
                 .raw(e)
         })?;
 
-        self.insert(folder_path.to_path_buf(), schema.clone());
+        self.insert(folder_path.clone(), schema.clone());
 
         Ok(schema)
     }

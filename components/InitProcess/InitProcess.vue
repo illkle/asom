@@ -41,6 +41,7 @@
         :disabled="!hasSelectedDefaults"
         >Create</Button
       >
+      {{ createDefaultSchemas.error }}
 
       <Button
         variant="outline"

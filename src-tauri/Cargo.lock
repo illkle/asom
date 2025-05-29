@@ -121,6 +121,7 @@ dependencies = [
  "tauri-plugin-os",
  "tauri-plugin-sql",
  "tauri-plugin-store",
+ "tempfile",
  "tokio",
  "ts-rs",
  "uuid",

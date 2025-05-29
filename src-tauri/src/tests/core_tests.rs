@@ -418,9 +418,11 @@ async fn test_schema_ops() {
         let schemas = schemas_cache.get_schemas_list().await;
         assert!(schemas.len() == 1, "Initial schemas count is not correct");
 
+        println!("schemas: {:?}", schemas);
+
         assert!(
             schemas.contains_key(&test_dir.clone().join("books").to_string_lossy().to_string()),
-            "Initial schema for owner was not returned by get_all_schemas_cached"
+            "Initial schema for owner was not returned by get_all_schemas_cached",
         );
 
         assert!(
@@ -463,8 +465,16 @@ async fn test_schema_ops() {
      */
 
     std::fs::rename(
-        test_dir.clone().join("books").join("schema.yaml"),
-        test_dir.clone().join("books").join("schema.txt"),
+        test_dir
+            .clone()
+            .join("books")
+            .join(".asom")
+            .join("schema.yaml"),
+        test_dir
+            .clone()
+            .join("books")
+            .join(".asom")
+            .join("schema.txt"),
     )
     .unwrap();
 
@@ -482,8 +492,16 @@ async fn test_schema_ops() {
      * Rename schema.txt back to schema.yaml
      */
     std::fs::rename(
-        test_dir.clone().join("books").join("schema.txt"),
-        test_dir.clone().join("books").join("schema.yaml"),
+        test_dir
+            .clone()
+            .join("books")
+            .join(".asom")
+            .join("schema.txt"),
+        test_dir
+            .clone()
+            .join("books")
+            .join(".asom")
+            .join("schema.yaml"),
     )
     .unwrap();
 
@@ -657,6 +675,13 @@ async fn test_nested_ops() {
         let files = files.unwrap();
         let folders = folders.unwrap();
 
+        println!("--------------------------------");
+        println!("schemas: {:?}", schemas.len());
+        println!("schemas: {:?}", schemas.keys());
+        println!("files: {:?}", files.len());
+        println!("folders: {:?}", folders.folders.len());
+        println!("--------------------------------");
+
         schemas.len() == 3 && files.len() == 4 && folders.folders.len() == 7
     };
 
@@ -687,6 +712,7 @@ async fn test_folder_schema_status() {
     let bks_s = test_dir
         .clone()
         .join("books")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
@@ -694,12 +720,14 @@ async fn test_folder_schema_status() {
         .clone()
         .join("books")
         .join("audiobooks")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
     let mvs_s = test_dir
         .clone()
         .join("movies")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
@@ -851,6 +879,7 @@ async fn test_folder_schema_status() {
     let bks_s = test_dir
         .clone()
         .join("books_renamed")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
@@ -858,12 +887,14 @@ async fn test_folder_schema_status() {
         .clone()
         .join("books_renamed")
         .join("audiobooks_renamed")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
     let mvs_s = test_dir
         .clone()
         .join("movies")
+        .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
