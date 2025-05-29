@@ -180,6 +180,12 @@ async fn handle_folder_add(
     }
 }
 
+/**
+ * Platform specific notes:
+ * - Windows sends CreateKind::Any, RemoveKind::Any
+ * - Windows send ModifyKind::Any for file changes, but ModifyKind::Name with correct From and To for renames
+ * - Mac sends RenameMode::Any for both files on rename
+ */
 pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
     let core = app.state::<CoreStateManager>();
 
@@ -190,7 +196,6 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
             EventKind::Create(kind) => match (kind, path.extension(), path.is_dir()) {
                 (CreateKind::File, Some(ext), _) => handle_file_add(&core, path, ext).await,
                 (CreateKind::Folder, _, _) => handle_folder_add(&core, path).await,
-                // Windows is dumb and sends Any as kind
                 (CreateKind::Any, _, true) => handle_folder_add(&core, path).await,
                 (CreateKind::Any, Some(ext), false) => handle_file_add(&core, path, ext).await,
                 k => {
@@ -227,7 +232,6 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                         handle_file_add(&core, path, ext).await
                     }
                     (RenameMode::Both, _, _, _, true, 1) => handle_folder_add(&core, path).await,
-                    // finder on mac calls with RenameMode::Any
                     (_, Ok(false), None, _, _, _) => handle_folder_remove(&core, path).await,
                     (_, Ok(false), Some(ext), _, _, _) => {
                         handle_file_remove(&core, path, ext).await
@@ -248,11 +252,19 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
                     // We ignore for non existing files to prevent trying to update renamed file by it's old path
                     _ => Ok(vec![]),
                 },
+                // Windows always sends "Any" as kind
+                ModifyKind::Any => match (path.extension(), path.is_dir()) {
+                    (Some(ext), false) => handle_file_update(&core, path, ext).await,
+                    (None, true) => handle_folder_add(&core, path).await,
+                    _ => Ok(vec![]),
+                },
                 _ => Ok(vec![]),
             },
             EventKind::Remove(kind) => match (kind, path.extension()) {
                 (RemoveKind::File, Some(ext)) => handle_file_remove(&core, path, ext).await,
                 (RemoveKind::Folder, _) => handle_folder_remove(&core, path).await,
+                (RemoveKind::Any, Some(ext)) => handle_file_remove(&core, path, ext).await,
+                (RemoveKind::Any, None) => handle_folder_remove(&core, path).await,
                 _ => Ok(vec![]),
             },
             _ => Ok(vec![]),

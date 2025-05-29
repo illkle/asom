@@ -59,7 +59,7 @@
     <div class="mt-4 flex flex-col gap-3 font-light">
       <div>
         <div
-          class="flex justify-between items-center border p-2 px-4"
+          class="flex justify-between gap-6 items-center border p-2 px-4"
           :class="appState.error && 'border-b-0'"
         >
           <div class="font-serif text-xl">Initializing...</div>
