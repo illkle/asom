@@ -1,5 +1,5 @@
 // based on https://github.com/alexgorbatchev/file-paths-to-tree/blob/master/src/index.ts
-import path from 'path-browserify';
+import {path} from '@tauri-apps/api';
 import type { FolderListGetResult } from '~/src-tauri/bindings/FolderListGetResult';
 
 export type FolderNode = {
@@ -17,7 +17,9 @@ export type FolderNode = {
  * Takes a list of file path strings and turns it into a `Node[]`.
  */
 export function filePathsToTree(paths: FolderListGetResult) {
-  const separator = path.sep;
+
+  const separator = path.sep();
+
 
   const folders = paths.folders.reduce((currentResults, currentFolder) => {
     const pathParts = currentFolder.path_relative.split(separator);
@@ -50,6 +52,8 @@ export function filePathsToTree(paths: FolderListGetResult) {
 
     return currentResults;
   }, [] as FolderNode[]);
+
+  console.log('folders', folders);
 
   return folders;
 }

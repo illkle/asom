@@ -31,6 +31,10 @@
       <PlusIcon :size="12" class="mr-2" />
       Create folder
     </Button>
+
+    {{ foldersAsTree.length }}
+
+
     <div :class="cn('rounded-lg border px-4 py-6 rounded-tl-none ')">
       <TreeRoot
         v-if="!isPending"

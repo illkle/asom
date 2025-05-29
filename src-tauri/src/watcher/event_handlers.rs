@@ -59,11 +59,13 @@ async fn handle_file_add(
     path: &Path,
     ext: &OsStr,
 ) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
+    println!("handle_file_add {:?}", path);
     match ext.to_str() {
         Some("md") => {
             if !schema_exists(core, path).await {
                 return Ok(vec![]);
             }
+
 
             match cache_file(&core.schemas_cache, &core.database_conn, path).await {
                 Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),

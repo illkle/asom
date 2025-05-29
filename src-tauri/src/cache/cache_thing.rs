@@ -43,6 +43,7 @@ pub async fn cache_file(
     dbm: &DatabaseConnectionMutex,
     path: &Path,
 ) -> Result<RecordFromDb, Box<ErrFR>> {
+    println!("cache_file {:?}", path);
     match read_file_by_path(
         schemas_cache,
         &path.to_string_lossy(),
@@ -51,6 +52,7 @@ pub async fn cache_file(
     .await
     {
         Ok(file) => {
+            println!("insert_file_into_cache_db {:?}", path);
             insert_file_into_cache_db(dbm, &file.record).await?;
             Ok(file.record)
         }
