@@ -15,7 +15,12 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
   }
 
   async get(schemaOwnerFolder: string) {
-    const targetFile = path.join(schemaOwnerFolder, this.fileName);
+    const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
+    const targetFile = path.join(targetFolder, this.fileName);
+
+    if (!(await fs.exists(targetFolder))) {
+      await fs.mkdir(targetFolder, { recursive: true });
+    }
 
     const def = this.fileSchema.parse(this.defaultData);
 
@@ -28,7 +33,11 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
   }
 
   async set(schemaOwnerFolder: string, data: z.infer<T>) {
-    const targetFile = path.join(schemaOwnerFolder, this.fileName);
+    const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
+    const targetFile = path.join(targetFolder, this.fileName);
+    if (!(await fs.exists(targetFolder))) {
+      await fs.mkdir(targetFolder, { recursive: true });
+    }
     await fs.writeTextFile(targetFile, JSON.stringify(data));
   }
 }

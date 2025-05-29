@@ -1,4 +1,4 @@
-import { useDebounceFn, useEventListener } from '@vueuse/core';
+import { useEventListener, useThrottleFn } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
 import { defineStore } from 'pinia';
 
@@ -486,7 +486,7 @@ const useTabsPreservation = () => {
     { immediate: true },
   );
 
-  const saveTabsDebounced = useDebounceFn(store._saveOpened, 5000);
+  const saveTabsDebounced = useThrottleFn(store._saveOpened, 5000);
 
   let unsubscribe: () => void;
 

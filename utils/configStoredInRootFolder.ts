@@ -20,12 +20,12 @@ export class ConfigStoredInRootFolder<T extends z.ZodSchema> {
       throw new Error('Trying to read settings without root path present');
     }
 
-    const targetFolder = path.join(rootPath, '/.internal/');
+    const targetFolder = path.join(rootPath, '/.asom_internal/');
     const targetFile = path.join(targetFolder, this.fileName);
 
     const f = (await fs.exists(targetFile))
       ? JSON.parse(await fs.readTextFile(targetFile))
-      : { tabs: [] };
+      : this.fileSchema.parse({});
 
     return this.fileSchema.parse(f);
   }
@@ -37,7 +37,7 @@ export class ConfigStoredInRootFolder<T extends z.ZodSchema> {
       throw new Error('Trying to write settings without root path present');
     }
 
-    const targetFolder = path.join(rootPath, '/.internal/');
+    const targetFolder = path.join(rootPath, '/.asom_internal/');
     const targetFile = path.join(targetFolder, this.fileName);
 
     if (!(await fs.exists(targetFolder))) {

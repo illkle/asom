@@ -2,7 +2,6 @@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
-import Calendar from '~/components/ui/calendar/Calendar.vue';
 
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
@@ -55,7 +54,7 @@ const isOpened = ref(false);
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">
-      <Calendar
+      <CalendarSelect
         v-model="dateModel"
         initial-focus
         :is-date-disabled="

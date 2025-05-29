@@ -27,9 +27,9 @@
 
     <div
       v-else-if="viewLayout.content.length === 0 && !editMode"
-      class="mx-auto mt-4 w-fit flex flex-col gap-2"
+      class="mx-auto mb-8 mt-4 w-fit flex flex-col gap-2"
     >
-      <div class="text-sm text-muted-foreground">All schema items are hidden in layout.</div>
+      <div class="text-sm text-muted-foreground">All schema items are hidden in current layout</div>
 
       <Button variant="outline" @click="emit('editMode')">Edit layout</Button>
     </div>
