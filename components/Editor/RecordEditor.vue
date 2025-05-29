@@ -150,15 +150,19 @@
 <script lang="ts" setup>
 import { remove } from '@tauri-apps/plugin-fs';
 import { EditIcon, EllipsisVerticalIcon, EyeIcon, PencilIcon, Trash2Icon } from 'lucide-vue-next';
+
 import path from 'path-browserify';
 import type { PropType } from 'vue';
 
+import { path as tauriPath } from '@tauri-apps/api';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
   type IOpenedFile,
 } from '~/composables/stores/useTabsStoreV2';
+
+const separator = tauriPath.sep();
 
 const props = defineProps({
   opened: {
@@ -174,14 +178,12 @@ const breadcrumbItems = computed(() => {
 
   const all = [{ label: path.basename(rootFolder), path: rootFolder }];
 
-  for (const item of realPath.split(path.sep)) {
+  for (const item of realPath.split(separator)) {
     all.push({
       label: item,
       path: path.join(all[all.length - 1].path, item),
     });
   }
-
-  console.log('all', all);
 
   if (all.length > 4) {
     return {

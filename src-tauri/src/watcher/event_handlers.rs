@@ -66,7 +66,6 @@ async fn handle_file_add(
                 return Ok(vec![]);
             }
 
-
             match cache_file(&core.schemas_cache, &core.database_conn, path).await {
                 Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),
                 Err(e) => Err(e),
@@ -188,9 +187,12 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
 
     for (index, path) in event.paths.iter().enumerate() {
         let res = match event.kind {
-            EventKind::Create(kind) => match (kind, path.extension()) {
-                (CreateKind::File, Some(ext)) => handle_file_add(&core, path, ext).await,
-                (CreateKind::Folder, _) => handle_folder_add(&core, path).await,
+            EventKind::Create(kind) => match (kind, path.extension(), path.is_dir()) {
+                (CreateKind::File, Some(ext), _) => handle_file_add(&core, path, ext).await,
+                (CreateKind::Folder, _, _) => handle_folder_add(&core, path).await,
+                // Windows is dumb and sends Any as kind
+                (CreateKind::Any, _, true) => handle_folder_add(&core, path).await,
+                (CreateKind::Any, Some(ext), false) => handle_file_add(&core, path, ext).await,
                 k => {
                     println!("unknown create event {:?}", k);
                     Ok(vec![])

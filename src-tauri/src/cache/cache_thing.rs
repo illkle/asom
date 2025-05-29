@@ -123,6 +123,10 @@ pub async fn cache_folder(dbm: &DatabaseConnectionMutex, path: &Path) -> Result<
         None => "/".to_string(),
     };
 
+    if folder_name.starts_with('.') {
+        return Ok(());
+    }
+
     let mut db = dbm.lock().await;
     let conn = db.get_conn().await;
 

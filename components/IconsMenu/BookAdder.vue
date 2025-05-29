@@ -20,8 +20,9 @@
 </template>
 
 <script lang="ts" setup>
+import { path as tauriPath } from '@tauri-apps/api';
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
-import path from 'path-browserify';
+import { computedAsync } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 const props = defineProps({
@@ -41,8 +42,8 @@ const actualFilename = computed(() => {
   return newFileName.value.endsWith('.md') ? newFileName.value : newFileName.value + '.md';
 });
 
-const folderToSaveDisplay = computed(() => {
-  return path.join(props.pathToSave, actualFilename.value);
+const folderToSaveDisplay = computedAsync(() => {
+  return tauriPath.join(props.pathToSave, actualFilename.value);
 });
 
 const addBook = async () => {
@@ -51,7 +52,7 @@ const addBook = async () => {
     return;
   }
 
-  const finalPath = await path.join(props.pathToSave, actualFilename.value);
+  const finalPath = await tauriPath.join(props.pathToSave, actualFilename.value);
 
   const ex = await exists(finalPath);
   if (ex) {
