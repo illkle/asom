@@ -2,7 +2,7 @@
   <div class="w-full">
     <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
 
-    <div class="flex flex-col gap-2 w-fit">
+    <div class="flex flex-col gap-1z` w-fit">
       <div v-for="(date, index) in modelValue" :key="index" class="flex items-center">
         <DateInput
           v-model="date.started"

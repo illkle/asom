@@ -2,6 +2,7 @@
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
+import CommonLabel from './CommonLabel.vue';
 
 import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
@@ -37,12 +38,14 @@ const isOpened = ref(false);
 <template>
   <Popover>
     <PopoverTrigger as-child>
+      <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
+
       <Button
         :disabled="disabled"
         variant="outline"
         :class="
           cn(
-            'min-w-40 grow justify-start text-left font-normal',
+            'min-w-40  grow justify-start text-left font-normal',
             !dateModel && 'text-muted-foreground',
             props.class,
           )

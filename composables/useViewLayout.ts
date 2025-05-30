@@ -40,3 +40,7 @@ export const useViewLayout = (schemaOwnerFolder: Ref<string>) => {
     update,
   };
 };
+
+const saveViewLayout = async (schemaOwnerFolder: string, viewLayout: IDynamicViewGroup) => {
+  await disk.set(schemaOwnerFolder, viewLayout);
+};

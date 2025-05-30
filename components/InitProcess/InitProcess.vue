@@ -15,13 +15,13 @@
 
     <div class="mt-4">
       <h2 class="text-xl font-serif">Create schemas from presets</h2>
-      <div v-if="defaultSchemasQ.data.value" class="flex flex-col gap-2 justify-between mt-2">
+      <div class="flex flex-col gap-2 justify-between mt-2">
         <div class="grid grid-cols-[1fr_1fr] items-center gap-2 justify-start px-1 text-xs">
           <div>Preset</div>
           <div>Custom Folder name</div>
         </div>
         <div
-          v-for="schema in defaultSchemasQ.data.value"
+          v-for="schema in DefaultSchemaPacks"
           :key="schema.name"
           class="grid grid-cols-[1fr_1fr] items-center gap-2 justify-start"
         >
@@ -106,9 +106,9 @@ import { LoaderCircle, XIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import { c_save_schema } from '~/api/tauriActions';
-import { useDefaultSchemas } from '~/composables/queries';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { isOurError } from '~/composables/useRustErrorNotifcation';
+import { DefaultSchemaPacks } from '~/utils/defaultSchemas';
 
 const store = useMainStore();
 
@@ -118,17 +118,13 @@ const initQ = useRootPath();
 const selectedDefaults = ref<Record<string, boolean>>({});
 const defautPath = ref<Record<string, string>>({});
 
-const defaultSchemasQ = useDefaultSchemas();
-
 const hasSelectedDefaults = computed(() => {
   return Object.values(selectedDefaults.value).some((v) => v);
 });
 
 const createDefaultSchemas = useMutation({
   mutation: async () => {
-    const schemasToCreate = defaultSchemasQ.data.value?.filter(
-      (v) => selectedDefaults.value[v.name],
-    );
+    const schemasToCreate = DefaultSchemaPacks.filter((v) => selectedDefaults.value[v.name]);
 
     if (!schemasToCreate) throw new Error('No schemas to create');
     if (!initQ.data.value) throw new Error('No root path');
@@ -136,7 +132,7 @@ const createDefaultSchemas = useMutation({
     for (const schema of schemasToCreate) {
       const folder = path.join(initQ.data.value, defautPath.value[schema.name] ?? schema.name);
       await mkdir(folder, { recursive: true });
-      await c_save_schema(folder, schema);
+      await c_save_schema(folder, schema.schema);
     }
   },
 });

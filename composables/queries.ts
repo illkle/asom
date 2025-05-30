@@ -2,7 +2,6 @@ import { throttle } from 'lodash-es';
 import {
   c_get_all_folders,
   c_get_all_folders_by_schema,
-  c_get_default_schemas,
   c_get_schemas,
   c_init,
   c_resolve_schema_path,
@@ -26,7 +25,6 @@ const FOLDERS_BY_SCHEMA_KEY = (root: string | null | undefined, schemaPath: stri
   'folders',
   schemaPath,
 ];
-const DEFAULT_SCHEMAS_KEY = ['defaultSchemas'];
 
 const FOLDERS_LIST_KEY = (root: string | null | undefined) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
@@ -109,13 +107,6 @@ export const useIsAppUsable = () => {
   });
 
   return appState;
-};
-
-export const useDefaultSchemas = () => {
-  return useQuery({
-    key: DEFAULT_SCHEMAS_KEY,
-    query: c_get_default_schemas,
-  });
 };
 
 /**

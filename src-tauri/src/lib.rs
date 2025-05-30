@@ -18,7 +18,6 @@ use cache::query::{
 use files::read_save::{
     read_file_by_path, save_file, FileReadMode, RecordReadResult, RecordSaveResult,
 };
-use schema::defaults::get_default_schemas;
 use schema::schema_cache::SchemaResult;
 use schema::types::Schema;
 use tauri::test::{mock_builder, MockRuntime};
@@ -41,7 +40,6 @@ type IPCGetSchemas = Result<HashMap<String, Schema>, Box<ErrFR>>;
 type IPCLoadSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveFile = Result<RecordSaveResult, Box<ErrFR>>;
-type IPCGetDefaultSchemas = Result<Vec<Schema>, Box<ErrFR>>;
 type IPCResolveSchemaPath = Result<Option<SchemaResult>, Box<ErrFR>>;
 #[derive(TS)]
 #[ts(export)]
@@ -59,7 +57,6 @@ struct IPCResponces {
     c_load_schema: IPCLoadSchema,
     c_save_schema: IPCSaveSchema,
     c_save_file: IPCSaveFile,
-    c_get_default_schemas: IPCGetDefaultSchemas,
     c_resolve_schema_path: IPCResolveSchemaPath,
 }
 
@@ -168,11 +165,6 @@ async fn c_save_schema<T: tauri::Runtime>(
 }
 
 #[tauri::command]
-async fn c_get_default_schemas<T: tauri::Runtime>(_: AppHandle<T>) -> IPCGetDefaultSchemas {
-    Ok(get_default_schemas())
-}
-
-#[tauri::command]
 fn c_save_file<T: tauri::Runtime>(
     _: AppHandle<T>,
     record: RecordFromDb,
@@ -202,7 +194,6 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_get_root_path,
             c_load_schema,
             c_save_schema,
-            c_get_default_schemas,
             c_get_files_path,
             c_get_all_tags,
             c_get_all_folders,

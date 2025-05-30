@@ -1,7 +1,7 @@
 <template>
   <div class="w-full rounded">
     <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
-    <div class="flex flex-col gap-2 w-fit" :key="key">
+    <div class="flex flex-col gap-1 w-fit" :key="key">
       <div
         v-for="(date, index) in modelValue"
         :key="index"
