@@ -2,18 +2,20 @@
   <div class="w-full">
     <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
 
-    <div class="flex flex-col gap-1z` w-fit">
+    <div class="flex flex-col gap-1 w-fit">
       <div v-for="(date, index) in modelValue" :key="index" class="flex items-center">
         <DateInput
           v-model="date.started"
           :limits="{ end: date.finished }"
+          hide-label
           class="rounded-r-none min-w-40 grow-0"
           :disabled="disabled"
         />
         <DateInput
           v-model="date.finished"
           :limits="{ start: date.started }"
-          class="rounded-none border-l-0 border-r-0 w-fit min-w-40 grow-0"
+          hide-label
+          class="rounded-none border-l-0 w-fit min-w-40 grow-0"
           :disabled="disabled"
         />
 
@@ -27,7 +29,7 @@
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="outline" size="sm" class="" @click="addNewDate" :disabled="disabled">
+      <Button variant="outline" class="min-w-88" @click="addNewDate" :disabled="disabled">
         <PlusIcon :size="16" /> Log Dates
       </Button>
     </div>

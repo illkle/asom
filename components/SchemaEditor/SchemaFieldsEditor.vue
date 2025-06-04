@@ -1,11 +1,11 @@
 <template>
-  <div v-if="schema" class="flex flex-col gap-4 max-w-4xl w-full mx-auto">
+  <div v-if="schema" class="flex flex-col gap-4 max-w-4xl pb-16 w-full mx-auto">
     <!-- Header -->
     <div class="sticky top-0 pt-8 z-10 pb-2 rounded-b-md bg-background">
       <div class="flex justify-between items-center gap-2">
         <h2 class="text-3xl font-serif">Edit schema</h2>
         <div class="text-sm text-muted-foreground text-center">
-          {{ route.query.path }}
+          {{ props.path }}
         </div>
       </div>
       <div class="flex items-center gap-2 mt-4">
@@ -38,17 +38,23 @@ import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriAct
 
 import type { ErrFR, Schema } from '~/types';
 
-const route = useRoute();
+const props = defineProps<{
+  path: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'back'): void;
+}>();
 
 const selectedItemIndex = ref<number | null>(null);
 
 const goBack = () => {
-  history.back();
+  emit('back');
 };
 
 const save = async () => {
   if (!schema.value) return;
-  const r = await c_save_schema(route.query.path as string, schema.value).catch(returnErrorHandler);
+  const r = await c_save_schema(props.path as string, schema.value).catch(returnErrorHandler);
   if ('isError' in r) {
     useRustErrorNotification(r);
     return;
@@ -60,13 +66,12 @@ const schema = ref<Schema | null>(null);
 
 onMounted(async () => {
   try {
-    const res = await c_load_schema(route.query.path as string);
+    const res = await c_load_schema(props.path as string);
     schema.value = res;
   } catch (e) {
     if (isOurError(e)) {
       useRustErrorNotification(e as ErrFR);
     }
-    //  navigateTo('/schemas', { replace: true });
   }
 });
 

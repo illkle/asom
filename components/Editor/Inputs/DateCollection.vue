@@ -1,6 +1,6 @@
 <template>
-  <div class="w-full rounded">
-    <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
+  <div class="w-full flex flex-col rounded">
+    <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
     <div class="flex flex-col gap-1 w-fit" :key="key">
       <div
         v-for="(date, index) in modelValue"
@@ -11,20 +11,21 @@
           :model-value="date"
           @update:model-value="(v) => updateDate(index, v)"
           class="rounded-r-none"
+          hide-label
           :disabled="disabled"
         />
 
         <Button
           variant="outline"
           size="icon"
-          class="rounded-l-none border-l-0"
+          class="rounded-l-none border-l-0 m-0"
           :disabled="disabled"
           @click="removeDate(index)"
         >
           <XIcon class="w-4 opacity-50" />
         </Button>
       </div>
-      <Button variant="outline" size="sm" class="" @click="addNewDate" :disabled="disabled">
+      <Button variant="outline" class="" @click="addNewDate" :disabled="disabled">
         <PlusIcon :size="16" /> Add Date
       </Button>
     </div>

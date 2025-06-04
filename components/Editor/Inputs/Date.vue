@@ -36,8 +36,8 @@ const isOpened = ref(false);
 </script>
 
 <template>
-  <Popover>
-    <PopoverTrigger as-child>
+  <Popover class="">
+    <PopoverTrigger class="flex flex-col">
       <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
 
       <Button

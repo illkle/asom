@@ -1,10 +1,8 @@
 <template>
   <div class="mx-auto max-w-4xl w-full">
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between pt-8">
       <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-      <Button @click="navigateTo('/', { replace: true })" variant="outline">Save </Button>
-
-      <Link href="/"> </Link>
+      <Button @click="emit('exit-schema-editor')" variant="outline">Save</Button>
     </div>
 
     <div class="flex items-center justify-between mt-4">
@@ -47,6 +45,7 @@
             :item="item"
             @add-new-schema="addNewSchema"
             @create-folder="(v) => ((isNewFolderDialogOpen = true), (folderCreationPath = v))"
+            @edit-schema="(v) => emit('edit-schema', v)"
           />
         </template>
       </TreeRoot>
@@ -88,11 +87,10 @@ import FolderNodeSchema from '~/components/SchemaEditor/FolderNodeSchema.vue';
 
 const rootPath = useRootPath();
 
-watch(rootPath.data, (v) => {
-  if (!v) {
-    navigateTo('/', { replace: true });
-  }
-});
+const emit = defineEmits<{
+  (e: 'edit-schema', item: string): void;
+  (e: 'exit-schema-editor'): void;
+}>();
 
 const changeRootPathHandler = async () => {
   await selectAndSetRootPath();

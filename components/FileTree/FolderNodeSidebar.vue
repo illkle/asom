@@ -22,12 +22,6 @@ const props = defineProps<{
   item: FlattenedItem<FolderNode>;
 }>();
 
-const router = useRouter();
-
-const openSchemaEditor = (path: string) => {
-  router.push(`/schemas/edit?path=${path}`);
-};
-
 const isCreatingFolder = ref(false);
 const newFolderName = ref('');
 

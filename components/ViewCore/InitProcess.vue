@@ -43,11 +43,7 @@
       >
       {{ createDefaultSchemas.error }}
 
-      <Button
-        variant="outline"
-        class="mt-8 w-full"
-        @click="navigateTo('/schemas', { replace: true })"
-      >
+      <Button variant="outline" class="mt-8 w-full" @click="store.setView('schemas')">
         Open schemas editor
       </Button>
     </div>
@@ -101,11 +97,9 @@
 </template>
 
 <script lang="ts" setup>
-import { mkdir } from '@tauri-apps/plugin-fs';
 import { LoaderCircle, XIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
-import { c_save_schema } from '~/api/tauriActions';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { isOurError } from '~/composables/useRustErrorNotifcation';
 import { DefaultSchemaPacks } from '~/utils/defaultSchemas';
@@ -131,8 +125,7 @@ const createDefaultSchemas = useMutation({
 
     for (const schema of schemasToCreate) {
       const folder = path.join(initQ.data.value, defautPath.value[schema.name] ?? schema.name);
-      await mkdir(folder, { recursive: true });
-      await c_save_schema(folder, schema.schema);
+      await createDefaultSchema(schema, folder);
     }
   },
 });

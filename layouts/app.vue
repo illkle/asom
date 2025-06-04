@@ -22,7 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import AppSidebar from '~/components/Sidebar/AppSidebar.vue';
+import AppSidebar from '~/components/ViewCore/AppSidebar.vue';
+import InitProcess from '~/components/ViewCore/InitProcess.vue';
 import TabsSelector from '~/components/ViewCore/TabsSelector.vue';
 import { useIsAppUsable } from '~/composables/queries';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';

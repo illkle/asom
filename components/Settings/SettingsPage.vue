@@ -3,11 +3,7 @@
   <div v-if="s.settings" class="w-full max-w-[500px]">
     <div class="mt-4 flex flex-col gap-2">
       <span class="font-mono text-xs opacity-50">{{ rootPath.data }}</span>
-      <Button
-        class="w-fit min-w-36"
-        variant="outline"
-        @click="navigateTo('/schemas', { replace: true })"
-      >
+      <Button class="w-fit min-w-36" variant="outline" @click="store.setView('schemas')">
         Root Path & Schema
       </Button>
     </div>

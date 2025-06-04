@@ -12,12 +12,18 @@ const props = defineProps<{
 
 const router = useRouter();
 
-const openSchemaEditor = (path: string) => {
-  router.push(`/schemas/edit?path=${path}`);
-};
+const emit = defineEmits<{
+  (e: 'editSchema', path: string): void;
+  (e: 'addNewSchema', name: string, path: string): void;
+  (e: 'createFolder', path: string): void;
+}>();
 
 const isCreatingFolder = ref(false);
 const newFolderName = ref('');
+
+const createFromTemplate = async (schema: DefaultSchemaPack) => {
+  await createDefaultSchema(schema, props.item.value.rawPath);
+};
 </script>
 
 <template>
@@ -60,7 +66,7 @@ const newFolderName = ref('');
               variant="outline"
               size="sm"
               class="rounded-l-none"
-              @click.stop="openSchemaEditor(item.value.schemaFilePath)"
+              @click.stop="$emit('editSchema', item.value.schemaFilePath)"
               >Edit</Button
             >
           </div>
@@ -69,7 +75,7 @@ const newFolderName = ref('');
       <ContextMenuContent>
         <ContextMenuItem
           v-if="item.value.hasSchema && item.value.schemaFilePath"
-          @click="openSchemaEditor(item.value.schemaFilePath)"
+          @click="$emit('editSchema', item.value.schemaFilePath)"
         >
           Edit schema
         </ContextMenuItem>
@@ -79,11 +85,27 @@ const newFolderName = ref('');
         >
           Create schema
         </ContextMenuItem>
+
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>Create from template </ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem
+              v-for="schema in DefaultSchemaPacks"
+              :key="schema.name"
+              @click="createFromTemplate(schema)"
+            >
+              {{ schema.name }}
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+
         <ContextMenuItem
           v-if="item.value.ownSchema"
           @click="
             async () =>
-              await remove(path.join(item.value.rawPath, 'schema.yaml'), { recursive: true })
+              await remove(path.join(item.value.rawPath, '.asom', 'schema.yaml'), {
+                recursive: true,
+              })
           "
         >
           Delete schema

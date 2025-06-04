@@ -6,10 +6,6 @@ export const returnErrorHandler = (e: unknown): ErrFR => {
   if (isOurError(e)) {
     console.error('Error from rust', e);
 
-    if (e.actionCode === 'NoRootPath') {
-      navigateTo('/');
-    }
-
     return e;
   }
   console.error(e);
