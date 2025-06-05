@@ -22,7 +22,8 @@
 <script lang="ts" setup>
 import { path as tauriPath } from '@tauri-apps/api';
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
-import { computedAsync } from '@vueuse/core';
+import { platform } from '@tauri-apps/plugin-os';
+import { computedAsync, useEventListener } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 const props = defineProps({
@@ -65,4 +66,14 @@ const addBook = async () => {
   ts.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
   newFileOpened.value = false;
 };
+
+const currentPlatform = platform();
+const isMacOS = currentPlatform === 'macos';
+useEventListener('keydown', (e) => {
+  const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
+
+  if (wantSelection && e.key === 'n') {
+    newFileOpened.value = true;
+  }
+});
 </script>

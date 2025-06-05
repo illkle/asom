@@ -1,5 +1,7 @@
+import { platform } from '@tauri-apps/plugin-os';
 import { useEventListener, useThrottleFn } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
+import path from 'path-browserify';
 import { defineStore } from 'pinia';
 
 import ShortUniqueId from 'short-unique-id';
@@ -556,8 +558,6 @@ export const useScrollRestorationOnMount = (
   });
 
   watch([condition, mounted], ([v, v2]) => {
-    console.log('scroll res on mount');
-
     if (!v2 || !element.value || !v) return;
 
     if (!element.value) return;
@@ -594,5 +594,70 @@ export const useScrollWatcher = (item: ShallowRef<HTMLDivElement | null>) => {
     }
     tabsStore.openedItem.scrollPositionY = (e.target as HTMLDivElement).scrollTop;
     tabsStore.openedItem.scrollPositionX = (e.target as HTMLDivElement).scrollLeft;
+  });
+};
+
+export const setupTabsHotkeys = () => {
+  const store = useTabsStoreV2();
+
+  const currentPlatform = platform();
+  const isMacOS = currentPlatform === 'macos';
+
+  const actionKey = isMacOS ? 'metaKey' : 'ctrlKey';
+
+  const { query: usableSchemas } = useUsableSchemas();
+
+  const hotkeyHandler = (e: KeyboardEvent) => {
+    if (e.code === 'KeyT' && e[actionKey]) {
+      e.preventDefault();
+
+      store.openNewThingFast(
+        {
+          _type: 'folder',
+          _path: store.openedItem
+            ? store.openedItem._type === 'file'
+              ? path.dirname(store.openedItem._path)
+              : store.openedItem._path
+            : Object.keys(usableSchemas.data.value ?? {})[0],
+        },
+        'last',
+      );
+    }
+
+    if (e.code === 'KeyW' && e[actionKey]) {
+      e.preventDefault();
+      store.closeTab(store.openedTabActiveId);
+    }
+
+    if (e.code === 'BracketLeft' && e[actionKey] && e.shiftKey) {
+      e.preventDefault();
+      store.setOpenedIndexRelative(-1);
+    }
+
+    if (e.code === 'BracketRight' && e[actionKey] && e.shiftKey) {
+      e.preventDefault();
+      store.setOpenedIndexRelative(1);
+    }
+  };
+
+  const mouseHandler = (e: MouseEvent) => {
+    if (e.button === 3) {
+      e.preventDefault();
+      store.moveBack();
+    }
+
+    if (e.button === 4) {
+      e.preventDefault();
+      store.moveForward();
+    }
+  };
+
+  onMounted(() => {
+    window.addEventListener('keydown', hotkeyHandler);
+    window.addEventListener('mousedown', mouseHandler);
+  });
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', hotkeyHandler);
   });
 };

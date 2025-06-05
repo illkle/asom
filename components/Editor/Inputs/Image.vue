@@ -14,13 +14,13 @@
   </ContextMenu>
   <div
     v-else-if="imageName"
-    class="flex h-full w-full items-center justify-center"
+    class="flex max-w-[200px] h-full w-full items-center justify-center"
     @click="changeImageHandler"
   >
     File not found: {{ imageName }}
   </div>
   <div
-    class="h-46 relative min-w-46 w-full rounded-md border flex items-center flex-col justify-center"
+    class="max-w-[200px] relative w-full rounded-md border flex items-center flex-col justify-center"
     v-else
     @click="changeImageHandler"
   >

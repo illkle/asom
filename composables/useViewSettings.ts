@@ -53,6 +53,7 @@ const zViewSettings = z.object({
   columnSizing: zSizingState,
   columnOrder: zOrderState,
   labelsHidden: z.boolean(),
+  layoutWarningsHidden: z.boolean(),
 });
 
 export type IViewSettings = z.infer<typeof zViewSettings>;
@@ -63,6 +64,7 @@ export const DEFAULT_VIEW_SETTINGS = () => ({
   columnSizing: {},
   columnOrder: [],
   labelsHidden: false,
+  layoutWarningsHidden: false,
 });
 
 const viewSettingsOnDisk = new ConfigTiedToSchema(

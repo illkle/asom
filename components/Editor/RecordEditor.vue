@@ -76,6 +76,19 @@
               >
                 <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                v-if="viewSettingsQ.data.value?.layoutWarningsHidden"
+                @click="
+                  viewSettingsUpdater(
+                    'layoutWarningsHidden',
+                    !viewSettingsQ.data.value?.layoutWarningsHidden,
+                  )
+                "
+              >
+                <EyeIcon /> {{ viewSettingsQ.data.value?.layoutWarningsHidden ? 'Show' : 'Hide' }}
+                warnings
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </BreadcrumbList>
@@ -114,6 +127,18 @@
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div v-if="showLayoutWarning" class="text-xs text-muted-foreground p-1 flex">
+        You have {{ inviSchemaItms.length }} item{{ inviSchemaItms.length === 1 ? '' : 's' }}
+        in schema that are not visible in the view:
+        <br />
+        <span class="cursor-pointer underline ml-4" @click="editMode = true">Edit Layout</span>
+        <span
+          class="cursor-pointer underline ml-4"
+          @click="viewSettingsUpdater('layoutWarningsHidden', true)"
+          >Hide
+        </span>
+      </div>
 
       <EditorMetaEditor
         v-if="editableProxy && schema && viewLayoutQ.data.value"
@@ -161,6 +186,7 @@ import {
   useTabsStoreV2,
   type IOpenedFile,
 } from '~/composables/stores/useTabsStoreV2';
+import type { IDynamicItem } from '../DynamicView/helpers';
 
 const separator = tauriPath.sep();
 
@@ -236,6 +262,39 @@ const onRemove = async () => {
   await remove(props.opened._path);
   ts.openNewThingFast({ _type: 'folder', _path: path.dirname(props.opened._path) });
 };
+
+const markKey = (item: IDynamicItem, toSave: Record<string, boolean>) => {
+  toSave[item.id] = true;
+
+  if (item.type === 'group') {
+    for (const child of item.content) {
+      markKey(child, toSave);
+    }
+  }
+};
+
+const viewLayoutKeys = computed(() => {
+  const hasKey: Record<string, boolean> = {};
+  if (!viewLayoutQ.data.value) return {};
+  markKey(viewLayoutQ.data.value, hasKey);
+  return hasKey;
+});
+
+const inviSchemaItms = computed(() => {
+  if (!schema.value) return [];
+  return (
+    schema.value?.schema.items
+      .filter((item) => !viewLayoutKeys.value[item.name])
+      .map((item) => item.name) ?? []
+  );
+});
+const showLayoutWarning = computed(() => {
+  return (
+    !viewSettingsQ.data.value?.layoutWarningsHidden &&
+    inviSchemaItms.value.length &&
+    !editMode.value
+  );
+});
 </script>
 
 <style>

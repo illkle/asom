@@ -72,11 +72,14 @@
 <script lang="ts" setup>
 import { clamp } from 'lodash-es';
 import { computed, onMounted, ref, watch } from 'vue';
-import { setupTabsHotkeys } from './tabsHotkeys';
 import TabVisual from './TabsSelectorTab.vue';
 
 import { useElementSize, useMouse } from '@vueuse/core';
-import { useTabsStoreV2, type ITabEntry } from '~/composables/stores/useTabsStoreV2';
+import {
+  setupTabsHotkeys,
+  useTabsStoreV2,
+  type ITabEntry,
+} from '~/composables/stores/useTabsStoreV2';
 
 const store = useTabsStoreV2();
 
