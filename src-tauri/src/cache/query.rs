@@ -89,8 +89,8 @@ pub async fn get_files_by_path(
     };
 
     let  files = get_files_abstact(conn, format!(
-        "WHERE files.path LIKE concat('%', '{}', '%') AND LOWER(files.attributes) LIKE concat('%', LOWER('{}'), '%') COLLATE NOCASE ORDER BY {} {}, path",
-        path, search_query, sort_target, if sort.descending { "DESC" } else { "ASC" }
+        "WHERE files.path LIKE concat('%', '{}', '%') AND files.search_index LIKE concat('%', '{}', '%') ORDER BY {} {}, path",
+        path, search_query.to_lowercase(), sort_target, if sort.descending { "DESC" } else { "ASC" }
     ))
     .await?;
 

@@ -12,7 +12,7 @@ pub async fn create_db_tables(dbm: &DatabaseConnectionMutex) -> Result<(), sqlx:
         .execute(&mut *conn)
         .await?;
 
-    sqlx::query("CREATE TABLE files (path TEXT PRIMARY KEY, modified TEXT, attributes TEXT CHECK(json_valid(attributes)))")
+    sqlx::query("CREATE TABLE files (path TEXT PRIMARY KEY, modified TEXT, attributes TEXT CHECK(json_valid(attributes)), search_index TEXT)")
     .execute(&mut *conn)
     .await?;
 

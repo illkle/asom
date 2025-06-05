@@ -1,12 +1,50 @@
 use sqlx::SqliteConnection;
+use std::collections::HashMap;
 use std::path::Path;
 use walkdir::WalkDir;
 
 use crate::core::core_state::{DatabaseConnectionMutex, SchemasCacheMutex};
 use crate::files::read_save::{read_file_by_path, FileReadMode};
+use crate::schema::types::AttrValue;
 use crate::utils::errorhandling::ErrFR;
 
 use super::query::RecordFromDb;
+
+fn get_search_index(attrs: &HashMap<String, AttrValue>) -> String {
+    let mut search_index = String::new();
+
+    for value in attrs.values() {
+        match value {
+            AttrValue::String(s) => {
+                search_index.push_str(&s.clone().unwrap_or("".to_string()));
+            }
+            AttrValue::StringVec(s) => {
+                for s in s.clone().unwrap_or(vec![]) {
+                    search_index.push_str(&s);
+                }
+            }
+            AttrValue::DatePairVec(d) => {
+                for d in d.clone().unwrap_or(vec![]) {
+                    search_index.push_str(&format!(
+                        "{} {}",
+                        d.started.map_or("".to_string(), |s| s.to_string()),
+                        d.finished.map_or("".to_string(), |f| f.to_string())
+                    ));
+                }
+            }
+            AttrValue::Integer(i) => {
+                search_index.push_str(&i.unwrap_or(0.0).to_string());
+            }
+            AttrValue::Float(f) => {
+                search_index.push_str(&f.unwrap_or(0.0).to_string());
+            }
+        }
+    }
+
+    search_index = search_index.to_lowercase();
+
+    search_index
+}
 
 // Function to insert a file record into the database
 pub async fn insert_file_into_cache_db(
@@ -26,11 +64,12 @@ pub async fn insert_file_into_cache_db(
     let conn = db.get_conn().await;
 
     sqlx::query(
-        "INSERT INTO files (path, modified, attributes) VALUES (?1, ?2, ?3) ON CONFLICT(path) DO UPDATE SET modified=excluded.modified, attributes=excluded.attributes",
+        "INSERT INTO files (path, modified, attributes, search_index) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(path) DO UPDATE SET modified=excluded.modified, attributes=excluded.attributes, search_index=excluded.search_index",
     )
     .bind(path.to_string())
     .bind(file.modified.clone())
-    .bind(attrs)
+    .bind(&attrs)
+    .bind(get_search_index(&file.attrs))
     .execute(conn)
     .await
     .map_err(|e| ErrFR::new("Error when inserting file").raw(e))?;
