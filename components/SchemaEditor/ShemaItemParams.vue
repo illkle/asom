@@ -198,6 +198,14 @@
         <h5 class="text-xs text-muted-foreground">Prefix</h5>
         <Input v-model="item.value.settings.prefix" />
       </template>
+
+      <template v-else-if="item.value.type === 'Image'">
+        <h5 class="text-xs text-muted-foreground">Aspect Ratio</h5>
+        <Input v-model="item.value.settings.aspectRatio" />
+        <div class="text-xs text-muted-foreground">
+          Formatted as "width / height". Example: "16 / 9"
+        </div>
+      </template>
     </div>
   </div>
 </template>

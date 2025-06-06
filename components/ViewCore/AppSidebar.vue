@@ -23,8 +23,8 @@
           </Button>
         </div>
 
-        <IconsMenuBookAdder :path-to-save="pathToSave ?? ''" class="">
-          <Button :disabled="!pathToSave" variant="outline" size="sm" class="w-full text-xs">
+        <IconsMenuBookAdder class="">
+          <Button variant="outline" size="sm" class="w-full text-xs">
             <PlusIcon :size="12" /> Create
           </Button>
         </IconsMenuBookAdder>
@@ -77,21 +77,11 @@ import {
   PlusIcon,
   WrenchIcon,
 } from 'lucide-vue-next';
-import path from 'path-browserify';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStoreV2();
-
-const pathToSave = computed(() => {
-  if (!tabsStore.openedItem) return null;
-  if (tabsStore.openedItem._type === 'file') return path.dirname(tabsStore.openedItem._path);
-
-  if (tabsStore.openedItem._type === 'folder') return tabsStore.openedItem._path;
-
-  return null;
-});
 
 const openGoodreadsImporter = () => {
   tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last');

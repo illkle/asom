@@ -79,7 +79,10 @@ export const DefaultBookSchema: Schema = {
       name: 'cover',
       value: {
         type: 'Image',
-        settings: {},
+        settings: {
+          settingsType: 'Image',
+          aspectRatio: '2 / 3',
+        },
       },
     },
     {
@@ -253,7 +256,10 @@ export const DefaultMovieSchema: Schema = {
       name: 'poster',
       value: {
         type: 'Image',
-        settings: {},
+        settings: {
+          settingsType: 'Image',
+          aspectRatio: '2 / 3',
+        },
       },
     },
   ],
@@ -407,7 +413,10 @@ export const DefaultGameSchema: Schema = {
       name: 'cover',
       value: {
         type: 'Image',
-        settings: {},
+        settings: {
+          settingsType: 'Image',
+          aspectRatio: '2 / 3',
+        },
       },
     },
   ],

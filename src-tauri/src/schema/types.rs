@@ -74,7 +74,7 @@ pub enum SchemaAttrType {
     Date(EmptySettings),
     DateCollection(EmptySettings),
     DatesPairCollection(EmptySettings),
-    Image(EmptySettings),
+    Image(ImageSettings),
 }
 
 /*
@@ -104,6 +104,14 @@ pub enum SettingsTypeNumber {
 pub enum SettingsTypeTextCollection {
     #[default]
     TextCollection,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[derive(Default)]
+pub enum SettingsTypeImage {
+    #[default]
+    Image,
 }
 
 #[skip_serializing_none]
@@ -207,6 +215,29 @@ impl Default for TextCollectionSettings {
             font: None,
             weight: None,
             prefix: None,
+        }
+    }
+}
+
+#[skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+#[serde_with::skip_serializing_none]
+pub struct ImageSettings {
+    #[serde(default)]
+    pub settings_type: SettingsTypeImage,
+    #[ts(optional)]
+    pub display_name: Option<String>,
+    #[ts(optional)]
+    pub aspect_ratio: Option<String>,
+}
+impl Default for ImageSettings {
+    fn default() -> ImageSettings {
+        ImageSettings {
+            settings_type: SettingsTypeImage::Image,
+            display_name: None,
+            aspect_ratio: None,
         }
     }
 }

@@ -1,8 +1,8 @@
 <template>
   <ContextMenu v-if="imagePath">
     <ContextMenuTrigger>
-      <div class="max-w-[200px] min-h-36 rounded-md overflow-hidden">
-        <img :src="imagePath" draggable="false" />
+      <div class="w-full rounded-md overflow-hidden" :style="ar">
+        <img :src="imagePath" class="w-full h-full object-cover object-center" draggable="false" />
       </div>
     </ContextMenuTrigger>
 
@@ -16,13 +16,15 @@
   </ContextMenu>
   <div
     v-else-if="imageName"
-    class="flex max-w-[200px] h-full w-full items-center justify-center"
+    class="flex h-full w-full items-center justify-center"
+    :style="ar"
     @click="changeImageHandler"
   >
     File not found: {{ imageName }}
   </div>
   <div
-    class="max-w-[200px] min-h-36 relative w-full rounded-md border flex items-center flex-col justify-center"
+    class="relative w-full rounded-md border flex items-center flex-col justify-center"
+    :style="ar"
     v-else
     @click="changeImageHandler"
   >
@@ -36,25 +38,34 @@
 
 <script setup lang="ts">
 import { open } from '@tauri-apps/plugin-dialog';
-import { copyFile, exists } from '@tauri-apps/plugin-fs';
+import { copyFile, exists, mkdir } from '@tauri-apps/plugin-fs';
 
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { computedAsync } from '@vueuse/core';
 import path from 'path-browserify';
+import type { CSSProperties } from 'vue';
+import type { ImageSettings } from '~/types';
 
 const imageName = defineModel<string | null>();
 const props = defineProps<{
   name: string;
   hideLabel?: boolean;
   disabled?: boolean;
+  settings: ImageSettings;
 }>();
+
+const ar = computed(() => {
+  return {
+    aspectRatio: props.settings.aspectRatio ?? '1 / 1',
+  } as CSSProperties;
+});
 
 const rootPath = useRootPath();
 
 const filePath = computed(() => {
   if (!imageName.value || !rootPath.data.value) return null;
-  return path.join(rootPath.data.value, imageName.value);
+  return path.join(rootPath.data.value, '.assets', imageName.value);
 });
 
 const pathFolder = computed(() => {
@@ -80,9 +91,16 @@ const changeImageHandler = async () => {
 
   if (!result) return;
 
-  const basename = path.basename(result);
+  const basename = generateUniqId() + path.extname(result);
 
-  await copyFile(result, path.join(rootPath.data.value, basename));
+  const folder = path.join(rootPath.data.value, '.assets');
+
+  const folderExists = await exists(folder);
+  if (!folderExists) {
+    await mkdir(folder, { recursive: true });
+  }
+
+  await copyFile(result, path.join(folder, basename));
 
   imageName.value = basename;
 };

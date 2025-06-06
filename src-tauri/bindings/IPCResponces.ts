@@ -19,6 +19,5 @@ export type IPCResponces = {
   c_load_schema: { Ok: Schema } | { Err: ErrFR };
   c_save_schema: { Ok: Schema } | { Err: ErrFR };
   c_save_file: { Ok: RecordSaveResult } | { Err: ErrFR };
-  c_get_default_schemas: { Ok: Array<Schema> } | { Err: ErrFR };
   c_resolve_schema_path: { Ok: SchemaResult | null } | { Err: ErrFR };
 };

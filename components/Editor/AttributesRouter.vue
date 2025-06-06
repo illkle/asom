@@ -57,6 +57,7 @@
       v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
       v-model="attr.value"
       :name="name"
+      :settings="schemaItem.value.settings"
       :disabled="disabled"
       :hide-label="hideLabel"
     />
