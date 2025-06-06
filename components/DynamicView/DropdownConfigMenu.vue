@@ -53,6 +53,23 @@
       </DropdownMenuRadioGroup>
     </DropdownMenuSubContent>
   </DropdownMenuSub>
+  <DropdownMenuSub>
+    <DropdownMenuSubTrigger>Size Units</DropdownMenuSubTrigger>
+    <DropdownMenuSubContent>
+      <DropdownMenuRadioGroup v-model="model.sizeUnits">
+        <DropdownMenuRadioItem value="1"> 1 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="2"> 2 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="3"> 3 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="4"> 4 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="5"> 5 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="6"> 6 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="7"> 7 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="8"> 8 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="9"> 9 </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="10"> 10 </DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+    </DropdownMenuSubContent>
+  </DropdownMenuSub>
 </template>
 
 <script setup lang="ts">

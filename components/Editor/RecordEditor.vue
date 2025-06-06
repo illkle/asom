@@ -1,7 +1,7 @@
 <template>
   <div
     ref="scrollElement"
-    class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable"
+    class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
     <div class="max-w-2xl mx-auto w-full">
       <template v-if="!editMode">

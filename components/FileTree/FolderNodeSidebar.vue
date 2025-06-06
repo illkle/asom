@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { openPath } from '@tauri-apps/plugin-opener';
-import { platform } from '@tauri-apps/plugin-os';
 import { ChevronDown, FolderIcon, PlusIcon } from 'lucide-vue-next';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
@@ -91,19 +90,7 @@ useAppearingInputFocuser('inputRefRename');
 
 useAppearingInputFocuser('inputRefCreate');
 
-const currentPlatform = platform();
-
-const fileManagerName = computed(() => {
-  if (currentPlatform === 'macos') {
-    return 'Finder';
-  }
-
-  if (currentPlatform === 'windows') {
-    return 'Explorer';
-  }
-
-  return 'System File Manager';
-});
+const fileManagerName = useFileManagerName();
 </script>
 
 <template>

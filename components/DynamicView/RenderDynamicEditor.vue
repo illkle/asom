@@ -20,7 +20,7 @@
                       gap: '4',
                       align: 'start',
                       justify: 'start',
-                      width: 'auto',
+                      sizeUnits: '1',
                     },
                     content: [],
                   });

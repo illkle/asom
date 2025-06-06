@@ -103,7 +103,7 @@ const DefaultBookView: IDynamicViewGroup = {
     gap: '16',
     align: 'start',
     justify: 'start',
-    width: 'auto',
+    sizeUnits: '1',
   },
   content: [
     {
@@ -114,7 +114,7 @@ const DefaultBookView: IDynamicViewGroup = {
         gap: '4',
         align: 'center',
         justify: 'start',
-        width: 'auto',
+        sizeUnits: '2',
       },
       content: [
         {
@@ -135,7 +135,7 @@ const DefaultBookView: IDynamicViewGroup = {
         gap: '16',
         align: 'start',
         justify: 'start',
-        width: 'auto',
+        sizeUnits: '5',
       },
       content: [
         {
@@ -154,7 +154,7 @@ const DefaultBookView: IDynamicViewGroup = {
             gap: '4',
             align: 'start',
             justify: 'start',
-            width: 'auto',
+            sizeUnits: '1',
           },
           content: [
             {
@@ -267,7 +267,7 @@ export const DefaultMovieView: IDynamicViewGroup = {
     gap: '16',
     align: 'start',
     justify: 'start',
-    width: 'auto',
+    sizeUnits: '1',
   },
   content: [
     {
@@ -278,7 +278,7 @@ export const DefaultMovieView: IDynamicViewGroup = {
         gap: '4',
         align: 'start',
         justify: 'center',
-        width: 'auto',
+        sizeUnits: '2',
       },
       content: [
         {
@@ -299,7 +299,7 @@ export const DefaultMovieView: IDynamicViewGroup = {
         gap: '16',
         align: 'start',
         justify: 'start',
-        width: 'auto',
+        sizeUnits: '5',
       },
       content: [
         {
@@ -318,7 +318,7 @@ export const DefaultMovieView: IDynamicViewGroup = {
             gap: '16',
             align: 'start',
             justify: 'start',
-            width: 'auto',
+            sizeUnits: '1',
           },
           content: [
             {
@@ -421,7 +421,7 @@ const DefaultGameView: IDynamicViewGroup = {
     gap: '16',
     align: 'start',
     justify: 'start',
-    width: 'auto',
+    sizeUnits: '1',
   },
   content: [
     {
@@ -432,7 +432,7 @@ const DefaultGameView: IDynamicViewGroup = {
         gap: '4',
         align: 'start',
         justify: 'start',
-        width: 'auto',
+        sizeUnits: '2',
       },
       content: [
         {
@@ -457,7 +457,7 @@ const DefaultGameView: IDynamicViewGroup = {
         gap: '8',
         align: 'start',
         justify: 'start',
-        width: 'auto',
+        sizeUnits: '5',
       },
       content: [
         {

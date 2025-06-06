@@ -32,12 +32,17 @@ const formattedDate = computed(() => {
   return format(new Date(dateModel.value.toString()), 'dd MMM yyyy');
 });
 
+const formattedDateSM = computed(() => {
+  if (!dateModel.value) return '—';
+  return format(new Date(dateModel.value.toString()), 'dd.MM.yy');
+});
+
 const isOpened = ref(false);
 </script>
 
 <template>
   <Popover class="">
-    <PopoverTrigger class="flex flex-col">
+    <PopoverTrigger class="flex flex-col w-full overflow-hidden @container">
       <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
 
       <Button
@@ -45,15 +50,21 @@ const isOpened = ref(false);
         variant="outline"
         :class="
           cn(
-            'min-w-40  grow justify-start text-left font-normal',
+            'w-full  grow shrink justify-start text-left font-normal',
             !dateModel && 'text-muted-foreground',
             props.class,
           )
         "
       >
-        <CalendarIcon class="mr-2 h-4 w-4" />
+        <CalendarIcon class="h-4 w-4 @max-[130px]:hidden" />
 
-        {{ formattedDate }}
+        <span class="@max-[100px]:hidden">
+          {{ formattedDate }}
+        </span>
+
+        <span class="@max-[100px]:block hidden">
+          {{ formattedDateSM }}
+        </span>
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">

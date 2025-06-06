@@ -9,7 +9,9 @@
     <ContextMenuContent>
       <ContextMenuItem @click="changeImageHandler"> Change Image </ContextMenuItem>
       <ContextMenuItem @click="removeImageHandler"> Remove </ContextMenuItem>
-      <ContextMenuItem> Show file in folder </ContextMenuItem>
+      <ContextMenuItem v-if="pathFolder" @click="() => pathFolder && openPath(pathFolder)">
+        Show in {{ fileManagerName }}
+      </ContextMenuItem>
     </ContextMenuContent>
   </ContextMenu>
   <div
@@ -37,6 +39,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { copyFile, exists } from '@tauri-apps/plugin-fs';
 
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { openPath } from '@tauri-apps/plugin-opener';
 import { computedAsync } from '@vueuse/core';
 import path from 'path-browserify';
 
@@ -49,12 +52,21 @@ const props = defineProps<{
 
 const rootPath = useRootPath();
 
-const imagePath = computedAsync(async () => {
+const filePath = computed(() => {
   if (!imageName.value || !rootPath.data.value) return null;
-  const p = path.join(rootPath.data.value, imageName.value);
-  const fileExistst = await exists(p);
+  return path.join(rootPath.data.value, imageName.value);
+});
+
+const pathFolder = computed(() => {
+  if (!filePath.value) return null;
+  return path.dirname(filePath.value);
+});
+
+const imagePath = computedAsync(async () => {
+  if (!filePath.value) return null;
+  const fileExistst = await exists(filePath.value);
   if (!fileExistst) return null;
-  return await convertFileSrc(p);
+  return await convertFileSrc(filePath.value);
 });
 
 const changeImageHandler = async () => {
@@ -78,4 +90,6 @@ const changeImageHandler = async () => {
 const removeImageHandler = () => {
   imageName.value = null;
 };
+
+const fileManagerName = useFileManagerName();
 </script>
