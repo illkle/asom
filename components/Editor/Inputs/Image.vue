@@ -16,7 +16,7 @@
   </ContextMenu>
   <div
     v-else-if="imageName"
-    class="flex h-full w-full items-center justify-center"
+    class="flex h-full w-full items-center justify-center border p-1.5 rounded-md text-xs text-muted-foreground text-center"
     :style="ar"
     @click="changeImageHandler"
   >
@@ -30,7 +30,7 @@
   >
     <EditorInputsCommonLabel v-if="!hideLabel">{{ name }}</EditorInputsCommonLabel>
     <span
-      class="text-xs absolute bottom-0 left-1/2 max-w-fit w-full -translate-x-1/2 border-b-0 rounded-b-none text-muted-foreground border p-1.5 rounded-md"
+      class="text-xs text-center absolute bottom-0 left-1/2 max-w-fit w-full -translate-x-1/2 border-b-0 rounded-b-none text-muted-foreground border p-1.5 rounded-md"
       >Select image</span
     >
   </div>

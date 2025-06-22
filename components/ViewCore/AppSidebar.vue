@@ -2,12 +2,12 @@
   <Sidebar variant="floating" collapsible="icon">
     <SidebarContent class="">
       <SidebarGroup class="">
-        <div class="flex flex-row gap-2 w-full mb-2">
+        <div class="flex flex-row gap-1 w-full mb-4" :class="{ 'pl-16': isMac }">
           <Button
             :disabled="!tabsStore.canGoBack"
             variant="ghost"
             size="sm"
-            class="flex-1 text-xs"
+            class="flex-1 text-xs h-6"
             @click="tabsStore.moveBack()"
           >
             <ArrowLeft :size="12" />
@@ -16,7 +16,7 @@
             :disabled="!tabsStore.canGoForward"
             variant="ghost"
             size="sm"
-            class="flex-1 text-xs"
+            class="flex-1 h-6 text-xs"
             @click="tabsStore.moveForward()"
           >
             <ArrowRight :size="12" />
@@ -78,10 +78,13 @@ import {
   WrenchIcon,
 } from 'lucide-vue-next';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import { useIsMac } from '~/composables/useTools';
 
 const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStoreV2();
+
+const isMac = useIsMac();
 
 const openGoodreadsImporter = () => {
   tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last');

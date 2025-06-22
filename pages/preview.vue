@@ -61,8 +61,4 @@ onMounted(() => {
     r.query.tab = tabs[0];
   }
 });
-
-definePageMeta({
-  layout: 'empty',
-});
 </script>

@@ -10,7 +10,7 @@
       <div class="flex flex-col gap-2">
         <Input ref="inputRef" autofocus v-model:model-value="newFileName" placeholder="Filename" />
 
-        <div class="flex">
+        <div class="flex" v-if="schemasArray.length > 1">
           <Button
             v-for="(schema, index) in schemasArray"
             :key="schema[0]"

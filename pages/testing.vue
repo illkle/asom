@@ -7,11 +7,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-definePageMeta({
-  layout: 'empty',
-});
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
 .dense {

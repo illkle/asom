@@ -14,3 +14,8 @@ export const useFileManagerName = () => {
     return 'System File Manager';
   });
 };
+
+export const useIsMac = () => {
+  const currentPlatform = platform();
+  return computed(() => currentPlatform === 'macos');
+};

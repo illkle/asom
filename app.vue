@@ -2,7 +2,7 @@
   <!-- Drag region, overlaid on top. Paddings are inside of layouts. -->
   <div
     data-tauri-drag-region
-    class="fixed z-20 top-0 col-span-2 h-[2rem] w-full flex-shrink-0 bg-red-500 opacity-0"
+    class="fixed z-20 top-0 col-span-2 h-[0.5rem] w-full flex-shrink-0 opacity-0"
   ></div>
 
   <!-- App -->

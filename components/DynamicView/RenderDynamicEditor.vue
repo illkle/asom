@@ -2,7 +2,7 @@
   <motion.div layout class="w-full">
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
-      <motion.div layout="preserve-aspect" class="flex justify-between items-center pl-2 border-b">
+      <motion.div layout class="flex justify-between items-center pl-2 border-b">
         <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"></motion.div>
         <motion.div layout="preserve-aspect" class="flex">
           <Button

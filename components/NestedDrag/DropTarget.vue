@@ -1,5 +1,5 @@
 <template>
-  <motion.div
+  <div
     ref="el"
     v-bind="$attrs"
     :class="[props.disabled && 'pointer-events-none', '']"
@@ -9,7 +9,7 @@
     @dragover=""
   >
     <slot :is-over="isOver" :quadrant="hoveredItem?.quadrant" />
-  </motion.div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -65,7 +65,7 @@ const backup = ref({ left: 0, top: 0, width: 0, height: 0 });
 const computeSizeData = () => {
   if (!el.value) return { left: 0, top: 0, width: 0, height: 0 };
 
-  const rect = el.value.$el.getBoundingClientRect();
+  const rect = el.value.getBoundingClientRect();
 
   return { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
 };

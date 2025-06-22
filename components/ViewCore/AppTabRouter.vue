@@ -19,7 +19,7 @@
 
   <div v-else class="relative h-full w-full px-2 pr-4">
     <div class="flex flex-col items-center justify-center h-full">
-      <div class="opacity-20">You have nothing opened</div>
+      <div class="text-muted-foreground">You have nothing opened</div>
     </div>
   </div>
 </template>
@@ -30,10 +30,6 @@ import RecordEditor from '~/components/Editor/RecordEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const tabsStore = useTabsStoreV2();
-
-definePageMeta({
-  layout: 'app',
-});
 </script>
 
 <style></style>

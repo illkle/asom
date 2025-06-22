@@ -1,15 +1,12 @@
 <template>
   <SidebarProvider>
-    <AppSidebar
-      v-if="appState.status === 'ok' && store.view === 'app'"
-      class="pt-[1.7rem] box-border"
-    />
+    <AppSidebar v-if="appState.status === 'ok' && store.view === 'app'" class="box-border" />
 
     <main
       class="relative flex w-36 flex-1 flex-col h-screen max-h-screen box-border"
       :class="{ 'bg-background': store.view === 'schemas' }"
     >
-      <div class="h-[1rem] shrink-0"></div>
+      <div class="h-[0.5rem] shrink-0"></div>
       <TabsSelector v-if="store.view === 'app' && appState.status === 'ok'" class="shrink-0" />
       <!-- Editing schemas-->
       <ViewCoreAppSchemaEditorRouter
