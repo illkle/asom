@@ -71,6 +71,7 @@ const isOpened = ref(false);
       <CalendarSelect
         v-model="dateModel"
         initial-focus
+        :week-starts-on="1"
         :is-date-disabled="
           (date) => {
             if (start) {
