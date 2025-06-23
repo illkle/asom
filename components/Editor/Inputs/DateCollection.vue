@@ -8,6 +8,7 @@
         class="flex w-fit items-center justify-between"
       >
         <DateInput
+          deletable
           :model-value="date"
           @update:model-value="(v) => updateDate(index, v)"
           class="rounded-r-none"

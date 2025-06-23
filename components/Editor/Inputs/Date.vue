@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-vue-next';
+import { CalendarIcon, XIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CommonLabel from './CommonLabel.vue';
 
@@ -17,6 +17,8 @@ const props = defineProps<{
   hideLabel?: boolean;
   class?: string;
   disabled?: boolean;
+  deletable?: boolean;
+  deletableInside?: boolean;
 }>();
 
 const modelValue = defineModel<string | null>({ default: null });
@@ -45,27 +47,40 @@ const isOpened = ref(false);
     <PopoverTrigger class="flex flex-col w-full overflow-hidden @container">
       <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
 
-      <Button
-        :disabled="disabled"
-        variant="outline"
-        :class="
-          cn(
-            'w-full  grow shrink justify-start text-left font-normal',
-            !dateModel && 'text-muted-foreground',
-            props.class,
-          )
-        "
-      >
-        <CalendarIcon class="h-4 w-4 @max-[130px]:hidden" />
+      <div class="flex w-full">
+        <Button
+          :disabled="disabled"
+          variant="outline"
+          :class="
+            cn(
+              'w-full  grow shrink justify-start text-left font-normal',
+              !dateModel && 'text-muted-foreground',
+              props.class,
+              deletable && 'rounded-r-none border-r-0',
+            )
+          "
+        >
+          <CalendarIcon class="h-4 w-4 @max-[130px]:hidden" />
 
-        <span class="@max-[100px]:hidden">
-          {{ formattedDate }}
-        </span>
+          <span class="@max-[100px]:hidden">
+            {{ formattedDate }}
+          </span>
 
-        <span class="@max-[100px]:block hidden">
-          {{ formattedDateSM }}
-        </span>
-      </Button>
+          <span class="@max-[100px]:block hidden">
+            {{ formattedDateSM }}
+          </span>
+        </Button>
+        <Button
+          v-if="deletable"
+          variant="outline"
+          size="icon"
+          class="rounded-l-none m-0"
+          :disabled="disabled"
+          @click="() => $emit('update:modelValue', null)"
+        >
+          <XIcon class="w-4 opacity-50" />
+        </Button>
+      </div>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">
       <CalendarSelect
@@ -84,6 +99,15 @@ const isOpened = ref(false);
           }
         "
       />
+      <Button
+        v-if="deletableInside"
+        variant="ghost"
+        size="sm"
+        class="w-full mb-2"
+        @click="() => $emit('update:modelValue', null)"
+      >
+        Remove Date
+      </Button>
     </PopoverContent>
   </Popover>
 </template>

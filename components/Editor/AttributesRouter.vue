@@ -36,6 +36,7 @@
       :name="name"
       :disabled="disabled"
       :hide-label="hideLabel"
+      :deletable="true"
     />
 
     <DateCollection

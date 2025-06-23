@@ -10,6 +10,7 @@
           hide-label
           class="rounded-r-none grow-0"
           :disabled="disabled"
+          deletable-inside
         />
         <DateInput
           v-model="date.finished"
@@ -17,6 +18,7 @@
           hide-label
           class="rounded-none border-l-0 grow-0"
           :disabled="disabled"
+          deletable-inside
         />
 
         <Button

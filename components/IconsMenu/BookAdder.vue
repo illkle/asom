@@ -31,7 +31,6 @@
 <script lang="ts" setup>
 import { path as tauriPath } from '@tauri-apps/api';
 import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
-import { platform } from '@tauri-apps/plugin-os';
 import { computedAsync, useEventListener } from '@vueuse/core';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
@@ -115,12 +114,11 @@ const addThing = async () => {
   newFileOpened.value = false;
 };
 
-const currentPlatform = platform();
-const isMacOS = currentPlatform === 'macos';
+const isMacOS = useIsMac();
 useEventListener('keydown', (e) => {
-  const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
+  const commandKey = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
 
-  if (wantSelection && e.key === 'n') {
+  if (commandKey && e.key === 'n') {
     newFileOpened.value = true;
   }
 });

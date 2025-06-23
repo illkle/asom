@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { remove } from '@tauri-apps/plugin-fs';
-import { platform } from '@tauri-apps/plugin-os';
+import { Input } from '~/components/ui/input';
 
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { onKeyStroke } from '@vueuse/core';
+import { onKeyStroke, useEventListener } from '@vueuse/core';
 import { cloneDeep, debounce } from 'lodash-es';
 import {
   ChevronDownIcon,
@@ -192,8 +192,7 @@ const dropdownOpened = ref(false);
 
 const lastSelectedIndex = ref<number | null>(null);
 
-const currentPlatform = platform();
-const isMacOS = currentPlatform === 'macos';
+const isMacOS = useIsMac();
 
 onKeyStroke('Escape', () => {
   if (isSelecting.value) {
@@ -289,11 +288,21 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
     document.removeEventListener('mousemove', moveHandler);
   });
 };
+
+const searchInputRef = useTemplateRef<InstanceType<typeof Input>>('searchInputRef');
+
+useEventListener('keydown', (e) => {
+  const commandKey = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
+
+  if (commandKey && e.key === 'f') {
+    searchInputRef.value?.$el.focus();
+  }
+});
 </script>
 
 <template>
   <div class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2">
-    <Input v-model="searchQuery" />
+    <Input ref="searchInputRef" v-model="searchQuery" />
 
     <Toggle
       :model-value="isSelecting !== null"
