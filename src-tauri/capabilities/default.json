@@ -82,6 +82,23 @@
           "requireLiteralLeadingDot": false
         }
       ]
+    },
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://id.twitch.tv/oauth2/token"
+        },
+        {
+          "url": "https://api.igdb.com/v4/games"
+        },
+        {
+          "url": "https://api.igdb.com/v4/screenshots"
+        },
+        {
+          "url": "https://api.igdb.com/v4/covers"
+        }
+      ]
     }
   ]
 }

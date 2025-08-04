@@ -66,7 +66,7 @@ const formatter = useDateFormatter('en');
     <CalendarHeader>
       <CalendarHeading class="flex items-center gap-1">
         <Select
-          :default-value="date.month.toString()"
+          :model-value="date.month.toString()"
           @update:model-value="
             (v) => {
               if (!v || !date) return;

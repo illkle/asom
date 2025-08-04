@@ -1,0 +1,313 @@
+import { fetch } from '@tauri-apps/plugin-http';
+import { z } from 'zod';
+import { useApiConnections } from '~/composables/useApiConnections';
+
+const zToken = z.object({
+  access_token: z.string(),
+  expires_in: z.number(),
+});
+
+const zCover = z.object({
+  id: z.number(),
+  image_id: z.string(),
+  url: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const zArtwork = z.object({
+  id: z.number(),
+  image_id: z.string(),
+  url: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const zScreenshot = z.object({
+  id: z.number(),
+  image_id: z.string(),
+  url: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+const zCompany = z.object({
+  id: z.number(),
+  name: z.string(),
+  slug: z.string().optional(),
+  description: z.string().optional(),
+  logo: z
+    .object({
+      id: z.number(),
+      image_id: z.string(),
+      url: z.string().optional(),
+    })
+    .optional(),
+});
+
+const zInvolvedCompany = z.object({
+  id: z.number(),
+  company: zCompany,
+  developer: z.boolean().optional(),
+  publisher: z.boolean().optional(),
+  porting: z.boolean().optional(),
+  supporting: z.boolean().optional(),
+});
+
+const zGenre = z.object({
+  id: z.number(),
+  name: z.string(),
+  slug: z.string().optional(),
+});
+
+const zPlatform = z.object({
+  id: z.number(),
+  name: z.string(),
+  abbreviation: z.string().optional(),
+  slug: z.string().optional(),
+});
+
+const zReleaseDate = z.object({
+  id: z.number(),
+  date: z.number().optional(),
+  human: z.string().optional(),
+  platform: zPlatform.optional(),
+  region: z.number().optional(),
+});
+
+const zGame = z.object({
+  id: z.number(),
+  name: z.string(),
+  slug: z.string().optional(),
+  summary: z.string().optional(),
+  storyline: z.string().optional(),
+  first_release_date: z.number().optional(),
+  first_release_date_human: z.date().optional(),
+  rating: z.number().optional(),
+  rating_count: z.number().optional(),
+  aggregated_rating: z.number().optional(),
+  aggregated_rating_count: z.number().optional(),
+  total_rating: z.number().optional(),
+  total_rating_count: z.number().optional(),
+  cover: zCover.optional(),
+  artworks: z.array(zArtwork).optional(),
+  screenshots: z.array(zScreenshot).optional(),
+  involved_companies: z.array(zInvolvedCompany).optional(),
+  genres: z.array(zGenre).optional(),
+  platforms: z.array(zPlatform).optional(),
+  release_dates: z.array(zReleaseDate).optional(),
+});
+
+export type IGDBGame = z.infer<typeof zGame>;
+export type IGDBCompany = z.infer<typeof zCompany>;
+export type IGDBCover = z.infer<typeof zCover>;
+
+const getToken = async (clientId: string, clientSecret: string) => {
+  const res = await fetch(
+    `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+    {
+      method: 'POST',
+    },
+  );
+  const data = await res.json();
+  console.log(data);
+  return zToken.parse(data);
+};
+
+const ensureToken = async (conns: ReturnType<typeof useApiConnections>, force = false) => {
+  const clientId = conns.q.data.value?.twitchigdb_clientId;
+  const csecret = conns.q.data.value?.twitchigdb_clientSecret;
+  if (!clientId || !csecret) {
+    throw new Error('Client ID or client secret is not set');
+  }
+
+  const token = conns.q.data.value?.twitchigdb_accessToken;
+  const expiresAt = conns.q.data.value?.twitchigdb_expiresAt;
+  if (!token || (expiresAt && expiresAt < Date.now()) || force) {
+    const token = await getToken(clientId, csecret);
+    conns.update({
+      twitchigdb_accessToken: token.access_token,
+      twitchigdb_expiresAt: Date.now() + token.expires_in * 1000,
+    });
+
+    return { token: token.access_token, clientId };
+  }
+  return { token, clientId };
+};
+
+const igdbApiRequest = async ({
+  token,
+  clientId,
+  endpoint,
+  query,
+}: {
+  token: string;
+  clientId: string;
+  endpoint: string;
+  query: string;
+}) => {
+  const res = await fetch(`https://api.igdb.com/v4/${endpoint}`, {
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+      'Client-ID': clientId,
+    },
+    body: query,
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    throw new Error(`IGDB API error: ${res.status} ${res.statusText}`);
+  }
+
+  return await res.json();
+};
+
+const igdbSearchGames = async ({
+  token,
+  clientId,
+  name,
+  limit = 10,
+}: {
+  token: string;
+  clientId: string;
+  name: string;
+  limit?: number;
+}) => {
+  const query = `
+    fields 
+      id, name, slug, summary, storyline, first_release_date,
+      rating, rating_count, aggregated_rating, aggregated_rating_count,
+      total_rating, total_rating_count,
+      cover.id, cover.image_id, cover.url, cover.width, cover.height,
+      involved_companies.id, involved_companies.developer, involved_companies.publisher, 
+      involved_companies.porting, involved_companies.supporting,
+      involved_companies.company.id, involved_companies.company.name, 
+      involved_companies.company.slug, involved_companies.company.description,
+      involved_companies.company.logo.id, involved_companies.company.logo.image_id, involved_companies.company.logo.url,
+      genres.id, genres.name, genres.slug,
+      platforms.id, platforms.name, platforms.abbreviation, platforms.slug,
+      release_dates.id, release_dates.date, release_dates.human, release_dates.region,
+      release_dates.platform.id, release_dates.platform.name, release_dates.platform.abbreviation;
+    search "${name}";
+    limit ${limit};
+    where version_parent = null;
+  `;
+
+  const data = await igdbApiRequest({ token, clientId, endpoint: 'games', query });
+  return z.array(zGame).parse(data);
+};
+
+const igdbGetCovers = async ({
+  token,
+  clientId,
+  gameIds,
+}: {
+  token: string;
+  clientId: string;
+  gameIds: number[];
+}) => {
+  if (gameIds.length === 0) return [];
+
+  const query = `
+    fields id, image_id, url, width, height, game;
+    where game = (${gameIds.join(',')});
+    limit 500;
+  `;
+
+  const data = await igdbApiRequest({ token, clientId, endpoint: 'covers', query });
+  return z.array(zCover.extend({ game: z.number() })).parse(data);
+};
+
+const igdbGetScreenshots = async ({
+  token,
+  clientId,
+  gameIds,
+}: {
+  token: string;
+  clientId: string;
+  gameIds: number[];
+}) => {
+  if (gameIds.length === 0) return [];
+
+  const query = `
+    fields id, image_id, url, width, height, game;
+    where game = (${gameIds.join(',')});
+    limit 500;
+  `;
+
+  const data = await igdbApiRequest({ token, clientId, endpoint: 'screenshots', query });
+  return z.array(zScreenshot.extend({ game: z.number() })).parse(data);
+};
+
+export const useTwitchIGDB = () => {
+  const apiConnections = useApiConnections();
+
+  const searchGames = async (
+    name: string,
+    options: { limit?: number; includeMedia?: boolean } = {},
+  ) => {
+    const { limit = 10, includeMedia = true } = options;
+
+    try {
+      const { token, clientId } = await ensureToken(apiConnections, false);
+
+      const games = await igdbSearchGames({ token, clientId, name, limit });
+
+      if (!includeMedia || games.length === 0) {
+        return games;
+      }
+
+      const gameIds = games.map((game) => game.id);
+
+      const [covers, screenshots] = await Promise.all([
+        igdbGetCovers({ token, clientId, gameIds }),
+        igdbGetScreenshots({ token, clientId, gameIds }),
+      ]);
+
+      const coversByGame = covers.reduce(
+        (acc, cover) => {
+          const gameId = cover.game;
+          if (!acc[gameId]) acc[gameId] = [];
+          acc[gameId].push(cover);
+          return acc;
+        },
+        {} as Record<number, typeof covers>,
+      );
+
+      const screenshotsByGame = screenshots.reduce(
+        (acc, screenshot) => {
+          const gameId = screenshot.game;
+          if (!acc[gameId]) acc[gameId] = [];
+          acc[gameId].push(screenshot);
+          return acc;
+        },
+        {} as Record<number, typeof screenshots>,
+      );
+
+      const enrichedGames = games.map((game) => ({
+        ...game,
+        cover: coversByGame[game.id]?.[0] || game.cover,
+        screenshots: screenshotsByGame[game.id] || [],
+      }));
+
+      for (const game of enrichedGames) {
+        if (game.cover) {
+          game.cover.url = `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`;
+        }
+        if (game.first_release_date) {
+          game.first_release_date_human = new Date(game.first_release_date * 1000);
+        }
+      }
+
+      return enrichedGames;
+    } catch (error) {
+      console.error('Error searching IGDB games:', error);
+      throw error;
+    }
+  };
+
+  return {
+    searchGames,
+  };
+};

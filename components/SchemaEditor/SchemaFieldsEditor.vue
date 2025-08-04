@@ -4,7 +4,7 @@
     <div class="sticky top-0 pt-8 z-10 pb-2 rounded-b-md bg-background">
       <div class="flex justify-between items-center gap-2">
         <h2 class="text-3xl font-serif">Edit schema</h2>
-        <div class="text-sm text-muted-foreground text-center">
+        <div class="text-xs text-muted-foreground max-w-1/2">
           {{ props.path }}
         </div>
       </div>

@@ -1,0 +1,9 @@
+
+
+POST https://api.igdb.com/v4/games
+Authorization: Bearer vacn1n4wudohd170z1w3j4wnydqc4c
+Client-ID: i4ejlpleb3p6651yz0e5bi4vq0uvbd
+
+fields game_type, cover, first_release_date, name, involved_companies; search "Witcher";
+
+---

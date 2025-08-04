@@ -200,11 +200,26 @@
       </template>
 
       <template v-else-if="item.value.type === 'Image'">
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
+        <Input v-model="item.value.settings.displayName" />
         <h5 class="text-xs text-muted-foreground">Aspect Ratio</h5>
         <Input v-model="item.value.settings.aspectRatio" />
         <div class="text-xs text-muted-foreground">
           Formatted as "width / height". Example: "16 / 9"
         </div>
+      </template>
+
+      <template v-else-if="item.value.type === 'Date'">
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
+        <Input v-model="item.value.settings.displayName" />
+      </template>
+      <template v-else-if="item.value.type === 'DateCollection'">
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
+        <Input v-model="item.value.settings.displayName" />
+      </template>
+      <template v-else-if="item.value.type === 'DatesPairCollection'">
+        <h5 class="text-xs text-muted-foreground">Display Name</h5>
+        <Input v-model="item.value.settings.displayName" />
       </template>
     </div>
   </div>

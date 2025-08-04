@@ -38,10 +38,13 @@
     </SidebarContent>
 
     <SidebarFooter>
-      <Collapsible defaultOpen class="group">
+      <Collapsible class="group">
         <CollapsibleContent>
           <SidebarMenuButton @click="openGoodreadsImporter">
             <ImportIcon /> Goodreads importer
+          </SidebarMenuButton>
+          <SidebarMenuButton @click="openApiConnections">
+            <CloudCogIcon /> Api connections
           </SidebarMenuButton>
         </CollapsibleContent>
         <CollapsibleTrigger asChild>
@@ -72,6 +75,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ChevronLeft,
+  CloudCogIcon,
   CogIcon,
   ImportIcon,
   PlusIcon,
@@ -88,6 +92,9 @@ const isMac = useIsMac();
 
 const openGoodreadsImporter = () => {
   tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last');
+};
+const openApiConnections = () => {
+  tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'apiConnections' }, 'last');
 };
 
 const settingsDialogOpened = ref(false);

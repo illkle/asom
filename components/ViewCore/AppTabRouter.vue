@@ -2,17 +2,20 @@
   <template v-if="tabsStore.openedItem" class="h-full w-full">
     <template v-if="tabsStore.openedItem._type === 'innerPage'">
       <ToolsGoodreadsImporter v-if="tabsStore.openedItem._path === 'goodreadsImporter'" />
+      <ToolsApiConnections v-if="tabsStore.openedItem._path === 'apiConnections'" />
     </template>
     <template v-else>
       <RecordEditor
         v-if="tabsStore.openedItem._type === 'file'"
         :opened="tabsStore.openedItem"
         :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
+        :class="{ 'rounded-tl': !isFirstTab }"
       />
       <BooksViewWrapper
         v-else-if="tabsStore.openedItem._type === 'folder'"
         :opened="tabsStore.openedItem"
         :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
+        :class="{ 'rounded-tl': !isFirstTab }"
       />
     </template>
   </template>
@@ -30,6 +33,10 @@ import RecordEditor from '~/components/Editor/RecordEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
 const tabsStore = useTabsStoreV2();
+
+const isFirstTab = computed(() => {
+  return tabsStore.openedTabActiveIndex === 0;
+});
 </script>
 
 <style></style>

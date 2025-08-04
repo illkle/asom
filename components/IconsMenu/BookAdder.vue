@@ -4,7 +4,7 @@
       <slot />
     </DialogTrigger>
 
-    <DialogContent class="" @keyup.enter="addThing">
+    <DialogContent class="">
       <DialogTitle> Create new file </DialogTitle>
 
       <div class="flex flex-col gap-2">
