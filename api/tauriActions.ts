@@ -104,3 +104,10 @@ export const c_resolve_schema_path = async (path: string) => {
     (v) => v as ExtractIpcResponcesType<'c_resolve_schema_path'>,
   );
 };
+
+// Moves file to recycle bin. Works with folders too
+export const c_delete_to_trash = async (path: string) => {
+  return invoke('c_delete_to_trash', { path }).then(
+    (v) => v as ExtractIpcResponcesType<'c_delete_to_trash'>,
+  );
+};

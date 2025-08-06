@@ -41,6 +41,7 @@ type IPCLoadSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveFile = Result<RecordSaveResult, Box<ErrFR>>;
 type IPCResolveSchemaPath = Result<Option<SchemaResult>, Box<ErrFR>>;
+type IPCDeleteFile = Result<(), Box<ErrFR>>;
 #[derive(TS)]
 #[ts(export)]
 #[allow(dead_code)]
@@ -59,6 +60,7 @@ struct IPCResponces {
     c_save_schema: IPCSaveSchema,
     c_save_file: IPCSaveFile,
     c_resolve_schema_path: IPCResolveSchemaPath,
+    c_delete_to_trash: IPCDeleteFile,
 }
 
 #[tauri::command]
@@ -192,6 +194,11 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
     Ok(cache.get_schema(&PathBuf::from(path)))
 }
 
+#[tauri::command]
+async fn c_delete_to_trash<T: tauri::Runtime>(_: AppHandle<T>, path: String) -> IPCDeleteFile {
+    trash::delete(&path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
+}
+
 pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T> {
     builder
         .plugin(tauri_plugin_sql::Builder::new().build())
@@ -212,6 +219,7 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_get_schemas_usable,
             c_get_schemas_all,
             c_resolve_schema_path,
+            c_delete_to_trash,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { remove } from '@tauri-apps/plugin-fs';
 import { Input } from '~/components/ui/input';
 
 import { useVirtualizer } from '@tanstack/vue-virtual';
@@ -16,6 +15,7 @@ import {
   XIcon,
 } from 'lucide-vue-next';
 import { ref, type ShallowRef } from 'vue';
+import { c_delete_to_trash } from '~/api/tauriActions';
 import {
   useNavigationBlock,
   useScrollRestorationOnMount,
@@ -260,7 +260,7 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 const deleteSelected = async () => {
   const paths = Object.keys(rowSelection.value);
 
-  await Promise.allSettled(paths.map((v) => remove(v)));
+  await Promise.allSettled(paths.map((v) => c_delete_to_trash(v)));
   rowSelection.value = {};
 };
 
@@ -521,7 +521,7 @@ useEventListener('keydown', (e) => {
               @click="
                 () => {
                   if (typeof dropdownRowLock !== 'number') return;
-                  remove(rows[dropdownRowLock].path ?? '');
+                  c_delete_to_trash(rows[dropdownRowLock].path ?? '');
                 }
               "
             >

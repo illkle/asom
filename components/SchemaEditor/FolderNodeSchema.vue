@@ -3,7 +3,7 @@ import { ChevronDown, FileIcon, FolderIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
-import { remove } from '@tauri-apps/plugin-fs';
+import { c_delete_to_trash } from '~/api/tauriActions';
 import type { FolderNode } from '~/components/FileTree/filePathsToTree';
 
 const props = defineProps<{
@@ -103,9 +103,7 @@ const createFromTemplate = async (schema: DefaultSchemaPack) => {
           v-if="item.value.ownSchema"
           @click="
             async () =>
-              await remove(path.join(item.value.rawPath, '.asom', 'schema.yaml'), {
-                recursive: true,
-              })
+              await c_delete_to_trash(path.join(item.value.rawPath, '.asom', 'schema.yaml'))
           "
         >
           Delete schema
@@ -117,7 +115,7 @@ const createFromTemplate = async (schema: DefaultSchemaPack) => {
           Create Folder
         </ContextMenuItem>
 
-        <ContextMenuItem @click="async () => await remove(item.value.rawPath, { recursive: true })">
+        <ContextMenuItem @click="async () => await c_delete_to_trash(item.value.rawPath)">
           Delete Folder
         </ContextMenuItem>
       </ContextMenuContent>

@@ -173,7 +173,6 @@
 </template>
 
 <script lang="ts" setup>
-import { remove } from '@tauri-apps/plugin-fs';
 import { EditIcon, EllipsisVerticalIcon, EyeIcon, PencilIcon, Trash2Icon } from 'lucide-vue-next';
 
 import path from 'path-browserify';
@@ -187,6 +186,7 @@ import {
   type IOpenedFile,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../DynamicView/helpers';
+import { c_delete_to_trash } from '~/api/tauriActions';
 
 const separator = tauriPath.sep();
 
@@ -259,7 +259,7 @@ useScrollRestorationOnMount(
 const ts = useTabsStoreV2();
 
 const onRemove = async () => {
-  await remove(props.opened._path);
+  await c_delete_to_trash(props.opened._path);
   ts.openNewThingFast({ _type: 'folder', _path: path.dirname(props.opened._path) });
 };
 
