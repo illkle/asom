@@ -1,11 +1,11 @@
 <template>
   <div class="w-full flex flex-col rounded">
     <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
-    <div class="flex flex-col gap-1 w-fit" :key="key">
+    <div class="flex flex-col gap-1" :key="key">
       <div
         v-for="(date, index) in modelValue"
         :key="index"
-        class="flex w-fit items-center justify-between"
+        class="flex items-center justify-between"
       >
         <DateInput
           deletable

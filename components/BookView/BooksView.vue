@@ -397,7 +397,7 @@ useEventListener('keydown', (e) => {
               width: `${getSizeForColumn(column.id, column.type)}px`,
             }"
             @mousedown="
-              (e) => {
+              (e: MouseEvent) => {
                 if (e.button !== 0) return;
                 if (props.viewSettings.value?.sorting?.key === column.id) {
                   emit('update:viewSettings', 'sorting', {

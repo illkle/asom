@@ -52,20 +52,10 @@
 
 <script setup lang="ts">
 import { XIcon as DeleteIcon } from 'lucide-vue-next';
-import type { AttrValue, DatePair, SchemaItem } from '~/types';
+import type { AttrValue, SchemaItem } from '~/types';
 import { SchemaItemKeys } from '~/types';
 import AttributesRouter from '../Editor/AttributesRouter.vue';
-
-const sampleDate = ref('2020-05-04');
-const sampleText = ref('Sample text');
-const sampleTextCollection = ref(['Hello', 'World']);
-const sampleNumber = ref(123);
-const sampleDateCollection = ref(['2020-05-04', '2020-05-05']);
-const sampleDatesPairCollection = ref([
-  { started: '2025-05-04', finished: '2025-05-05' },
-  { started: '2025-05-06', finished: '2025-05-07' },
-] as DatePair[]);
-const sampleImage = ref('');
+import { getValByType } from './mocks';
 
 const item = defineModel<SchemaItem>({ required: true });
 
@@ -91,46 +81,6 @@ const value = ref<AttrValue>({
   type: 'String',
   value: '',
 });
-
-const getValByType = (type: SchemaItem['value']['type']) => {
-  switch (item.value.value.type) {
-    case 'Date':
-      return {
-        type: 'String',
-        value: sampleDate.value,
-      } as AttrValue;
-    case 'Text':
-      return {
-        type: 'String',
-        value: sampleText.value,
-      } as AttrValue;
-    case 'TextCollection':
-      return {
-        type: 'StringVec',
-        value: sampleTextCollection.value,
-      } as AttrValue;
-    case 'Number':
-      return {
-        type: 'Float',
-        value: sampleNumber.value,
-      } as AttrValue;
-    case 'DateCollection':
-      return {
-        type: 'StringVec',
-        value: sampleDateCollection.value,
-      } as AttrValue;
-    case 'DatesPairCollection':
-      return {
-        type: 'DatePairVec',
-        value: sampleDatesPairCollection.value,
-      } as AttrValue;
-    case 'Image':
-      return {
-        type: 'String',
-        value: sampleImage.value,
-      } as AttrValue;
-  }
-};
 
 watch(
   item,

@@ -1,11 +1,11 @@
 <template>
-  <div v-if="schema" class="flex flex-col gap-4 max-w-4xl pb-16 w-full mx-auto">
+  <div v-if="schema" class="flex flex-col gap-4 max-w-4xl pb-16 px-4 w-full mx-auto">
     <!-- Header -->
-    <div class="sticky top-0 pt-8 z-10 pb-2 rounded-b-md bg-background">
+    <div class="sticky top-0 pt-10 z-10 pb-2 rounded-b-md bg-background">
       <div class="flex justify-between items-center gap-2">
         <h2 class="text-3xl font-serif">Edit schema</h2>
         <div class="text-xs text-muted-foreground max-w-1/2">
-          {{ props.path }}
+          {{ shortPath }}
         </div>
       </div>
       <div class="flex items-center gap-2 mt-4">
@@ -38,9 +38,15 @@ import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriAct
 
 import type { ErrFR, Schema } from '~/types';
 
+const root = useRootPath();
+
 const props = defineProps<{
   path: string;
 }>();
+
+const shortPath = computed(() => {
+  return props.path.replace(root.data.value ?? '', '');
+});
 
 const emit = defineEmits<{
   (e: 'back'): void;

@@ -140,6 +140,12 @@ impl SchemasInMemoryCache {
             .collect()
     }
 
+    pub async fn get_schemas_list_with_empty(&self) -> HashMap<String, Schema> {
+        self.iter()
+            .map(|(path, v)| (path.to_string_lossy().to_string(), v.clone()))
+            .collect()
+    }
+
     pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Option<Schema>, Box<ErrFR>> {
         let (schema_file_path, folder_path) = locate_schema_and_folder(&path)?;
 

@@ -24,7 +24,6 @@ pub enum IPCEmitEvent {
     FolderAdd(FolderEventEmit),
     ErrorHappened(ErrFR),
     SchemasUpdated(HashMap<String, Schema>),
-    SchemaUpdated(Schema),
     EventOverflow(u32),
 }
 
@@ -37,7 +36,6 @@ pub fn get_event_name(event: &IPCEmitEvent) -> String {
         IPCEmitEvent::FolderAdd(_) => "FolderAdd".to_string(),
         IPCEmitEvent::ErrorHappened(_) => "ErrorHappened".to_string(),
         IPCEmitEvent::SchemasUpdated(_) => "SchemasUpdated".to_string(),
-        IPCEmitEvent::SchemaUpdated(_) => "SchemaUpdated".to_string(),
         IPCEmitEvent::EventOverflow(_) => "EventOverflow".to_string(),
     }
 }

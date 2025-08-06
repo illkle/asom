@@ -53,7 +53,8 @@ struct IPCResponces {
     c_get_all_folders: IPCGetAllFolders,
     c_get_all_folders_by_schema: IPCGetAllFoldersBySchema,
     c_read_file_by_path: IPCReadFileByPath,
-    c_get_schemas: IPCGetSchemas,
+    c_get_schemas_usable: IPCGetSchemas,
+    c_get_schemas_all: IPCGetSchemas,
     c_load_schema: IPCLoadSchema,
     c_save_schema: IPCSaveSchema,
     c_save_file: IPCSaveFile,
@@ -133,9 +134,17 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     read_file_by_path(&core.schemas_cache, &path, FileReadMode::FullFile).await
 }
 
+#[tauri::command]
+async fn c_get_schemas_all<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
+    let core = app.state::<CoreStateManager>();
+    let cache = core.schemas_cache.lock().await;
+    let schemas = cache.get_schemas_list_with_empty().await;
+    Ok(schemas)
+}
+
 // This one returns only schemas with items
 #[tauri::command]
-async fn c_get_schemas<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
+async fn c_get_schemas_usable<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
     let core = app.state::<CoreStateManager>();
     let cache = core.schemas_cache.lock().await;
     let schemas = cache.get_schemas_list().await;
@@ -200,8 +209,9 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_get_all_folders_by_schema,
             c_read_file_by_path,
             c_save_file,
-            c_get_schemas,
-            c_resolve_schema_path
+            c_get_schemas_usable,
+            c_get_schemas_all,
+            c_resolve_schema_path,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

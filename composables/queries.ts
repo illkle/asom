@@ -2,7 +2,8 @@ import { throttle } from 'lodash-es';
 import {
   c_get_all_folders,
   c_get_all_folders_by_schema,
-  c_get_schemas,
+  c_get_schemas_all,
+  c_get_schemas_usable,
   c_init,
   c_resolve_schema_path,
 } from '~/api/tauriActions';
@@ -15,9 +16,14 @@ export const KEY_DEPENDENT_ON_ROOT = (root: string | null | undefined) => [
 ];
 
 const ROOT_PATH_KEY = ['rooPath'];
-const USEABLE_SCHEMAS_KEY = (root: string | null | undefined) => [
+const USABLE_SCHEMAS_KEY = (root: string | null | undefined) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
-  'schemas',
+  'schemasUsable',
+  'get',
+];
+const EXISTING_SCHEMAS_KEY = (root: string | null | undefined) => [
+  ...KEY_DEPENDENT_ON_ROOT(root),
+  'schemasExisting',
   'get',
 ];
 const FOLDERS_BY_SCHEMA_KEY = (root: string | null | undefined, schemaPath: string) => [
@@ -46,12 +52,30 @@ export const useUsableSchemas = () => {
   const root = useRootPath();
 
   const q = useQuery({
-    key: () => USEABLE_SCHEMAS_KEY(root.data.value),
-    query: c_get_schemas,
+    key: () => USABLE_SCHEMAS_KEY(root.data.value),
+    query: c_get_schemas_usable,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    // This is needed for returning from schemas editor
-    refetchOnMount: true,
+    refetchOnMount: false,
+  });
+  const schemasArray = computed(() => {
+    const a = Object.entries(q.data.value || {}) as [string, Schema][];
+    a.sort((a, b) => a[0].localeCompare(b[0]));
+    return a;
+  });
+
+  return { schemasArray, query: q };
+};
+
+export const useExistingSchemas = () => {
+  const root = useRootPath();
+
+  const q = useQuery({
+    key: () => EXISTING_SCHEMAS_KEY(root.data.value),
+    query: c_get_schemas_all,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
   const schemasArray = computed(() => {
     const a = Object.entries(q.data.value || {}) as [string, Schema][];
@@ -179,6 +203,8 @@ export const useGlobalInvalidators = () => {
   useListenToEvent('SchemasUpdated', async () => {
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas'] });
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'folders'] });
+    await qc.invalidateQueries({ key: USABLE_SCHEMAS_KEY(root.data.value) });
+    await qc.invalidateQueries({ key: EXISTING_SCHEMAS_KEY(root.data.value) });
   });
 
   useListenToEvent('EventOverflow', async ({ c }) => {

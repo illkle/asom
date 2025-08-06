@@ -1,38 +1,79 @@
 <template>
   <div class="bg-background h-full overflow-y-auto gutter-stable scrollbarMod p-4">
     <template v-if="apiConnections.q.data.value">
-      <h2>Twitch IGDB</h2>
-      <span>https://api-docs.igdb.com/#getting-started</span>
+      <h2 class="text-2xl font-bold mb-2">Twitch IGDB</h2>
+      <span class="text-sm text-muted-foreground mb-4 block"
+        >https://api-docs.igdb.com/#getting-started</span
+      >
 
-      <div class="flex gap-2 items-end">
-        <div>
-          <h4>Client ID</h4>
+      <div class="flex gap-4 items-end mb-6">
+        <div class="flex-1">
+          <h4 class="text-sm font-medium mb-1">Client ID</h4>
           <Input v-model="twitchigdb_clientId" />
         </div>
-        <div>
-          <h4>Client secret</h4>
-          <Input v-model="twitchigdb_clientSecret" />
+        <div class="flex-1">
+          <h4 class="text-sm font-medium mb-1">Client secret</h4>
+          <Input v-model="twitchigdb_clientSecret" type="password" />
         </div>
 
         <Button :disabled="!canSaveTwitchigdb" @click="save">Save</Button>
       </div>
     </template>
 
-    <Input v-model="search" />
-    <div v-if="q.data.value" class="flex flex-col gap-2">
-      <div v-for="game in q.data.value" :key="game.id" class="flex gap-2 items-center">
-        <img :src="game.cover?.url" class="w-10" />
-        <div>{{ game.name }}</div>
-        <div>
-          {{ game.first_release_date_human?.toLocaleDateString() }}
-        </div>
-        <div>
-          {{
-            game.involved_companies
-              ?.filter((v) => v.developer)
-              .map((v) => v.company.name)
-              .join(', ')
-          }}
+    <div class="mb-4">
+      <Input v-model="search" placeholder="Search games..." class="w-full" />
+    </div>
+
+    <div>{{ apiConnections.q.data.value }}</div>
+
+    <div v-if="q.isLoading.value" class="flex justify-center my-8">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+
+    <div v-else-if="q.data.value" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        v-for="game in q.data.value"
+        :key="game.id"
+        class="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      >
+        <div class="flex">
+          <img
+            v-if="game.cover?.url"
+            :src="game.cover.url.replace('t_thumb', 't_cover_big')"
+            class="w-24 h-full object-cover"
+            :alt="game.name"
+          />
+          <div v-else class="w-24 h-32 bg-muted flex items-center justify-center">
+            <span class="text-xs text-muted-foreground">No cover</span>
+          </div>
+
+          <div class="p-3 flex-1">
+            <h3 class="font-bold text-lg mb-1 line-clamp-1">{{ game.name }}</h3>
+
+            <div class="text-sm text-muted-foreground mb-2">
+              {{ game.first_release_date_human?.toLocaleDateString() }}
+            </div>
+
+            <div v-if="game.genres?.length" class="text-xs mb-2">
+              <span class="font-medium">Genres:</span>
+              {{ game.genres.map((g) => g.name).join(', ') }}
+            </div>
+
+            <div v-if="game.involved_companies?.length" class="text-xs mb-2">
+              <span class="font-medium">Developers:</span>
+              {{
+                game.involved_companies
+                  .filter((v) => v.developer)
+                  .map((v) => v.company.name)
+                  .join(', ')
+              }}
+            </div>
+
+            <div v-if="game.rating" class="text-xs">
+              <span class="font-medium">Rating:</span>
+              {{ Math.round(game.rating) }}%
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -40,7 +81,8 @@
 </template>
 
 <script setup lang="ts">
-import { useTwitchIGDB } from '~/api/igb';
+import { refDebounced } from '@vueuse/core';
+import { useTwitchIGDB } from '~/api/external/igb';
 
 const apiConnections = useApiConnections();
 const twitchigdb_clientId = ref('');
@@ -74,10 +116,11 @@ const save = () => {
 const igb = useTwitchIGDB();
 
 const search = ref('');
+const debouncedSearch = refDebounced(search, 300);
 
 const q = useQuery({
-  key: computed(() => ['igb-search', search.value]),
-  query: () => igb.searchGames(search.value),
-  enabled: computed(() => search.value.length > 2),
+  key: computed(() => ['igb-search', debouncedSearch.value]),
+  query: () => igb.searchGames(debouncedSearch.value),
+  enabled: computed(() => debouncedSearch.value.length > 2),
 });
 </script>

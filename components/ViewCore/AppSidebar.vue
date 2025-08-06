@@ -58,14 +58,11 @@
         </CollapsibleTrigger>
       </Collapsible>
 
-      <Dialog v-model:open="settingsDialogOpened">
-        <DialogContent>
-          <SettingsPage />
-        </DialogContent>
-        <DialogTrigger>
-          <SidebarMenuButton> <CogIcon /> Settings </SidebarMenuButton>
-        </DialogTrigger>
-      </Dialog>
+      <SidebarMenuButton class="w-full" variant="outline" @click="store.setView('schemas')">
+        <CogIcon /> Root Path & Schema
+      </SidebarMenuButton>
+
+      <ColorModeSelector />
     </SidebarFooter>
   </Sidebar>
 </template>
@@ -81,12 +78,17 @@ import {
   PlusIcon,
   WrenchIcon,
 } from 'lucide-vue-next';
+import { useMainStore } from '~/composables/stores/useMainStore';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import { useIsMac } from '~/composables/useTools';
+import ColorModeSelector from '../uiExtra/ColorModeSelector.vue';
 
 const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStoreV2();
+
+const colorMode = useColorMode();
+const store = useMainStore();
 
 const isMac = useIsMac();
 

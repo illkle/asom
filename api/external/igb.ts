@@ -219,25 +219,77 @@ const igdbGetCovers = async ({
   return z.array(zCover.extend({ game: z.number() })).parse(data);
 };
 
-const igdbGetScreenshots = async ({
+export const getGamesFromIGDB = async ({
   token,
   clientId,
-  gameIds,
+  name,
+  limit = 10,
 }: {
   token: string;
   clientId: string;
-  gameIds: number[];
+  name: string;
+  limit?: number;
 }) => {
-  if (gameIds.length === 0) return [];
+  const games = await igdbSearchGames({ token, clientId, name, limit });
 
-  const query = `
-    fields id, image_id, url, width, height, game;
-    where game = (${gameIds.join(',')});
-    limit 500;
-  `;
+  if (games.length === 0) {
+    return games;
+  }
 
-  const data = await igdbApiRequest({ token, clientId, endpoint: 'screenshots', query });
-  return z.array(zScreenshot.extend({ game: z.number() })).parse(data);
+  const gameIds = games.map((game) => game.id);
+
+  const [covers] = await Promise.all([igdbGetCovers({ token, clientId, gameIds })]);
+
+  const coversByGame = covers.reduce(
+    (acc, cover) => {
+      const gameId = cover.game;
+      if (!acc[gameId]) acc[gameId] = [];
+      acc[gameId].push(cover);
+      return acc;
+    },
+    {} as Record<number, typeof covers>,
+  );
+
+  const enrichedGames = games.map((game) => ({
+    ...game,
+    cover: coversByGame[game.id]?.[0] || game.cover,
+  }));
+
+  return enrichedGames.map((game) => ({
+    id: game.id,
+    name: game.name,
+    cover: game.cover?.url
+      ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
+      : null,
+    first_release_date: game.first_release_date ? new Date(game.first_release_date * 1000) : null,
+    summary: game.summary,
+    storyline: game.storyline,
+    rating: game.rating,
+    genres: game.genres?.map((genre) => genre.name),
+    platforms: game.platforms?.map((platform) => platform.name),
+    companies_all: game.involved_companies
+      ?.sort(
+        (v) =>
+          Number(v.developer) * 4 +
+          Number(v.publisher) * 3 +
+          Number(v.supporting) * 2 +
+          Number(v.porting) * 1,
+      )
+      .map((company) => company.company.name),
+    companies_developers: game.involved_companies
+      ?.filter((company) => company.developer)
+      .sort((v) => Number(v.developer))
+      .map((company) => company.company.name),
+    companies_publishers: game.involved_companies
+      ?.filter((company) => company.publisher)
+      .map((company) => company.company.name),
+    companies_porting: game.involved_companies
+      ?.filter((company) => company.porting)
+      .map((company) => company.company.name),
+    companies_supporting: game.involved_companies
+      ?.filter((company) => company.supporting)
+      .map((company) => company.company.name),
+  }));
 };
 
 export const useTwitchIGDB = () => {
@@ -249,62 +301,11 @@ export const useTwitchIGDB = () => {
   ) => {
     const { limit = 10, includeMedia = true } = options;
 
-    try {
-      const { token, clientId } = await ensureToken(apiConnections, false);
+    const { token, clientId } = await ensureToken(apiConnections, false);
 
-      const games = await igdbSearchGames({ token, clientId, name, limit });
+    const games = await getGamesFromIGDB({ token, clientId, name, limit });
 
-      if (!includeMedia || games.length === 0) {
-        return games;
-      }
-
-      const gameIds = games.map((game) => game.id);
-
-      const [covers, screenshots] = await Promise.all([
-        igdbGetCovers({ token, clientId, gameIds }),
-        igdbGetScreenshots({ token, clientId, gameIds }),
-      ]);
-
-      const coversByGame = covers.reduce(
-        (acc, cover) => {
-          const gameId = cover.game;
-          if (!acc[gameId]) acc[gameId] = [];
-          acc[gameId].push(cover);
-          return acc;
-        },
-        {} as Record<number, typeof covers>,
-      );
-
-      const screenshotsByGame = screenshots.reduce(
-        (acc, screenshot) => {
-          const gameId = screenshot.game;
-          if (!acc[gameId]) acc[gameId] = [];
-          acc[gameId].push(screenshot);
-          return acc;
-        },
-        {} as Record<number, typeof screenshots>,
-      );
-
-      const enrichedGames = games.map((game) => ({
-        ...game,
-        cover: coversByGame[game.id]?.[0] || game.cover,
-        screenshots: screenshotsByGame[game.id] || [],
-      }));
-
-      for (const game of enrichedGames) {
-        if (game.cover) {
-          game.cover.url = `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`;
-        }
-        if (game.first_release_date) {
-          game.first_release_date_human = new Date(game.first_release_date * 1000);
-        }
-      }
-
-      return enrichedGames;
-    } catch (error) {
-      console.error('Error searching IGDB games:', error);
-      throw error;
-    }
+    return games;
   };
 
   return {

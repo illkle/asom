@@ -76,8 +76,14 @@ export const c_read_file_by_path = async (path: string) => {
 };
 
 // Retrieve all cached schemas from memory
-export const c_get_schemas = async () => {
-  return invoke('c_get_schemas').then((v) => v as ExtractIpcResponcesType<'c_get_schemas'>);
+export const c_get_schemas_usable = async () => {
+  return invoke('c_get_schemas_usable').then(
+    (v) => v as ExtractIpcResponcesType<'c_get_schemas_usable'>,
+  );
+};
+
+export const c_get_schemas_all = async () => {
+  return invoke('c_get_schemas_all').then((v) => v as ExtractIpcResponcesType<'c_get_schemas_all'>);
 };
 
 export const c_save_schema = async (path: string, schema: Schema) => {
