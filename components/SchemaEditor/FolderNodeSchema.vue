@@ -10,8 +10,6 @@ const props = defineProps<{
   item: FlattenedItem<FolderNode>;
 }>();
 
-const router = useRouter();
-
 const emit = defineEmits<{
   (e: 'editSchema', path: string): void;
   (e: 'addNewSchema', name: string, path: string): void;

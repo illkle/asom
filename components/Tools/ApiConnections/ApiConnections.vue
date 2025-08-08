@@ -38,8 +38,8 @@
       >
         <div class="flex">
           <img
-            v-if="game.cover?.url"
-            :src="game.cover.url.replace('t_thumb', 't_cover_big')"
+            v-if="game.cover"
+            :src="game.cover.replace('t_thumb', 't_cover_big')"
             class="w-24 h-full object-cover"
             :alt="game.name"
           />
@@ -51,22 +51,17 @@
             <h3 class="font-bold text-lg mb-1 line-clamp-1">{{ game.name }}</h3>
 
             <div class="text-sm text-muted-foreground mb-2">
-              {{ game.first_release_date_human?.toLocaleDateString() }}
+              {{ game.first_release_date?.toLocaleDateString() }}
             </div>
 
             <div v-if="game.genres?.length" class="text-xs mb-2">
               <span class="font-medium">Genres:</span>
-              {{ game.genres.map((g) => g.name).join(', ') }}
+              {{ game.genres.map((g) => g).join(', ') }}
             </div>
 
-            <div v-if="game.involved_companies?.length" class="text-xs mb-2">
+            <div v-if="game.companies_developers?.length" class="text-xs mb-2">
               <span class="font-medium">Developers:</span>
-              {{
-                game.involved_companies
-                  .filter((v) => v.developer)
-                  .map((v) => v.company.name)
-                  .join(', ')
-              }}
+              {{ game.companies_developers.map((v) => v).join(', ') }}
             </div>
 
             <div v-if="game.rating" class="text-xs">

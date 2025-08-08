@@ -1,22 +1,21 @@
-export type ApiResponseText = string;
-export type ApiResponseTextCollection = string[];
-export type ApiResponseNumber = number;
-export type APiResponseDate = Date;
-export type ApiResponseImageUrl = string;
+import type { DatePair, SchemaAttrType } from '~/types';
 
-export type ApiRespones =
-  | ApiResponseText
-  | ApiResponseTextCollection
-  | ApiResponseNumber
-  | APiResponseDate
-  | ApiResponseImageUrl;
-
-export type ApiResponse = {
-  [key: string]: ApiRespones;
+export type ExApiValueFor = {
+  Text: string;
+  TextCollection: string[];
+  Number: number;
+  Date: Date;
+  DateCollection: Date[];
+  DatesPairCollection: DatePair[];
+  Image: string;
+  StringVec: string[];
 };
 
-const makeExternalApi = <T extends ApiResponse, I>(fetch: (input: I) => Promise<T[]>) => {
-  return {
-    fetch,
-  };
+export type ExApiSchema = Record<string, SchemaAttrType['type']>;
+
+export type ExApiData<T extends ExApiSchema> = {
+  [K in keyof T]: ExApiValueFor[T[K]] | undefined;
 };
+
+// Needs a function to tell TS that our key-valuetype pairs are permament
+export const defineExApiSchema = <T extends ExApiSchema>(schema: T): T => schema;

@@ -62,25 +62,12 @@
               </DropdownMenu>
             </div>
           </div>
-          <div
+          <MappingSelector
             v-if="currentSchema"
-            v-for="mappingKey in mappingKeys"
-            :key="mappingKey.key"
-            class="grid grid-cols-2 w-full odd:bg-accent/20 p-2 items-center"
-          >
-            <div>{{ mappingKey.label }}</div>
-
-            <Select v-model="mappings[mappingKey.key]" :options="mappingKey.fields" class="w-full">
-              <SelectTrigger class="w-full">{{
-                mappings[mappingKey.key] || 'Select field'
-              }}</SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="field in mappingKey.fields.value" :key="field" :value="field">
-                  {{ field }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            :api-schema="goodreadsApiSchema"
+            v-model:mapping="mappings"
+            :schema="currentSchema"
+          />
         </div>
       </div>
 
@@ -126,7 +113,12 @@ import { Check, ChevronDown } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { c_save_file } from '~/api/tauriActions';
 import type { AttrValue, RecordFromDb } from '~/types';
-import { extractDataFromGoodreadsHTML, type GoodreadsParsedBook } from './goodreadsHTMLParser';
+import {
+  extractDataFromGoodreadsHTML,
+  goodreadsApiSchema,
+  type GoodreadsParsedBook,
+} from '../../../api/external/goodreadsHTMLParser';
+import MappingSelector from './MappingSelector.vue';
 
 const usableSchemas = useUsableSchemas();
 const schemasArray = computed(() => usableSchemas.schemasArray.value);
@@ -172,40 +164,6 @@ const currentSchemaPath = computed(() => {
   return schemasArray.value[selectedSchemaIndex.value][0];
 });
 
-const awailableTextFields = computed(() => {
-  if (currentSchema.value === null) return [];
-  return currentSchema.value.items
-    .filter((item) => item.value.type === 'Text')
-    .map((item) => item.name);
-});
-
-const awailableNumberFields = computed(() => {
-  if (currentSchema.value === null) return [];
-  return currentSchema.value.items
-    .filter((item) => item.value.type === 'Number')
-    .map((item) => item.name);
-});
-
-const awailableDatePairFields = computed(() => {
-  if (currentSchema.value === null) return [];
-  return currentSchema.value.items
-    .filter((item) => item.value.type === 'DatesPairCollection')
-    .map((item) => item.name);
-});
-
-watch(currentSchema, () => {
-  if (currentSchema.value === null) return;
-  const keys = currentSchema.value?.items.map((v) => v.name);
-
-  Object.keys(mappings.value).forEach((key) => {
-    const matchKey = keys.find((k) => k.toLowerCase().includes(key.toLowerCase()));
-    if (matchKey) {
-      mappings.value[key as keyof GoodreadsParsedBook] = matchKey;
-    } else {
-      mappings.value[key as keyof GoodreadsParsedBook] = undefined;
-    }
-  });
-});
 
 const selectedFileInfo = ref({ fileName: '', bookCount: 0, importDone: false });
 
@@ -237,42 +195,42 @@ const importBooks = async () => {
   for (const book of books.value) {
     const attrs: Record<string, AttrValue> = {};
 
-    if (mappings.value.author) {
+    if (mappings.value.author && book.author) {
       attrs[mappings.value.author] = {
         type: 'String',
         value: book.author,
       };
     }
 
-    if (mappings.value.title) {
+    if (mappings.value.title && book.title) {
       attrs[mappings.value.title] = {
         type: 'String',
         value: book.title,
       };
     }
 
-    if (mappings.value.isbn) {
+    if (mappings.value.isbn && book.isbn) {
       attrs[mappings.value.isbn] = {
         type: 'String',
         value: book.isbn ?? null,
       };
     }
 
-    if (mappings.value.year) {
+    if (mappings.value.year && book.year) {
       attrs[mappings.value.year] = {
         type: 'Integer',
         value: book.year ?? null,
       };
     }
 
-    if (mappings.value.rating) {
+    if (mappings.value.rating && book.rating) {
       attrs[mappings.value.rating] = {
         type: 'Float',
         value: book.rating,
       };
     }
 
-    if (mappings.value.read) {
+    if (mappings.value.read && book.read) {
       attrs[mappings.value.read] = {
         type: 'DatePairVec',
         value: book.read,
@@ -301,40 +259,4 @@ const importBooks = async () => {
   }
 };
 
-const mappingKeys: {
-  key: keyof GoodreadsParsedBook;
-  label: string;
-  fields: Ref<string[]>;
-}[] = [
-  {
-    key: 'title',
-    label: 'Title',
-    fields: awailableTextFields,
-  },
-  {
-    key: 'author',
-    label: 'Author',
-    fields: awailableTextFields,
-  },
-  {
-    key: 'isbn',
-    label: 'ISBN13',
-    fields: awailableTextFields,
-  },
-  {
-    key: 'year',
-    label: 'Year',
-    fields: awailableNumberFields,
-  },
-  {
-    key: 'rating',
-    label: 'Rating',
-    fields: awailableNumberFields,
-  },
-  {
-    key: 'read',
-    label: 'Read',
-    fields: awailableDatePairFields,
-  },
-];
 </script>

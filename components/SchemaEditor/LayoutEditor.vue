@@ -59,7 +59,6 @@ const { q: viewLayoutQ, update: updateViewLayout } = useViewLayout(ownerFolder);
 
 const { q: viewSettingsQ } = useViewSettings(ownerFolder);
 
-const editMode = ref(false);
 
 watch(
   computed(() => schema.data.value),

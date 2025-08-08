@@ -1,4 +1,5 @@
 import { format, isValid, parse } from 'date-fns';
+import { defineExApiSchema, type ExApiData } from '~/api/external/base';
 import type { DatePair } from '~/types';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
@@ -85,14 +86,16 @@ const getYear = (rootElement: Element) => {
   if (date) return date.getFullYear();
 };
 
-export type GoodreadsParsedBook = {
-  title: string;
-  author: string;
-  isbn: string;
-  year?: number;
-  rating: number;
-  read: DatePair[];
-};
+export const goodreadsApiSchema = defineExApiSchema({
+  title: 'Text',
+  author: 'Text',
+  isbn: 'Text',
+  year: 'Number',
+  rating: 'Number',
+  read: 'DatesPairCollection',
+});
+
+export type GoodreadsParsedBook = ExApiData<typeof goodreadsApiSchema>;
 
 const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBook => {
   const book: GoodreadsParsedBook = {

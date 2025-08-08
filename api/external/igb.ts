@@ -1,5 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { z } from 'zod';
+import type { ExApiData, ExApiSchema } from '~/api/external/base';
 import { useApiConnections } from '~/composables/useApiConnections';
 
 const zToken = z.object({
@@ -82,7 +83,6 @@ const zGame = z.object({
   summary: z.string().optional(),
   storyline: z.string().optional(),
   first_release_date: z.number().optional(),
-  first_release_date_human: z.date().optional(),
   rating: z.number().optional(),
   rating_count: z.number().optional(),
   aggregated_rating: z.number().optional(),
@@ -182,11 +182,9 @@ const igdbSearchGames = async ({
       cover.id, cover.image_id, cover.url, cover.width, cover.height,
       involved_companies.id, involved_companies.developer, involved_companies.publisher, 
       involved_companies.porting, involved_companies.supporting,
-      involved_companies.company.id, involved_companies.company.name, 
-      involved_companies.company.slug, involved_companies.company.description,
-      involved_companies.company.logo.id, involved_companies.company.logo.image_id, involved_companies.company.logo.url,
+      involved_companies.company.id, involved_companies.company.name,
       genres.id, genres.name, genres.slug,
-      platforms.id, platforms.name, platforms.abbreviation, platforms.slug,
+      platforms.id, platforms.name,
       release_dates.id, release_dates.date, release_dates.human, release_dates.region,
       release_dates.platform.id, release_dates.platform.name, release_dates.platform.abbreviation;
     search "${name}";
@@ -198,26 +196,22 @@ const igdbSearchGames = async ({
   return z.array(zGame).parse(data);
 };
 
-const igdbGetCovers = async ({
-  token,
-  clientId,
-  gameIds,
-}: {
-  token: string;
-  clientId: string;
-  gameIds: number[];
-}) => {
-  if (gameIds.length === 0) return [];
-
-  const query = `
-    fields id, image_id, url, width, height, game;
-    where game = (${gameIds.join(',')});
-    limit 500;
-  `;
-
-  const data = await igdbApiRequest({ token, clientId, endpoint: 'covers', query });
-  return z.array(zCover.extend({ game: z.number() })).parse(data);
+export const igdbAPISchema: ExApiSchema = {
+  id: 'Number',
+  name: 'Text',
+  cover: 'Image',
+  first_release_date: 'Date',
+  rating: 'Number',
+  genres: 'TextCollection',
+  platforms: 'TextCollection',
+  companies_all: 'TextCollection',
+  companies_developers: 'TextCollection',
+  companies_publishers: 'TextCollection',
+  companies_porting: 'TextCollection',
+  companies_supporting: 'TextCollection',
 };
+
+export type IgdbApiGame = ExApiData<typeof igdbAPISchema>;
 
 export const getGamesFromIGDB = async ({
   token,
@@ -230,66 +224,46 @@ export const getGamesFromIGDB = async ({
   name: string;
   limit?: number;
 }) => {
-  const games = await igdbSearchGames({ token, clientId, name, limit });
+  const gamesSource = await igdbSearchGames({ token, clientId, name, limit });
 
-  if (games.length === 0) {
-    return games;
-  }
-
-  const gameIds = games.map((game) => game.id);
-
-  const [covers] = await Promise.all([igdbGetCovers({ token, clientId, gameIds })]);
-
-  const coversByGame = covers.reduce(
-    (acc, cover) => {
-      const gameId = cover.game;
-      if (!acc[gameId]) acc[gameId] = [];
-      acc[gameId].push(cover);
-      return acc;
-    },
-    {} as Record<number, typeof covers>,
+  return gamesSource.map(
+    (game) =>
+      ({
+        id: game.id,
+        name: game.name,
+        cover: game.cover?.url
+          ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
+          : undefined,
+        first_release_date: game.first_release_date
+          ? new Date(game.first_release_date * 1000)
+          : undefined,
+        rating: game.rating,
+        genres: game.genres?.map((genre) => genre.name),
+        platforms: game.platforms?.map((platform) => platform.name),
+        companies_all: game.involved_companies
+          ?.sort(
+            (v) =>
+              Number(v.developer) * 4 +
+              Number(v.publisher) * 3 +
+              Number(v.supporting) * 2 +
+              Number(v.porting) * 1,
+          )
+          .map((company) => company.company.name),
+        companies_developers: game.involved_companies
+          ?.filter((company) => company.developer)
+          .sort((v) => Number(v.developer))
+          .map((company) => company.company.name),
+        companies_publishers: game.involved_companies
+          ?.filter((company) => company.publisher)
+          .map((company) => company.company.name),
+        companies_porting: game.involved_companies
+          ?.filter((company) => company.porting)
+          .map((company) => company.company.name),
+        companies_supporting: game.involved_companies
+          ?.filter((company) => company.supporting)
+          .map((company) => company.company.name),
+      }) satisfies IgdbApiGame,
   );
-
-  const enrichedGames = games.map((game) => ({
-    ...game,
-    cover: coversByGame[game.id]?.[0] || game.cover,
-  }));
-
-  return enrichedGames.map((game) => ({
-    id: game.id,
-    name: game.name,
-    cover: game.cover?.url
-      ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
-      : null,
-    first_release_date: game.first_release_date ? new Date(game.first_release_date * 1000) : null,
-    summary: game.summary,
-    storyline: game.storyline,
-    rating: game.rating,
-    genres: game.genres?.map((genre) => genre.name),
-    platforms: game.platforms?.map((platform) => platform.name),
-    companies_all: game.involved_companies
-      ?.sort(
-        (v) =>
-          Number(v.developer) * 4 +
-          Number(v.publisher) * 3 +
-          Number(v.supporting) * 2 +
-          Number(v.porting) * 1,
-      )
-      .map((company) => company.company.name),
-    companies_developers: game.involved_companies
-      ?.filter((company) => company.developer)
-      .sort((v) => Number(v.developer))
-      .map((company) => company.company.name),
-    companies_publishers: game.involved_companies
-      ?.filter((company) => company.publisher)
-      .map((company) => company.company.name),
-    companies_porting: game.involved_companies
-      ?.filter((company) => company.porting)
-      .map((company) => company.company.name),
-    companies_supporting: game.involved_companies
-      ?.filter((company) => company.supporting)
-      .map((company) => company.company.name),
-  }));
 };
 
 export const useTwitchIGDB = () => {
