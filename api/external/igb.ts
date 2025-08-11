@@ -1,7 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { z } from 'zod';
 import type { ExApiData, ExApiSchema } from '~/api/external/base';
-import { useApiConnections } from '~/composables/useApiConnections';
 
 const zToken = z.object({
   access_token: z.string(),
@@ -110,29 +109,8 @@ const getToken = async (clientId: string, clientSecret: string) => {
     },
   );
   const data = await res.json();
-  console.log(data);
+
   return zToken.parse(data);
-};
-
-const ensureToken = async (conns: ReturnType<typeof useApiConnections>, force = false) => {
-  const clientId = conns.q.data.value?.twitchigdb_clientId;
-  const csecret = conns.q.data.value?.twitchigdb_clientSecret;
-  if (!clientId || !csecret) {
-    throw new Error('Client ID or client secret is not set');
-  }
-
-  const token = conns.q.data.value?.twitchigdb_accessToken;
-  const expiresAt = conns.q.data.value?.twitchigdb_expiresAt;
-  if (!token || (expiresAt && expiresAt < Date.now()) || force) {
-    const token = await getToken(clientId, csecret);
-    conns.update({
-      twitchigdb_accessToken: token.access_token,
-      twitchigdb_expiresAt: Date.now() + token.expires_in * 1000,
-    });
-
-    return { token: token.access_token, clientId };
-  }
-  return { token, clientId };
 };
 
 const igdbApiRequest = async ({
@@ -155,6 +133,8 @@ const igdbApiRequest = async ({
     body: query,
     method: 'POST',
   });
+
+  console.log('res', res);
 
   if (!res.ok) {
     throw new Error(`IGDB API error: ${res.status} ${res.statusText}`);
@@ -193,6 +173,7 @@ const igdbSearchGames = async ({
   `;
 
   const data = await igdbApiRequest({ token, clientId, endpoint: 'games', query });
+  console.log('data', data);
   return z.array(zGame).parse(data);
 };
 
@@ -216,15 +197,57 @@ export type IgdbApiGame = ExApiData<typeof igdbAPISchema>;
 export const getGamesFromIGDB = async ({
   token,
   clientId,
+  clientSecret,
   name,
   limit = 10,
+  saveToken,
 }: {
   token: string;
   clientId: string;
+  clientSecret: string;
   name: string;
   limit?: number;
+  saveToken: (token: string) => void;
 }) => {
-  const gamesSource = await igdbSearchGames({ token, clientId, name, limit });
+  if (!token) {
+    try {
+      const t = await getToken(clientId, clientSecret);
+      token = t.access_token;
+      saveToken(token);
+    } catch (e) {
+      if (isOurError(e)) {
+        console.log('our error', e);
+        useRustErrorNotification(e);
+      }
+      useRustErrorNotification({
+        isError: true,
+        title: 'Failed to get token for IGDB',
+        info: e instanceof Error ? e.message : 'Unknown error',
+        subErrors: [],
+      });
+      return [];
+    }
+  }
+
+  let gamesSource: IGDBGame[] = [];
+
+  try {
+    gamesSource = await igdbSearchGames({ token, clientId, name, limit });
+  } catch (e) {
+    const t = await getToken(clientId, clientSecret);
+    token = t.access_token;
+    saveToken(token);
+    try {
+      gamesSource = await igdbSearchGames({ token, clientId, name, limit });
+    } catch (e) {
+      useRustErrorNotification({
+        isError: true,
+        title: 'Failed to get games from IGDB',
+        subErrors: [],
+      });
+      return [];
+    }
+  }
 
   return gamesSource.map(
     (game) =>
@@ -266,23 +289,13 @@ export const getGamesFromIGDB = async ({
   );
 };
 
-export const useTwitchIGDB = () => {
-  const apiConnections = useApiConnections();
+export const zAPIIGDB = z.object({
+  type: z.literal('twitchigdb'),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  accessToken: z.string().optional(),
+  expiresAt: z.number().optional(),
+  mapping: z.record(z.string(), z.string().or(z.undefined())).optional(),
+});
 
-  const searchGames = async (
-    name: string,
-    options: { limit?: number; includeMedia?: boolean } = {},
-  ) => {
-    const { limit = 10, includeMedia = true } = options;
-
-    const { token, clientId } = await ensureToken(apiConnections, false);
-
-    const games = await getGamesFromIGDB({ token, clientId, name, limit });
-
-    return games;
-  };
-
-  return {
-    searchGames,
-  };
-};
+export type ApiSettingsIGDB = z.infer<typeof zAPIIGDB>;

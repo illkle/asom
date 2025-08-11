@@ -4,7 +4,10 @@
     :key="name"
     class="grid grid-cols-2 w-full odd:bg-accent/20 p-2 items-center"
   >
-    <div>{{ name }}</div>
+    <div>
+      <div>{{ name }}</div>
+      <div class="text-xs text-muted-foreground">{{ type }}</div>
+    </div>
 
     <Select v-model="mapping[name]" :options="availableFields[apiSchema[name]]" class="w-full">
       <SelectTrigger class="w-full">{{ mapping[name] || 'Select field' }}</SelectTrigger>

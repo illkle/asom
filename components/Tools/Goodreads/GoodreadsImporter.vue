@@ -118,7 +118,7 @@ import {
   goodreadsApiSchema,
   type GoodreadsParsedBook,
 } from '../../../api/external/goodreadsHTMLParser';
-import MappingSelector from './MappingSelector.vue';
+import MappingSelector from '../../SchemaEditor/ApiSettings/MappingSelector.vue';
 
 const usableSchemas = useUsableSchemas();
 const schemasArray = computed(() => usableSchemas.schemasArray.value);
@@ -163,7 +163,6 @@ const currentSchemaPath = computed(() => {
   if (selectedSchemaIndex.value === null) return null;
   return schemasArray.value[selectedSchemaIndex.value][0];
 });
-
 
 const selectedFileInfo = ref({ fileName: '', bookCount: 0, importDone: false });
 
@@ -258,5 +257,4 @@ const importBooks = async () => {
     selectedFileInfo.value.importDone = true;
   }
 };
-
 </script>

@@ -77,7 +77,6 @@
 
 <script setup lang="ts">
 import { refDebounced } from '@vueuse/core';
-import { useTwitchIGDB } from '~/api/external/igb';
 
 const apiConnections = useApiConnections();
 const twitchigdb_clientId = ref('');

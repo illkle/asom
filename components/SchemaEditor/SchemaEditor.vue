@@ -34,7 +34,9 @@
             <Button variant="outline" size="sm" @click="emit('edit-layout', schema[0])">
               Layout Editor
             </Button>
-            <Button variant="outline" size="sm" @click="emit('edit-schema', schema[0])">API</Button>
+            <Button variant="outline" size="sm" @click="emit('edit-api-connection', schema[0])"
+              >API</Button
+            >
           </div>
         </div>
       </div>
@@ -117,6 +119,7 @@ const rootPath = useRootPath();
 const emit = defineEmits<{
   (e: 'edit-schema', item: string): void;
   (e: 'edit-layout', item: string): void;
+  (e: 'edit-api-connection', item: string): void;
   (e: 'exit-schema-editor'): void;
 }>();
 

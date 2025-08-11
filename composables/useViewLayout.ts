@@ -3,7 +3,7 @@ import { zDynamicViewGroup, type IDynamicViewGroup } from '~/components/DynamicV
 const disk = new ConfigTiedToSchema('viewLayout.json', zDynamicViewGroup, {
   type: 'group',
   id: 'root',
-  style: { direction: 'row', gap: '4', align: 'start', justify: 'start', width: 'auto' },
+  style: { direction: 'row', gap: '4', align: 'start', justify: 'start', sizeUnits: '1' },
   content: [],
 });
 

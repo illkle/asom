@@ -1,26 +1,34 @@
 import z from 'zod';
-import { ConfigStoredInRootFolder } from '~/utils/configStoredInRootFolder';
+import { zAPIIGDB } from '~/api/external/igb';
 
-const zApiConnections = z.object({
-  twitchigdb_clientId: z.string().optional(),
-  twitchigdb_clientSecret: z.string().optional(),
-  twitchigdb_accessToken: z.string().optional(),
-  twitchigdb_expiresAt: z.number().optional(),
+const zApiConnections = z.discriminatedUnion('type', [
+  zAPIIGDB,
+  z.object({
+    type: z.literal('none'),
+  }),
+]);
+
+export type ApiConnection = z.infer<typeof zApiConnections>;
+
+export const API_Types = ['twitchigdb', 'none'] as ApiConnection['type'][];
+
+const disk = new ConfigTiedToSchema('apiConnections.json', zApiConnections, {
+  type: 'none',
 });
 
-const disk = new ConfigStoredInRootFolder('apiConnections.json', zApiConnections);
-
-const API_CONNECTIONS_KEY = (root: string | null | undefined) => [
+const API_CONNECTIONS_KEY = (root: string | null | undefined, folderPath: string) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
+  'schemas',
   'apiConnections',
+  folderPath,
 ];
 
-export const useApiConnections = () => {
+export const useApiConnection = (schemaOwnerFolder: Ref<string>) => {
   const root = useRootPath();
 
   const q = useQuery({
-    key: () => API_CONNECTIONS_KEY(root.data.value),
-    query: () => disk.get(),
+    key: () => API_CONNECTIONS_KEY(root.data.value, schemaOwnerFolder.value),
+    query: () => disk.get(schemaOwnerFolder.value),
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
@@ -29,15 +37,15 @@ export const useApiConnections = () => {
   const qc = useQueryCache();
 
   const update = async (newData: Partial<z.infer<typeof zApiConnections>>) => {
-    const current = await disk.get();
+    const current = await disk.get(schemaOwnerFolder.value);
 
     const data = zApiConnections.parse({
       ...current,
       ...newData,
     });
 
-    qc.setQueryData(API_CONNECTIONS_KEY(root.data.value), data);
-    void disk.set(data);
+    qc.setQueryData(API_CONNECTIONS_KEY(root.data.value, schemaOwnerFolder.value), data);
+    void disk.set(schemaOwnerFolder.value, data);
   };
 
   return {

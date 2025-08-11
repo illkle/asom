@@ -11,10 +11,16 @@
       :path="selectedItemLayout"
       @back="selectedItemLayout = null"
     />
+    <SchemaEditorApiConnection
+      v-else-if="selectedItemApiConnection"
+      :path="selectedItemApiConnection"
+      @back="selectedItemApiConnection = null"
+    />
     <SchemaEditor
       v-else
       @edit-schema="(v) => (selectedItemSchema = v)"
       @edit-layout="(v) => (selectedItemLayout = v)"
+      @edit-api-connection="(v) => (selectedItemApiConnection = v)"
       @exit-schema-editor="store.setView('app')"
     />
   </div>
@@ -28,4 +34,5 @@ const store = useMainStore();
 
 const selectedItemSchema = ref<string | null>(null);
 const selectedItemLayout = ref<string | null>(null);
+const selectedItemApiConnection = ref<string | null>(null);
 </script>

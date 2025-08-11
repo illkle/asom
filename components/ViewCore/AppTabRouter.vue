@@ -2,7 +2,6 @@
   <template v-if="tabsStore.openedItem" class="h-full w-full">
     <template v-if="tabsStore.openedItem._type === 'innerPage'">
       <ToolsGoodreadsImporter v-if="tabsStore.openedItem._path === 'goodreadsImporter'" />
-      <ToolsApiConnections v-if="tabsStore.openedItem._path === 'apiConnections'" />
     </template>
     <template v-else>
       <RecordEditor
