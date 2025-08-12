@@ -13,10 +13,9 @@ use ts_rs::TS;
 
 #[derive(Serialize, Deserialize, Clone, Hash, Debug, PartialEq, TS)]
 #[ts(export)]
+#[ts(optional_fields)]
 pub struct DatePair {
-    #[ts(optional)]
     pub started: Option<String>,
-    #[ts(optional)]
     pub finished: Option<String>,
 }
 
@@ -118,19 +117,14 @@ pub enum SettingsTypeImage {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+#[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
 pub struct TextSettings {
-    #[serde(default)]
     pub settings_type: SettingsTypeText,
-    #[ts(optional)]
     pub display_name: Option<String>,
-    #[ts(optional)]
     pub size: Option<InputSize>,
-    #[ts(optional)]
     pub font: Option<TextFont>,
-    #[ts(optional)]
     pub weight: Option<TextWeight>,
-    #[ts(optional)]
     pub is_multiline: Option<bool>,
 }
 impl Default for TextSettings {
@@ -149,26 +143,21 @@ impl Default for TextSettings {
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
+#[ts(optional_fields)]
+#[serde_with::skip_serializing_none]
 #[serde(rename_all = "camelCase")]
 #[serde_with::skip_serializing_none]
 pub struct NumberSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeNumber,
 
-    #[ts(optional)]
     pub display_name: Option<String>,
-    #[ts(optional)]
     pub size: Option<InputSize>,
-    #[ts(optional)]
     pub min: Option<f64>,
-    #[ts(optional)]
     pub max: Option<f64>,
-    #[ts(optional)]
     pub decimal_places: Option<u8>,
-    #[ts(optional)]
     pub style: Option<NumberStyle>,
     // Stars only
-    #[ts(optional)]
     pub stars_count: Option<u8>,
 }
 
@@ -191,19 +180,15 @@ impl Default for NumberSettings {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+#[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
 pub struct TextCollectionSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeTextCollection,
-    #[ts(optional)]
     pub display_name: Option<String>,
-    #[ts(optional)]
     pub size: Option<InputSize>,
-    #[ts(optional)]
     pub font: Option<TextFont>,
-    #[ts(optional)]
     pub weight: Option<TextWeight>,
-    #[ts(optional)]
     pub prefix: Option<String>,
 }
 impl Default for TextCollectionSettings {
@@ -223,13 +208,12 @@ impl Default for TextCollectionSettings {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
+#[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
 pub struct ImageSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeImage,
-    #[ts(optional)]
     pub display_name: Option<String>,
-    #[ts(optional)]
     pub aspect_ratio: Option<String>,
 }
 impl Default for ImageSettings {

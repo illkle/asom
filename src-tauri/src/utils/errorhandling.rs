@@ -17,25 +17,18 @@ pub enum ErrFRActionCode {
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, TS)]
 #[ts(export)]
+#[ts(optional_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrFR {
     #[serde(rename = "isError")]
     pub is_error: bool,
     pub title: String,
-    #[ts(optional)]
     pub info: Option<String>,
-
-    #[ts(optional)]
     pub raw_error: Option<String>,
-
     pub sub_errors: Vec<ErrFR>,
-
     // Pass code for custom bind on frontend
-    #[ts(optional)]
     pub action_code: Option<ErrFRActionCode>,
-
     // Label for button that will call action
-    #[ts(optional)]
     pub action_label: Option<String>,
 }
 
