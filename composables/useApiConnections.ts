@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { zAPIIGDB } from '~/api/external/igb';
 
 const zApiConnections = z.discriminatedUnion('type', [

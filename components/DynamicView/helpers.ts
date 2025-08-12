@@ -1,15 +1,15 @@
-import z from 'zod';
+import z from 'zod/v4';
 import type { ItemInfoCore, PointQuadrant } from '~/components/NestedDrag/common';
 
-export const zLayoutItem = z.interface({
+export const zLayoutItem = z.object({
   id: z.string(),
   type: z.literal('item'),
 });
 
-export const zDynamicViewGroup = z.interface({
+export const zDynamicViewGroup = z.object({
   type: z.literal('group'),
   id: z.string(),
-  style: z.interface({
+  style: z.object({
     direction: z.enum(['row', 'column']).default('row'),
     gap: z.string().default('0'),
     align: z.enum(['start', 'center', 'end']).default('start'),
@@ -135,6 +135,9 @@ export const getFlatItems = (group: IDynamicViewGroup): IDynamicItem[] => {
   const items: IDynamicItem[] = [];
   for (let i = 0; i < group.content.length; i++) {
     const item = group.content[i];
+    if (!item) {
+      continue;
+    }
     if (item.type === 'group') {
       items.push(...getFlatItems(item));
     } else {

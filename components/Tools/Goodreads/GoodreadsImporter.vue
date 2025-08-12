@@ -43,7 +43,7 @@
                 <DropdownMenuTrigger as-child>
                   <Button variant="outline" class="w-full">
                     <template v-if="selectedSchemaIndex !== null">
-                      Schema: {{ schemasArray[selectedSchemaIndex][1].name }}
+                      Schema: {{ schemasArray[selectedSchemaIndex]![1].name }}
                     </template>
                     <template v-else> Select schema </template>
 
@@ -156,12 +156,12 @@ const mappings = ref<Record<keyof GoodreadsParsedBook, string | undefined>>({
 
 const currentSchema = computed(() => {
   if (selectedSchemaIndex.value === null) return null;
-  return schemasArray.value[selectedSchemaIndex.value][1];
+  return schemasArray.value[selectedSchemaIndex.value]![1];
 });
 
 const currentSchemaPath = computed(() => {
   if (selectedSchemaIndex.value === null) return null;
-  return schemasArray.value[selectedSchemaIndex.value][0];
+  return schemasArray.value[selectedSchemaIndex.value]![0];
 });
 
 const selectedFileInfo = ref({ fileName: '', bookCount: 0, importDone: false });

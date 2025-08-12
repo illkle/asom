@@ -130,7 +130,7 @@ const virtualizedOrder = computed(() => {
     // This is the case where we move existing tabs
     if (typeof draggingTab.value === 'string') {
       const draggingIndex = order.findIndex((v) => v.id === draggingTab.value);
-      order.splice(newIndex.value, 0, order.splice(draggingIndex, 1)[0]);
+      order.splice(newIndex.value, 0, order.splice(draggingIndex, 1)[0]!);
     } else {
       // This is when we drag from somewhere to create new tab
       order.splice(newIndex.value, 0, {} as ITabEntry);

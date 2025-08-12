@@ -206,7 +206,7 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 
   if (dropdownOpened.value) return;
 
-  const path = rows.value[index].path;
+  const path = rows.value[index]?.path;
   if (!path) return;
 
   const LMB = e.button === 0;
@@ -240,13 +240,13 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 
     if (ls > index) {
       for (let i = ls - 1; i >= index; i--) {
-        const p = rows.value[i].path;
+        const p = rows.value[i]?.path;
         if (!p) continue;
         rowSelection.value[p] = !rowSelection.value[p];
       }
     } else {
       for (let i = ls + 1; i <= index; i++) {
-        const p = rows.value[i].path;
+        const p = rows.value[i]?.path;
         if (!p) continue;
         rowSelection.value[p] = !rowSelection.value[p];
       }
@@ -269,9 +269,12 @@ const startColumnsSizing = (e: MouseEvent, index: number) => {
 
   const initialX = e.clientX;
 
-  const myId = columnsVisible.value[index].id;
+  const col = columnsVisible.value[index];
+  if (!col) return;
 
-  const myInitialSize = getSizeForColumn(myId, columnsVisible.value[index].type);
+  const myId = col.id;
+
+  const myInitialSize = getSizeForColumn(myId, col.type);
 
   const moveHandler = (e: MouseEvent) => {
     const delta = e.clientX - initialX;
@@ -301,7 +304,10 @@ useEventListener('keydown', (e) => {
 </script>
 
 <template>
-  <div class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2">
+  <div
+    class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2"
+    :class="$attrs.class"
+  >
     <Input ref="searchInputRef" v-model="searchQuery" />
 
     <Toggle
@@ -459,7 +465,7 @@ useEventListener('keydown', (e) => {
               :key="vRow.index"
               class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
               :class="{
-                'bg-muted hover:bg-muted/80': rowSelection[rows[vRow.index].path ?? ''],
+                'bg-muted hover:bg-muted/80': rowSelection[rows[vRow.index]?.path ?? ''],
                 'cursor-pointer': !isSelecting,
                 'cursor-copy': isSelecting,
               }"
@@ -484,7 +490,7 @@ useEventListener('keydown', (e) => {
                   width: `${getSizeForColumn(cell.id, cell.type)}px`,
                 }"
               >
-                <BookItemDisplay :value="rows[vRow.index].attrs[cell.id]" :type="cell.si" />
+                <BookItemDisplay :value="rows[vRow.index]?.attrs[cell.id]" :type="cell.si" />
               </td>
             </tr>
           </tbody>
@@ -496,7 +502,7 @@ useEventListener('keydown', (e) => {
                 if (typeof dropdownRowLock !== 'number') return;
 
                 ts.openNewThingFast(
-                  { _type: 'file', _path: rows[dropdownRowLock].path ?? '' },
+                  { _type: 'file', _path: rows[dropdownRowLock]?.path ?? '' },
                   'lastUnfocused',
                 );
               }
@@ -511,7 +517,7 @@ useEventListener('keydown', (e) => {
                 () => {
                   if (typeof dropdownRowLock !== 'number') return;
                   isSelecting = { lastSelectedIndex: dropdownRowLock };
-                  rowSelection[rows[dropdownRowLock].path ?? ''] = true;
+                  rowSelection[rows[dropdownRowLock]?.path ?? ''] = true;
                 }
               "
             >
@@ -521,7 +527,7 @@ useEventListener('keydown', (e) => {
               @click="
                 () => {
                   if (typeof dropdownRowLock !== 'number') return;
-                  c_delete_to_trash(rows[dropdownRowLock].path ?? '');
+                  c_delete_to_trash(rows[dropdownRowLock]?.path ?? '');
                 }
               "
             >

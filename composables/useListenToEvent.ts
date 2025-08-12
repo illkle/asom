@@ -21,7 +21,11 @@ export const useListenToEvent = <E extends IPCEmitEvent['type']>(
 
   onBeforeUnmount(async () => {
     if (u.value) {
-      await u.value();
+      try {
+        await u.value();
+      } catch (e) {
+        console.error('Error unlistening to event', e);
+      }
     }
   });
 };

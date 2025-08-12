@@ -21,7 +21,7 @@
     <div class="flex flex-col gap-x-2 gap-y-2 mt-4">
       <SchemaEditorShemaItem
         v-for="(_, i) in schema.items"
-        v-model:model-value="schema.items[i]"
+        v-model:model-value="schema.items[i]!"
         :selected="selectedItemIndex === i"
         @delete="deleteItem(i)"
         @customize="selectedItemIndex = i"

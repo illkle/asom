@@ -136,7 +136,6 @@ export const useFileEditorV2 = (
   const throrottledUpdate = throttle(performUpdate, 2000);
 
   watch(changesTracker, (v) => {
-    console.log('changesTracker', v);
     if (v > 0) {
       console.log('throrottledUpdate');
       throrottledUpdate();

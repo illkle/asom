@@ -55,7 +55,7 @@ const capitalize = (string: string) => {
 const text = computed(() => {
   if (!rootPath.data.value || !props.item) return '';
 
-  const opened = props.item.history[props.item.historyPointer];
+  const opened = props.item.history[props.item.historyPointer]!;
 
   if (opened._type === 'folder') {
     if (opened._path === rootPath.data.value || !opened._path.length) {

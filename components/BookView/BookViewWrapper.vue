@@ -1,6 +1,7 @@
 <template>
   <BookViewBooksView
     v-if="schema.data.value && viewSettingsQ.data"
+    v-bind="$attrs"
     :opened="opened"
     :view-settings="viewSettingsQ.data"
     :schema="schema.data"
