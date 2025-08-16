@@ -2,21 +2,21 @@
   <RadioGroupRoot v-model="colorMode.preference" class="flex border rounded-md">
     <RadioGroupItem
       value="light"
-      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-0.5"
+      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-1"
     >
-      <SunIcon width="16" />
+      <SunIcon :size="16" />
     </RadioGroupItem>
     <RadioGroupItem
       value="system"
-      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-0.5"
+      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-1"
     >
-      <SunMoonIcon width="16" />
+      <SunMoonIcon :size="16" />
     </RadioGroupItem>
     <RadioGroupItem
       value="dark"
-      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-0.5"
+      class="data-[state=checked]:bg-accent grow flex items-center justify-center rounded-md py-1"
     >
-      <MoonIcon width="16" />
+      <MoonIcon :size="16" />
     </RadioGroupItem>
   </RadioGroupRoot>
 </template>

@@ -2,6 +2,7 @@
   <template v-if="tabsStore.openedItem" class="h-full w-full">
     <template v-if="tabsStore.openedItem._type === 'innerPage'">
       <ToolsGoodreadsImporter v-if="tabsStore.openedItem._path === 'goodreadsImporter'" />
+      <TestPage v-if="tabsStore.openedItem._path === 'testPage'" />
     </template>
     <template v-else>
       <RecordEditor
@@ -30,6 +31,7 @@
 import BooksViewWrapper from '~/components/BookView/BookViewWrapper.vue';
 import RecordEditor from '~/components/Editor/RecordEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import TestPage from '~/components/Tools/TestPage.vue';
 
 const tabsStore = useTabsStoreV2();
 

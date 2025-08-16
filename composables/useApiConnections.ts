@@ -1,3 +1,4 @@
+import type { UseQueryReturn } from '@pinia/colada';
 import z from 'zod/v4';
 import { zAPIIGDB } from '~/api/external/igb';
 
@@ -48,8 +49,38 @@ export const useApiConnection = (schemaOwnerFolder: Ref<string>) => {
     void disk.set(schemaOwnerFolder.value, data);
   };
 
+  const editableData = useEditableRef(q, update);
+
   return {
     q,
     update,
+    editableData,
   };
+};
+
+export const useEditableRef = <T>(
+  q: UseQueryReturn<T, Error, undefined>,
+  update: (newData: T) => Promise<void>,
+) => {
+  const proxyRef = ref<T | null>(q.data.value ?? null);
+
+  watch(
+    q.isPending,
+    (newIsPending) => {
+      if (!newIsPending) {
+        proxyRef.value = q.data.value;
+      }
+    },
+    { once: true },
+  );
+
+  watch(
+    proxyRef,
+    async (newData) => {
+      await update(newData);
+    },
+    { deep: true },
+  );
+
+  return proxyRef;
 };

@@ -58,14 +58,15 @@ const zViewSettings = z.object({
 
 export type IViewSettings = z.infer<typeof zViewSettings>;
 
-export const DEFAULT_VIEW_SETTINGS = () => ({
-  sorting: null,
-  columnVisibility: {},
-  columnSizing: {},
-  columnOrder: [],
-  labelsHidden: false,
-  layoutWarningsHidden: false,
-});
+export const DEFAULT_VIEW_SETTINGS = () =>
+  ({
+    sorting: undefined,
+    columnVisibility: {},
+    columnSizing: {},
+    columnOrder: [],
+    labelsHidden: false,
+    layoutWarningsHidden: false,
+  }) as IViewSettings;
 
 const viewSettingsOnDisk = new ConfigTiedToSchema(
   'viewSettings.json',

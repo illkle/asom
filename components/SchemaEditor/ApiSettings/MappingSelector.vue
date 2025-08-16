@@ -9,12 +9,17 @@
       <div class="text-xs text-muted-foreground">{{ type }}</div>
     </div>
 
-    <Select v-model="mapping[name]" :options="availableFields[apiSchema[name]]" class="w-full">
-      <SelectTrigger class="w-full">{{ mapping[name] || 'Select field' }}</SelectTrigger>
+    <Select
+      v-model="mapping[name as string | undefined]"
+      :options="availableFields[apiSchema[name]]"
+      class="w-full"
+    >
+      <SelectTrigger class="w-full">{{ mapping[name as string] || 'None' }}</SelectTrigger>
       <SelectContent>
         <SelectItem v-for="field in availableFields[apiSchema[name]]" :key="field" :value="field">
           {{ field }}
         </SelectItem>
+        <SelectItem :value="null" class="opacity-50"> None </SelectItem>
       </SelectContent>
     </Select>
   </div>
@@ -28,7 +33,7 @@ const props = defineProps<{
   apiSchema: T;
 }>();
 
-const mapping = defineModel<Record<keyof T, string | undefined>>('mapping', {
+const mapping = defineModel<Record<string, string | null>>('mapping', {
   required: true,
 });
 
@@ -68,13 +73,13 @@ watch(
 
     for (const [key, value] of Object.entries(apiSchema)) {
       const opts = availableFields[value];
-      const currentValue = mapping.value[key as keyof T];
+      const currentValue = mapping.value[key];
 
       if (!currentValue || opts.includes(currentValue)) {
         continue;
       }
 
-      mapping.value[key as keyof T] = undefined;
+      mapping.value[key] = undefined;
     }
   },
   { immediate: true },

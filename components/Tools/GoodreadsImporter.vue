@@ -117,8 +117,8 @@ import {
   extractDataFromGoodreadsHTML,
   goodreadsApiSchema,
   type GoodreadsParsedBook,
-} from '../../../api/external/goodreadsHTMLParser';
-import MappingSelector from '../../SchemaEditor/ApiSettings/MappingSelector.vue';
+} from '../../api/external/goodreadsHTMLParser';
+import MappingSelector from '~/components/SchemaEditor/ApiSettings/MappingSelector.vue';
 
 const usableSchemas = useUsableSchemas();
 const schemasArray = computed(() => usableSchemas.schemasArray.value);

@@ -2,65 +2,39 @@
   <div class="flex gap-4">
     <div>
       <div>Client ID</div>
-      <Input
-        :model-value="data.clientId"
-        @update:model-value="(v) => emit('update', { ...data, clientId: String(v) })"
-      />
+      <Input v-model="data.clientId" />
     </div>
     <div>
       <div>Client secret</div>
-      <Input
-        :model-value="data.clientSecret"
-        @update:model-value="(v) => emit('update', { ...data, clientSecret: String(v) })"
-      />
+      <Input v-model="data.clientSecret" />
     </div>
   </div>
 
-  <div class="flex items-center gap-2 mt-4">
-    <Button variant="outline" @click="onTestConnection">Test connection</Button>
-
-    <div class="border rounded-md p-1">
-      <FileQuestionIcon v-if="testStatus === 'unknown'" />
-      <CheckIcon v-if="testStatus === 'success'" />
-      <XIcon v-if="testStatus === 'error'" />
-    </div>
+  <div class="mt-2" v-if="data.clientId && data.clientSecret">
+    <IGDBSearch v-model="data" />
   </div>
 
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
-  <MappingSelector
-    :schema="schema"
-    :api-schema="igdbAPISchema"
-    :mapping="data.mapping ?? {}"
-    @update:mapping="
-      (v) => {
-        emit('update', { ...data, mapping: v });
-      }
-    "
-  />
+  <MappingSelector v-model:mapping="data.mapping" :schema="schema" :api-schema="igdbAPISchema" />
 </template>
 
 <script setup lang="ts">
-import { CheckIcon, FileQuestionIcon, XIcon } from 'lucide-vue-next';
 import { getGamesFromIGDB, igdbAPISchema, type ApiSettingsIGDB } from '~/api/external/igb';
+import IGDBSearch from '~/components/SchemaEditor/ApiSettings/IGDBSearch.vue';
 import MappingSelector from '~/components/SchemaEditor/ApiSettings/MappingSelector.vue';
 import type { Schema } from '~/types';
 
 const props = defineProps<{
-  data: ApiSettingsIGDB;
   schema: Schema;
 }>();
 
-const mapping = ref<Record<keyof typeof igdbAPISchema, string | undefined>>({});
-
-const emit = defineEmits<{
-  (e: 'update', data: ApiSettingsIGDB): void;
-}>();
+const data = defineModel<ApiSettingsIGDB>();
 
 const testStatus = ref<'unknown' | 'success' | 'error'>('unknown');
 
 const onTestConnection = async () => {
-  if (!props.data.clientId || !props.data.clientSecret) {
+  if (!data.value.clientId || !data.value.clientSecret) {
     useRustErrorNotification({
       isError: true,
       title: 'Client ID and client secret are required',
@@ -70,12 +44,12 @@ const onTestConnection = async () => {
   }
 
   const games = await getGamesFromIGDB({
-    token: props.data.accessToken ?? '',
-    clientId: props.data.clientId,
-    clientSecret: props.data.clientSecret,
+    token: data.value.accessToken ?? '',
+    clientId: data.value.clientId,
+    clientSecret: data.value.clientSecret,
     name: 'Witcher',
     limit: 10,
-    saveToken: (token) => emit('update', { ...props.data, accessToken: token }),
+    saveToken: (token) => (data.value.accessToken = token),
   });
 
   if (games.length > 0) {

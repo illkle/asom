@@ -83,7 +83,7 @@ export const zOpenedFile = zFileCore.extend({
 
 const zInnerPageCore = z.object({
   _type: z.literal('innerPage'),
-  _path: z.enum(['goodreadsImporter', 'apiConnections']),
+  _path: z.enum(['goodreadsImporter', 'testPage']),
 });
 
 const zCore = z.discriminatedUnion('_type', [zFileCore, zInnerPageCore, zPathCore]);

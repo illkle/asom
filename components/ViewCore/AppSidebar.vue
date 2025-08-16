@@ -40,8 +40,19 @@
     <SidebarFooter>
       <Collapsible class="group">
         <CollapsibleContent>
-          <SidebarMenuButton @click="openGoodreadsImporter">
+          <SidebarMenuButton
+            @click="
+              tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last')
+            "
+          >
             <ImportIcon /> Goodreads importer
+          </SidebarMenuButton>
+          <SidebarMenuButton
+            @click="
+              tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'testPage' }, 'last')
+            "
+          >
+            <TestTubeIcon /> Test page
           </SidebarMenuButton>
         </CollapsibleContent>
         <CollapsibleTrigger asChild>
@@ -72,6 +83,7 @@ import {
   CogIcon,
   ImportIcon,
   PlusIcon,
+  TestTubeIcon,
   WrenchIcon,
 } from 'lucide-vue-next';
 import { useMainStore } from '~/composables/stores/useMainStore';
@@ -88,9 +100,7 @@ const store = useMainStore();
 
 const isMac = useIsMac();
 
-const openGoodreadsImporter = () => {
-  tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last');
-};
+const openGoodreadsImporter = () => {};
 
 const settingsDialogOpened = ref(false);
 useNavigationBlock(settingsDialogOpened);

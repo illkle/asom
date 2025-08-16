@@ -9,9 +9,9 @@
     <div>Select api to connect to this schema:</div>
 
     <Select
-      v-if="apiConnection.q.data.value"
-      :model-value="apiConnection.q.data.value?.type"
-      @update:model-value="(v) => apiConnection.update({ type: v as ApiConnection['type'] })"
+      v-if="apiData"
+      :model-value="apiData.type"
+      @update:model-value="(v) => (apiData.type = v as ApiConnection['type'])"
     >
       <SelectTrigger class="mt-4">
         <SelectValue placeholder="Select an API" />
@@ -23,12 +23,11 @@
       </SelectContent>
     </Select>
 
-    <div v-if="schema.data.value" class="mt-4">
+    <div v-if="schema.data.value && apiData" class="mt-4">
       <IGDB
-        v-if="apiConnection.q.data.value?.type === 'twitchigdb'"
-        :data="apiConnection.q.data.value"
+        v-if="apiData.type === 'twitchigdb'"
+        v-model="apiData"
         :schema="schema.data.value.schema"
-        @update="apiConnection.update"
       />
     </div>
   </div>
@@ -47,5 +46,5 @@ const props = defineProps<{
 
 const schema = useSchemaByPath(computed(() => props.path));
 
-const apiConnection = useApiConnection(computed(() => props.path));
+const { editableData: apiData, q } = useApiConnection(computed(() => props.path));
 </script>

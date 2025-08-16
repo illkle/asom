@@ -63,6 +63,8 @@ const pathFromTab = computed(() => {
 
 const sc = useSchemaByPath(pathFromTab);
 
+const apiConnection = useApiConnection(computed(() => selectedSchema.value?.[0]));
+
 watch(newFileOpened, (v) => {
   if (v) {
     selectedSchemaIndex.value = null;

@@ -261,41 +261,46 @@ export const getGamesFromIGDB = async ({
           ? new Date(game.first_release_date * 1000)
           : undefined,
         rating: game.rating,
-        genres: game.genres?.map((genre) => genre.name),
-        platforms: game.platforms?.map((platform) => platform.name),
-        companies_all: game.involved_companies
-          ?.sort(
-            (v) =>
-              Number(v.developer) * 4 +
-              Number(v.publisher) * 3 +
-              Number(v.supporting) * 2 +
-              Number(v.porting) * 1,
-          )
-          .map((company) => company.company.name),
-        companies_developers: game.involved_companies
-          ?.filter((company) => company.developer)
-          .sort((v) => Number(v.developer))
-          .map((company) => company.company.name),
-        companies_publishers: game.involved_companies
-          ?.filter((company) => company.publisher)
-          .map((company) => company.company.name),
-        companies_porting: game.involved_companies
-          ?.filter((company) => company.porting)
-          .map((company) => company.company.name),
-        companies_supporting: game.involved_companies
-          ?.filter((company) => company.supporting)
-          .map((company) => company.company.name),
+        genres: game.genres?.map((genre) => genre.name) ?? [],
+        platforms: game.platforms?.map((platform) => platform.name) ?? [],
+        companies_all:
+          game.involved_companies
+            ?.sort(
+              (v) =>
+                Number(v.developer) * 4 +
+                Number(v.publisher) * 3 +
+                Number(v.supporting) * 2 +
+                Number(v.porting) * 1,
+            )
+            .map((company) => company.company.name) ?? [],
+        companies_developers:
+          game.involved_companies
+            ?.filter((company) => company.developer)
+            .sort((v) => Number(v.developer))
+            .map((company) => company.company.name) ?? [],
+        companies_publishers:
+          game.involved_companies
+            ?.filter((company) => company.publisher)
+            .map((company) => company.company.name) ?? [],
+        companies_porting:
+          game.involved_companies
+            ?.filter((company) => company.porting)
+            .map((company) => company.company.name) ?? [],
+        companies_supporting:
+          game.involved_companies
+            ?.filter((company) => company.supporting)
+            .map((company) => company.company.name) ?? [],
       }) satisfies IgdbApiGame,
   );
 };
 
 export const zAPIIGDB = z.object({
   type: z.literal('twitchigdb'),
-  clientId: z.string().optional(),
-  clientSecret: z.string().optional(),
-  accessToken: z.string().optional(),
-  expiresAt: z.number().optional(),
-  mapping: z.record(z.string(), z.string().or(z.undefined())).optional(),
+  clientId: z.string().default(''),
+  clientSecret: z.string().default(''),
+  accessToken: z.string().default(''),
+  expiresAt: z.number().default(0),
+  mapping: z.record(z.string(), z.string().or(z.null())).default({}),
 });
 
 export type ApiSettingsIGDB = z.infer<typeof zAPIIGDB>;
