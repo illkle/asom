@@ -2,5 +2,6 @@
   "prettier.singleQuote": true,
   "editor.gotoLocation.multipleDefinitions": "goto",
   "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]],
-  "cSpell.words": ["Goodreads"]
+  "cSpell.words": ["Goodreads"],
+  "typescript.preferences.importModuleSpecifier": "non-relative"
 }

@@ -16,7 +16,7 @@ export interface ShadcnVueOptions {
 export default defineNuxtModule<ShadcnVueOptions>({
   defaults: {
     prefix: 'Ui',
-    componentDir: '~/components/ui',
+    componentDir: '~/app/components/ui',
   },
   meta: {
     name: 'ShadcnVue',

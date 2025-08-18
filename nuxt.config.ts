@@ -1,9 +1,14 @@
 import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath } from 'url';
 
 export default defineNuxtConfig({
+  components: {
+    dirs: [],
+  },
+
   alias: {
-    components: './components',
-    '@types': './types',
+    '~c': fileURLToPath(new URL('app/components', import.meta.url)),
+    types: fileURLToPath(new URL('app/types', import.meta.url)),
   },
   modules: [
     '@pinia/nuxt',
@@ -19,7 +24,6 @@ export default defineNuxtConfig({
 
   shadcn: {
     prefix: '',
-
     componentDir: '~/components/ui',
   },
 
