@@ -1,4 +1,7 @@
-import { zDynamicViewGroup, type IDynamicViewGroup } from '~/components/DynamicView/helpers';
+import {
+  zDynamicViewGroup,
+  type IDynamicViewGroup,
+} from '~/components/Modules/DynamicView/helpers';
 
 const disk = new ConfigTiedToSchema('viewLayout.json', zDynamicViewGroup, {
   type: 'group',

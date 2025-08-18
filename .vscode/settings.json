@@ -3,5 +3,6 @@
   "editor.gotoLocation.multipleDefinitions": "goto",
   "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]],
   "cSpell.words": ["Goodreads"],
-  "typescript.preferences.importModuleSpecifier": "non-relative"
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.autoImportFileExcludePatterns": ["$src-tauri$"]
 }

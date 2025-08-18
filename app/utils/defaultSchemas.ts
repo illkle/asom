@@ -1,6 +1,6 @@
 import { mkdir } from '@tauri-apps/plugin-fs';
 import { c_save_schema } from '~/api/tauriActions';
-import type { IDynamicViewGroup } from '~/components/DynamicView/helpers';
+import type { IDynamicViewGroup } from '~/components/Modules/DynamicView/helpers';
 import type { Schema } from '~/types';
 
 const CURRENT_SCHEMA_VERSION = '1.0';

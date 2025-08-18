@@ -2,12 +2,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'url';
 
 export default defineNuxtConfig({
-  components: {
-    dirs: [],
-  },
+  components: {},
 
   alias: {
-    '~c': fileURLToPath(new URL('app/components', import.meta.url)),
     types: fileURLToPath(new URL('app/types', import.meta.url)),
   },
   modules: [
@@ -28,6 +25,14 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
+
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        strictNullChecks: false,
+      },
+    },
+  },
 
   $env: {
     preview: {

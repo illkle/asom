@@ -1,7 +1,7 @@
 import { markRaw } from 'vue';
 import { toast } from 'vue-sonner';
 
-import ErrorToast from '~/components/Error/ErrorToast.vue';
+import ErrorToast from '~/components/Modules/Error/ErrorToast.vue';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import type { ErrFR, ErrFRActionCode } from '~/types';
 

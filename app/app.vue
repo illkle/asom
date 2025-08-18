@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import ErrorModal from './components/Error/ErrorModal.vue';
+import ErrorModal from './components/Modules/Error/ErrorModal.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
 
 const colorMode = useColorMode();
