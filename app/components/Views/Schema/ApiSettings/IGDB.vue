@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { getGamesFromIGDB, igdbAPISchema, type ApiSettingsIGDB } from '~/api/external/igb';
+import { igdbAPISchema, type ApiSettingsIGDB } from '~/api/external/igb';
 import IGDBSearch from '~/components/Views/Schema/ApiSettings/IGDBSearch.vue';
 import MappingSelector from '~/components/Views/Schema/ApiSettings/MappingSelector.vue';
 import type { Schema } from '~/types';
@@ -30,32 +30,4 @@ const props = defineProps<{
 }>();
 
 const data = defineModel<ApiSettingsIGDB>();
-
-const testStatus = ref<'unknown' | 'success' | 'error'>('unknown');
-
-const onTestConnection = async () => {
-  if (!data.value.clientId || !data.value.clientSecret) {
-    useRustErrorNotification({
-      isError: true,
-      title: 'Client ID and client secret are required',
-      subErrors: [],
-    });
-    return;
-  }
-
-  const games = await getGamesFromIGDB({
-    token: data.value.accessToken ?? '',
-    clientId: data.value.clientId,
-    clientSecret: data.value.clientSecret,
-    name: 'Witcher',
-    limit: 10,
-    saveToken: (token) => (data.value.accessToken = token),
-  });
-
-  if (games.length > 0) {
-    testStatus.value = 'success';
-  } else {
-    testStatus.value = 'error';
-  }
-};
 </script>

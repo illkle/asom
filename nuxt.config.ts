@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
     'motion-v/nuxt',
     '@nuxt/test-utils/module',
+    'shadcn-nuxt',
   ],
 
   compatibilityDate: '2024-09-29',
@@ -21,7 +22,7 @@ export default defineNuxtConfig({
 
   shadcn: {
     prefix: '',
-    componentDir: '~/components/ui',
+    componentDir: './app/components/ui',
   },
 
   css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
