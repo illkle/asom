@@ -7,6 +7,8 @@
     <DialogContent class="">
       <DialogTitle> Create new file </DialogTitle>
 
+      <SchemaEditorApiSettingsApiSearchRouter :connection="apiConnection.q.data.value" />
+
       <div class="flex flex-col gap-2">
         <Input ref="inputRef" autofocus v-model:model-value="newFileName" placeholder="Filename" />
 
