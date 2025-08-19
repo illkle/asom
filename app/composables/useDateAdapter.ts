@@ -1,32 +1,23 @@
 import { CalendarDate, type DateValue } from '@internationalized/date';
 import { format, parse } from 'date-fns';
-import { useSettingsStore } from '~/composables/stores/useSettingsStore';
 
-export const useDateHooks = () => {
-  const s = useSettingsStore();
+export const DATE_FORMAT = 'yyyy-MM-dd';
 
-  const stringToDate = (dateString: string | undefined | null) => {
-    if (!dateString) return undefined;
+export const fileStringToDate = (dateString: string | undefined | null) => {
+  if (!dateString) return undefined;
 
-    if (!s.settings) {
-      throw new Error('No settings loaded');
-    }
+  const dd = parse(dateString, DATE_FORMAT, new Date());
+  if (isNaN(dd.getTime())) {
+    throw new Error('Invalid date');
+  }
+  return new CalendarDate(dd.getFullYear(), dd.getMonth() + 1, dd.getDate());
+};
 
-    const dd = parse(dateString, s.settings.dateFormat, new Date());
-    return new CalendarDate(dd.getFullYear(), dd.getMonth() + 1, dd.getDate());
-  };
-
-  const dateToString = (date: DateValue) => {
-    if (!s.settings) {
-      throw new Error('No settings loaded');
-    }
-    return format(new Date(date.year, date.month - 1, date.day), s.settings.dateFormat);
-  };
-
-  return {
-    stringToDate,
-    dateToString,
-  };
+export const dateToFileString = (date: DateValue) => {
+  return format(new Date(date.year, date.month - 1, date.day), DATE_FORMAT);
+};
+export const jsDateToFileString = (date: Date) => {
+  return format(date, DATE_FORMAT);
 };
 
 /**
@@ -34,12 +25,17 @@ export const useDateHooks = () => {
  * @returns
  */
 export const useDateAdapterModel = (modelValue: Ref<string | null>) => {
-  const { stringToDate, dateToString } = useDateHooks();
-
   const dateModel = computed({
-    get: () => stringToDate(modelValue.value ?? undefined),
+    get: () => {
+      try {
+        return fileStringToDate(modelValue.value ?? undefined);
+      } catch (e) {
+        console.error('error parsing date', e);
+        return undefined;
+      }
+    },
     set: (v) => {
-      modelValue.value = v ? dateToString(v) : null;
+      modelValue.value = v ? dateToFileString(v) : null;
     },
   });
 

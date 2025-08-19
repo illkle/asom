@@ -44,7 +44,7 @@
 import { PlusIcon } from 'lucide-vue-next';
 import type { TextCollectionSettings } from 'types';
 import { nextTick, ref } from 'vue';
-import ContentEditable from '~/components/uiExtra/ContentEditable.vue';
+import ContentEditable from '~/components/Modules/ContentEditable.vue';
 import CommonLabel from './CommonLabel.vue';
 import { textCollectionInputVariants } from './helpers';
 const tags = defineModel<string[] | null>();

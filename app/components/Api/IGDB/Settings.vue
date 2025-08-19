@@ -20,9 +20,9 @@
 </template>
 
 <script setup lang="ts">
-import { igdbAPISchema, type ApiSettingsIGDB } from '~/api/external/igb';
-import IGDBSearch from '~/components/Views/Schema/ApiSettings/IGDBSearch.vue';
-import MappingSelector from '~/components/Views/Schema/ApiSettings/MappingSelector.vue';
+import { igdbAPISchema, type ApiSettingsIGDB } from '~/components/Api/IGDB';
+import IGDBSearch from '~/components/Api/IGDB/Search.vue';
+import MappingSelector from '~/components/Modules/MappingSelector.vue';
 import type { Schema } from '~/types';
 
 const props = defineProps<{

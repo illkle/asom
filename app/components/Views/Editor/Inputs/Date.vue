@@ -4,10 +4,6 @@ import { CalendarIcon, XIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import CommonLabel from './CommonLabel.vue';
 
-import { useSettingsStore } from '~/composables/stores/useSettingsStore';
-
-const s = useSettingsStore();
-
 const props = defineProps<{
   limits?: {
     start?: string;
@@ -23,19 +19,20 @@ const props = defineProps<{
 
 const modelValue = defineModel<string | null>({ default: null });
 
-const { stringToDate } = useDateHooks();
 const { dateModel } = useDateAdapterModel(modelValue);
 
-const start = computed(() => stringToDate(props.limits?.start));
-const end = computed(() => stringToDate(props.limits?.end));
+const start = computed(() => fileStringToDate(props.limits?.start));
+const end = computed(() => fileStringToDate(props.limits?.end));
 
 const formattedDate = computed(() => {
   if (!dateModel.value) return 'Select Date';
+
   return format(new Date(dateModel.value.toString()), 'dd MMM yyyy');
 });
 
 const formattedDateSM = computed(() => {
   if (!dateModel.value) return '—';
+
   return format(new Date(dateModel.value.toString()), 'dd.MM.yy');
 });
 
@@ -75,7 +72,7 @@ const isOpened = ref(false);
           variant="outline"
           size="icon"
           class="rounded-l-none m-0"
-          :disabled="disabled"
+          :disabled="disabled || !dateModel"
           @click="() => $emit('update:modelValue', null)"
         >
           <XIcon class="w-4 opacity-50" />
@@ -103,7 +100,7 @@ const isOpened = ref(false);
         v-if="deletableInside"
         variant="ghost"
         size="sm"
-        class="w-full mb-2"
+        class="w-full mb-2 disabled:opacity-0"
         @click="() => $emit('update:modelValue', null)"
       >
         Remove Date

@@ -1,105 +1,7 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { z } from 'zod';
-import type { ExApiData, ExApiSchema } from '~/api/external/base';
-
-const zToken = z.object({
-  access_token: z.string(),
-  expires_in: z.number(),
-});
-
-const zCover = z.object({
-  id: z.number(),
-  image_id: z.string(),
-  url: z.string().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-});
-
-const zArtwork = z.object({
-  id: z.number(),
-  image_id: z.string(),
-  url: z.string().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-});
-
-const zScreenshot = z.object({
-  id: z.number(),
-  image_id: z.string(),
-  url: z.string().optional(),
-  width: z.number().optional(),
-  height: z.number().optional(),
-});
-
-const zCompany = z.object({
-  id: z.number(),
-  name: z.string(),
-  slug: z.string().optional(),
-  description: z.string().optional(),
-  logo: z
-    .object({
-      id: z.number(),
-      image_id: z.string(),
-      url: z.string().optional(),
-    })
-    .optional(),
-});
-
-const zInvolvedCompany = z.object({
-  id: z.number(),
-  company: zCompany,
-  developer: z.boolean().optional(),
-  publisher: z.boolean().optional(),
-  porting: z.boolean().optional(),
-  supporting: z.boolean().optional(),
-});
-
-const zGenre = z.object({
-  id: z.number(),
-  name: z.string(),
-  slug: z.string().optional(),
-});
-
-const zPlatform = z.object({
-  id: z.number(),
-  name: z.string(),
-  abbreviation: z.string().optional(),
-  slug: z.string().optional(),
-});
-
-const zReleaseDate = z.object({
-  id: z.number(),
-  date: z.number().optional(),
-  human: z.string().optional(),
-  platform: zPlatform.optional(),
-  region: z.number().optional(),
-});
-
-const zGame = z.object({
-  id: z.number(),
-  name: z.string(),
-  slug: z.string().optional(),
-  summary: z.string().optional(),
-  storyline: z.string().optional(),
-  first_release_date: z.number().optional(),
-  rating: z.number().optional(),
-  rating_count: z.number().optional(),
-  aggregated_rating: z.number().optional(),
-  aggregated_rating_count: z.number().optional(),
-  total_rating: z.number().optional(),
-  total_rating_count: z.number().optional(),
-  cover: zCover.optional(),
-  artworks: z.array(zArtwork).optional(),
-  screenshots: z.array(zScreenshot).optional(),
-  involved_companies: z.array(zInvolvedCompany).optional(),
-  genres: z.array(zGenre).optional(),
-  platforms: z.array(zPlatform).optional(),
-  release_dates: z.array(zReleaseDate).optional(),
-});
-
-export type IGDBGame = z.infer<typeof zGame>;
-export type IGDBCompany = z.infer<typeof zCompany>;
-export type IGDBCover = z.infer<typeof zCover>;
+import type { IgdbApiGame } from '~/components/Api/IGDB';
+import { zGame, zToken, type IGDBGame } from '~/components/Api/IGDB/externalSchema';
 
 const getToken = async (clientId: string, clientSecret: string) => {
   const res = await fetch(
@@ -176,23 +78,6 @@ const igdbSearchGames = async ({
   console.log('data', data);
   return z.array(zGame).parse(data);
 };
-
-export const igdbAPISchema: ExApiSchema = {
-  id: 'Number',
-  name: 'Text',
-  cover: 'Image',
-  first_release_date: 'Date',
-  rating: 'Number',
-  genres: 'TextCollection',
-  platforms: 'TextCollection',
-  companies_all: 'TextCollection',
-  companies_developers: 'TextCollection',
-  companies_publishers: 'TextCollection',
-  companies_porting: 'TextCollection',
-  companies_supporting: 'TextCollection',
-};
-
-export type IgdbApiGame = ExApiData<typeof igdbAPISchema>;
 
 export const getGamesFromIGDB = async ({
   token,
@@ -293,14 +178,3 @@ export const getGamesFromIGDB = async ({
       }) satisfies IgdbApiGame,
   );
 };
-
-export const zAPIIGDB = z.object({
-  type: z.literal('twitchigdb'),
-  clientId: z.string().default(''),
-  clientSecret: z.string().default(''),
-  accessToken: z.string().default(''),
-  expiresAt: z.number().default(0),
-  mapping: z.record(z.string(), z.string().or(z.null())).default({}),
-});
-
-export type ApiSettingsIGDB = z.infer<typeof zAPIIGDB>;

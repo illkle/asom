@@ -27,11 +27,7 @@
 
     <template v-else-if="props.type.type === 'Date' && props.value.type === 'String'">
       <span class="text-ellipsis overflow-hidden whitespace-nowrap">
-        {{
-          props.value.value
-            ? format(parse(props.value.value, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy')
-            : ''
-        }}
+        {{ mapDate(props.value.value) }}
       </span>
     </template>
 
@@ -69,21 +65,40 @@ const props = defineProps({
   },
 });
 
+const mapDate = (v: string) => {
+  try {
+    return format(parse(v, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy');
+  } catch (e) {
+    console.error('error parsing date', e);
+    return '';
+  }
+};
+
 const mapPair = (v: DatePair[] | null) => {
   if (!v) return '';
-  return v
-    .map((v) =>
-      v.started || v.finished
-        ? format(parse(v.finished || v.started || '', 'yyyy-MM-dd', new Date()), 'yyyy MMM')
-        : '',
-    )
-    .join(', ');
+  try {
+    return v
+      .map((v) =>
+        v.started || v.finished
+          ? format(parse(v.finished || v.started || '', 'yyyy-MM-dd', new Date()), 'yyyy MMM')
+          : '',
+      )
+      .join(', ');
+  } catch (e) {
+    console.error('error parsing date', e);
+    return '';
+  }
 };
 
 const mapDatesVec = (v: string[] | null) => {
   if (!v) return '';
-  return v
-    .map((v) => (v ? format(parse(v, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy') : ''))
-    .join(', ');
+  try {
+    return v
+      .map((v) => (v ? format(parse(v, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy') : ''))
+      .join(', ');
+  } catch (e) {
+    console.error('error parsing date', e);
+    return '';
+  }
 };
 </script>

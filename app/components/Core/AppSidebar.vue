@@ -23,11 +23,11 @@
           </Button>
         </div>
 
-        <BookAdder class="">
+        <RecordAdder class="">
           <Button variant="outline" size="sm" class="w-full text-xs">
             <PlusIcon :size="12" /> Create
           </Button>
-        </BookAdder>
+        </RecordAdder>
       </SidebarGroup>
 
       <SidebarGroup v-for="[path, schema] in schemasArray" :key="path" class="py-0">
@@ -84,12 +84,12 @@ import {
   TestTubeIcon,
   WrenchIcon,
 } from 'lucide-vue-next';
+import RecordAdder from '~/components/Views/Add/RecordAdder.vue';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import { useIsMac } from '~/composables/useTools';
 import FileTree from '../FileTree/FileTree.vue';
-import BookAdder from '../Views/Add/BookAdder.vue';
-import ColorModeSelector from '../uiExtra/ColorModeSelector.vue';
+import ColorModeSelector from '../Modules/ColorModeSelector.vue';
 
 const { schemasArray } = useUsableSchemas();
 

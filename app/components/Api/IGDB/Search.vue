@@ -33,7 +33,8 @@
 
 <script lang="ts" setup>
 import { refDebounced } from '@vueuse/core';
-import { getGamesFromIGDB, type ApiSettingsIGDB, type IgdbApiGame } from '~/api/external/igb';
+import { type ApiSettingsIGDB, type IgdbApiGame } from '~/components/Api/IGDB';
+import { getGamesFromIGDB } from '~/components/Api/IGDB/igdb';
 
 const data = defineModel<ApiSettingsIGDB>();
 

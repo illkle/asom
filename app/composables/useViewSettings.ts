@@ -102,8 +102,6 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
       qc.getQueryData<IViewSettings>(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value)) ??
       DEFAULT_VIEW_SETTINGS();
 
-    const beforeKey = before[key];
-
     const after = { ...before, [key]: newValue };
 
     qc.setQueryData(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value), after);

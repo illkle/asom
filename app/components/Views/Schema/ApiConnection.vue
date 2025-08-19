@@ -11,7 +11,7 @@
     <Select
       v-if="apiData"
       :model-value="apiData.type"
-      @update:model-value="(v) => (apiData.type = v as ApiConnection['type'])"
+      @update:model-value="(v) => (apiData.type = v as ApiSettings['type'])"
     >
       <SelectTrigger class="mt-4">
         <SelectValue placeholder="Select an API" />
@@ -34,8 +34,9 @@
 </template>
 
 <script setup lang="ts">
-import IGDB from '~/components/Views/Schema/ApiSettings/IGDB.vue';
-import { API_Types, type ApiConnection } from '~/composables/useApiConnections';
+import IGDB from '~/components/Api/IGDB/Settings.vue';
+import type { ApiSettings } from '~/components/Api/apis';
+import { API_Types } from '~/components/Api/apis';
 
 const emit = defineEmits<{
   (e: 'back'): void;

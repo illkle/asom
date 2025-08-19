@@ -1,5 +1,5 @@
 import { format, isValid, parse } from 'date-fns';
-import { defineExApiSchema, type ExApiData } from '~/api/external/base';
+import { defineExApiSchema, type ExApiData } from '~/components/Api/base';
 import type { DatePair } from '~/types';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {

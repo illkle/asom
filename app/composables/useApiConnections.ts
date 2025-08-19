@@ -1,19 +1,8 @@
 import type { UseQueryReturn } from '@pinia/colada';
 import z from 'zod/v4';
-import { zAPIIGDB } from '~/api/external/igb';
+import { zApiSettings } from '~/components/Api/apis';
 
-const zApiConnections = z.discriminatedUnion('type', [
-  zAPIIGDB,
-  z.object({
-    type: z.literal('none'),
-  }),
-]);
-
-export type ApiConnection = z.infer<typeof zApiConnections>;
-
-export const API_Types = ['twitchigdb', 'none'] as ApiConnection['type'][];
-
-const disk = new ConfigTiedToSchema('apiConnections.json', zApiConnections, {
+const disk = new ConfigTiedToSchema('apiConnections.json', zApiSettings, {
   type: 'none',
 });
 
@@ -37,10 +26,10 @@ export const useApiConnection = (schemaOwnerFolder: Ref<string>) => {
 
   const qc = useQueryCache();
 
-  const update = async (newData: Partial<z.infer<typeof zApiConnections>>) => {
+  const update = async (newData: Partial<z.infer<typeof zApiSettings>>) => {
     const current = await disk.get(schemaOwnerFolder.value);
 
-    const data = zApiConnections.parse({
+    const data = zApiSettings.parse({
       ...current,
       ...newData,
     });

@@ -111,13 +111,13 @@ import { mkdir } from '@tauri-apps/plugin-fs';
 import { format } from 'date-fns';
 import { Check, ChevronDown } from 'lucide-vue-next';
 import path from 'path-browserify';
+import { c_save_file } from '~/api/tauriActions';
 import {
   extractDataFromGoodreadsHTML,
   goodreadsApiSchema,
   type GoodreadsParsedBook,
-} from '~/api/external/goodreadsHTMLParser';
-import { c_save_file } from '~/api/tauriActions';
-import MappingSelector from '~/components/Views/Schema/ApiSettings/MappingSelector.vue';
+} from '~/components/Api/Goodreads/goodreadsHTMLParser';
+import MappingSelector from '~/components/Modules/MappingSelector.vue';
 import type { AttrValue, RecordFromDb } from '~/types';
 
 const usableSchemas = useUsableSchemas();

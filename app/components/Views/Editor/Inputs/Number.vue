@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import RatingStars from '~/components/uiExtra/RatingStars.vue';
+import RatingStars from '~/components/Modules/RatingStars.vue';
 import type { NumberSettings } from '~/types';
 import CommonLabel from './CommonLabel.vue';
 import { numberInputVariants } from './helpers';

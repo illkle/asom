@@ -7,7 +7,11 @@
     <DialogContent class="">
       <DialogTitle> Create new file </DialogTitle>
 
-      <ApiSearchRouter :connection="apiConnection.q.data.value" />
+      <ApiSearchRouter
+        v-if="apiConnection.q.data.value"
+        :connection="apiConnection.q.data.value"
+        @select="(id, attrs) => addThing(id, attrs)"
+      />
 
       <div class="flex flex-col gap-2">
         <Input ref="inputRef" autofocus v-model:model-value="newFileName" placeholder="Filename" />
@@ -25,19 +29,21 @@
         </div>
       </div>
 
-      <Button variant="outline" size="default" @click="addThing"> Create </Button>
+      <Button variant="outline" size="default" @click="() => addThing()"> Create </Button>
     </DialogContent>
   </Dialog>
 </template>
 
 <script lang="ts" setup>
 import { path as tauriPath } from '@tauri-apps/api';
-import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
-import { computedAsync, useEventListener } from '@vueuse/core';
+import { exists } from '@tauri-apps/plugin-fs';
+import { useEventListener } from '@vueuse/core';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
+import { c_save_file } from '~/api/tauriActions';
 import ApiSearchRouter from '~/components/Views/Schema/ApiSettings/ApiSearchRouter.vue';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import type { RecordFromDb } from '~/types';
 
 const inputRef = useTemplateRef<HTMLInputElement>('inputRef');
 
@@ -69,6 +75,7 @@ const sc = useSchemaByPath(pathFromTab);
 const apiConnection = useApiConnection(computed(() => selectedSchema.value?.[0]));
 
 watch(newFileOpened, (v) => {
+  console.log('newFileOpened', v);
   if (v) {
     selectedSchemaIndex.value = null;
 
@@ -89,31 +96,39 @@ const actualFilename = computed(() => {
   return newFileName.value.endsWith('.md') ? newFileName.value : newFileName.value + '.md';
 });
 
-const folderToSaveDisplay = computedAsync(() => {
-  if (!selectedSchema.value?.[0]) return null;
-  return tauriPath.join(selectedSchema.value[0], actualFilename.value);
-});
+const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) => {
+  console.log('addThing', nameInput, attrsInput);
+  const name = nameInput ?? newFileName.value;
 
-const addThing = async () => {
-  if (!newFileName.value.length) {
+  const actualName = name.endsWith('.md') ? name : name + '.md';
+
+  if (!name.length) {
+    console.log('no name', name, newFileName.value);
     toast.error('Please enter a non empty file name');
     return;
   }
 
   if (!pathFromTab.value) {
+    console.log('no path');
     toast.error('Please open a folder to save the file');
     return;
   }
 
-  const finalPath = await tauriPath.join(pathFromTab.value, actualFilename.value);
+  const finalPath = await tauriPath.join(pathFromTab.value, actualName);
 
   const ex = await exists(finalPath);
   if (ex) {
+    console.log('file exists', finalPath);
     toast.error('File with this name already exists');
     return;
   }
 
-  await writeTextFile(finalPath, '');
+  await c_save_file({
+    path: finalPath,
+    attrs: attrsInput ?? {},
+    markdown: '',
+    modified: null,
+  });
 
   ts.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
   newFileOpened.value = false;

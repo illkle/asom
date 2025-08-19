@@ -9,13 +9,14 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <Sonner :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
+  <Toaster :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
   <ErrorModal />
 
   <div id="customTeleport" class="absolute top-[-1000px]"></div>
 </template>
 
 <script setup lang="ts">
+import { Toaster } from '~/components/ui/sonner/';
 import ErrorModal from './components/Modules/Error/ErrorModal.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
 
