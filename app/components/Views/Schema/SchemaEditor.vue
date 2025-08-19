@@ -1,8 +1,7 @@
 <template>
-  <div class="mx-auto max-w-4xl w-full px-5">
-    <div class="flex items-center justify-between pt-10">
+  <PageTemplate :data-pending="isPending">
+    <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-      <Button @click="emit('exit-schema-editor')" variant="outline">Save & Exit</Button>
     </div>
 
     <div class="flex items-center justify-between mt-4">
@@ -27,14 +26,31 @@
           </div>
 
           <div class="flex gap-2 mt-2">
-            <Button variant="outline" size="sm" @click="emit('edit-schema', schema[0])">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="
+                tabsStore.openNewThingFast({ _type: 'settings/schema', _path: schema[0] }, 'here')
+              "
+            >
               Schema
             </Button>
 
-            <Button variant="outline" size="sm" @click="emit('edit-layout', schema[0])">
+            <Button
+              variant="outline"
+              size="sm"
+              @click="
+                tabsStore.openNewThingFast({ _type: 'settings/layout', _path: schema[0] }, 'here')
+              "
+            >
               Layout Editor
             </Button>
-            <Button variant="outline" size="sm" @click="emit('edit-api-connection', schema[0])"
+            <Button
+              variant="outline"
+              size="sm"
+              @click="
+                tabsStore.openNewThingFast({ _type: 'settings/api', _path: schema[0] }, 'here')
+              "
               >API</Button
             >
           </div>
@@ -72,7 +88,9 @@
                 :item="item"
                 @add-new-schema="addNewSchema"
                 @create-folder="(v) => ((isNewFolderDialogOpen = true), (folderCreationPath = v))"
-                @edit-schema="(v) => emit('edit-schema', v)"
+                @edit-schema="
+                  (v) => tabsStore.openNewThingFast({ _type: 'settings/schema', _path: v }, 'here')
+                "
               />
             </template>
           </TreeRoot>
@@ -100,7 +118,7 @@
         <Button :disabled="!newFolderName" @click="createNewFolder"> Create </Button>
       </DialogContent>
     </Dialog>
-  </div>
+  </PageTemplate>
 </template>
 
 <script setup lang="ts">
@@ -113,15 +131,11 @@ import { FolderIcon, PlusIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
+import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import PageTemplate from './PageTemplate.vue';
 
 const rootPath = useRootPath();
-
-const emit = defineEmits<{
-  (e: 'edit-schema', item: string): void;
-  (e: 'edit-layout', item: string): void;
-  (e: 'edit-api-connection', item: string): void;
-  (e: 'exit-schema-editor'): void;
-}>();
+const tabsStore = useTabsStoreV2();
 
 const changeRootPathHandler = async () => {
   await selectAndSetRootPath();
@@ -142,7 +156,7 @@ const createNewFolder = async () => {
 
 const qc = useQueryCache();
 
-const { folders, isPending, refetch, throttledRefetch, foldersAsTree } = useFoldersList();
+const { folders, isPending, foldersAsTree } = useFoldersList();
 
 const existingSchemas = useExistingSchemas();
 

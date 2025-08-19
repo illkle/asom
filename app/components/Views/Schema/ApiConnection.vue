@@ -1,9 +1,7 @@
 <template>
-  <div class="mx-auto max-w-4xl w-full px-5">
-    <div class="flex items-center justify-between pt-10">
+  <PageTemplate :data-pending="q.isPending.value">
+    <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Api Connection</h1>
-
-      <Button variant="outline" @click="emit('back')">Save</Button>
     </div>
 
     <div>Select api to connect to this schema:</div>
@@ -30,22 +28,24 @@
         :schema="schema.data.value.schema"
       />
     </div>
-  </div>
+  </PageTemplate>
 </template>
 
 <script setup lang="ts">
 import IGDB from '~/components/Api/IGDB/Settings.vue';
 import type { ApiSettings } from '~/components/Api/apis';
 import { API_Types } from '~/components/Api/apis';
+import type { IOpened } from '~/composables/stores/useTabsStoreV2';
+import PageTemplate from './PageTemplate.vue';
 
-const emit = defineEmits<{
-  (e: 'back'): void;
-}>();
-const props = defineProps<{
-  path: string;
-}>();
+const props = defineProps({
+  opened: {
+    type: Object as PropType<IOpened>,
+    required: true,
+  },
+});
 
-const schema = useSchemaByPath(computed(() => props.path));
+const schema = useSchemaByPath(computed(() => props.opened._path));
 
-const { editableData: apiData, q } = useApiConnection(computed(() => props.path));
+const { editableData: apiData, q } = useApiConnection(computed(() => props.opened._path));
 </script>

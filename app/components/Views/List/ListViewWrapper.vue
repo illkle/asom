@@ -10,12 +10,12 @@
 </template>
 
 <script setup lang="ts">
-import type { IOpenedPath } from '~/composables/stores/useTabsStoreV2';
+import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import BooksView from './ListView.vue';
 
 const props = defineProps({
   opened: {
-    type: Object as PropType<IOpenedPath>,
+    type: Object as PropType<IOpened>,
     required: true,
   },
 });

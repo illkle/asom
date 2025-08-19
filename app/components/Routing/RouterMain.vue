@@ -15,23 +15,48 @@
         </div>
       </template>
       <template #default>
-        <template v-if="tabsStore.openedItem._type === 'innerPage'">
-          <GoodreadsImporter v-if="tabsStore.openedItem._path === 'goodreadsImporter'" />
-        </template>
-        <template v-else>
-          <RecordEditor
-            v-if="tabsStore.openedItem._type === 'file'"
-            :opened="tabsStore.openedItem"
-            :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
-            :class="{ 'rounded-tl': !isFirstTab }"
-          />
-          <ListViewWrapper
-            v-else-if="tabsStore.openedItem._type === 'folder'"
-            :opened="tabsStore.openedItem"
-            :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
-            :class="{ 'rounded-tl': !isFirstTab }"
-          />
-        </template>
+        <RecordEditor
+          v-if="tabsStore.openedItem._type === 'file'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+        <ListViewWrapper
+          v-else-if="tabsStore.openedItem._type === 'folder'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+        <SchemaEditor
+          v-else-if="tabsStore.openedItem._type === 'settings'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'schema'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+        <LayoutEditor
+          v-else-if="tabsStore.openedItem._type === 'settings/layout'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'layout'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+
+        <ApiConnection
+          v-else-if="tabsStore.openedItem._type === 'settings/api'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'api'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+
+        <SchemaFieldsEditor
+          v-else-if="tabsStore.openedItem._type === 'settings/schema'"
+          :opened="tabsStore.openedItem"
+          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'schemaFields'"
+          :class="{ 'rounded-tl': !isFirstTab }"
+        />
+
+        <GoodreadsImporter
+          v-else-if="tabsStore.openedItem._type === 'innerPage/goodreadsImporter'"
+        />
       </template>
     </NuxtErrorBoundary>
   </template>
@@ -47,7 +72,11 @@
 import GoodreadsImporter from '~/components/Api/Goodreads/GoodreadsImporter.vue';
 import RecordEditor from '~/components/Views/Editor/RecordEditor.vue';
 import ListViewWrapper from '~/components/Views/List/ListViewWrapper.vue';
+import SchemaEditor from '~/components/Views/Schema/SchemaEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import ApiConnection from '../Views/Schema/ApiConnection.vue';
+import LayoutEditor from '../Views/Schema/LayoutEditor.vue';
+import SchemaFieldsEditor from '../Views/Schema/SchemaFieldsEditor.vue';
 
 const tabsStore = useTabsStoreV2();
 

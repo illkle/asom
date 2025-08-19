@@ -18,16 +18,17 @@ export const KEY_DEPENDENT_ON_ROOT = (root: string | null | undefined) => [
 const ROOT_PATH_KEY = ['rooPath'];
 const USABLE_SCHEMAS_KEY = (root: string | null | undefined) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
-  'schemasUsable',
-  'get',
+  'schemas',
+  'usable',
 ];
 const EXISTING_SCHEMAS_KEY = (root: string | null | undefined) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
-  'schemasExisting',
-  'get',
+  'schemas',
+  'existing',
 ];
 const FOLDERS_BY_SCHEMA_KEY = (root: string | null | undefined, schemaPath: string) => [
   ...KEY_DEPENDENT_ON_ROOT(root),
+  'schemas',
   'folders',
   schemaPath,
 ];

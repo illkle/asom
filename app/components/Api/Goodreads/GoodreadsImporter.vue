@@ -1,6 +1,6 @@
 <template>
   <div class="bg-background h-full overflow-y-auto gutter-stable scrollbarMod">
-    <div class="p-4 max-w-2xl mx-auto flex flex-col gap-4">
+    <div class="p-4 max-w-3xl mx-auto flex flex-col gap-4">
       <h2 class="text-3xl font-serif col-span-2">Goodreads importer</h2>
 
       <div class="mt-2">

@@ -1,6 +1,6 @@
 <template>
-  <div class="mx-auto max-w-4xl w-full px-5">
-    <div class="flex items-center justify-between pt-10">
+  <PageTemplate :data-pending="viewLayoutQ.isPending.value || viewSettingsQ.isPending.value">
+    <div class="flex items-center justify-between">
       <h1 class="mb-4 font-serif text-3xl">Layout editor</h1>
     </div>
 
@@ -17,12 +17,12 @@
         @update:layout="
           (v) => {
             updateViewLayout(v);
-            emit('back');
+            tabsStore.moveBack();
           }
         "
         @discard="
           () => {
-            emit('back');
+            tabsStore.moveBack();
           }
         "
         :edit-mode="true"
@@ -30,13 +30,17 @@
         class="py-2"
       />
     </div>
-  </div>
+  </PageTemplate>
 </template>
 
 <script setup lang="ts">
 import MetaEditor from '~/components/Views/Editor/MetaEditor.vue';
+import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, RecordFromDb } from '~/types';
 import { getValByType } from './mocks';
+import PageTemplate from './PageTemplate.vue';
+
+const tabsStore = useTabsStoreV2();
 
 const editableProxy = ref<RecordFromDb>({
   path: null,
@@ -45,14 +49,14 @@ const editableProxy = ref<RecordFromDb>({
   attrs: {},
 });
 
-const emit = defineEmits<{
-  (e: 'back'): void;
-}>();
-const props = defineProps<{
-  path: string;
-}>();
+const props = defineProps({
+  opened: {
+    type: Object as PropType<IOpened>,
+    required: true,
+  },
+});
 
-const schema = useSchemaByPath(computed(() => props.path));
+const schema = useSchemaByPath(computed(() => props.opened._path));
 
 const ownerFolder = computed(() => schema.data.value?.owner_folder ?? '');
 

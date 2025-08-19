@@ -41,7 +41,7 @@ import { useEventListener } from '@vueuse/core';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
 import { c_save_file } from '~/api/tauriActions';
-import ApiSearchRouter from '~/components/Views/Schema/ApiSettings/ApiSearchRouter.vue';
+import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import type { RecordFromDb } from '~/types';
 
@@ -62,7 +62,7 @@ const selectedSchema = computed(() => {
 });
 
 const pathFromTab = computed(() => {
-  if (!tabsStore.openedItem) return '';
+  if (!tabsStore.openedItem || !tabsStore.openedItem._path) return '';
   if (tabsStore.openedItem._type === 'file') return path.dirname(tabsStore.openedItem._path);
 
   if (tabsStore.openedItem._type === 'folder') return tabsStore.openedItem._path;
@@ -91,10 +91,6 @@ watch(newFileOpened, (v) => {
 const ts = useTabsStoreV2();
 
 const newFileName = ref('');
-
-const actualFilename = computed(() => {
-  return newFileName.value.endsWith('.md') ? newFileName.value : newFileName.value + '.md';
-});
 
 const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) => {
   console.log('addThing', nameInput, attrsInput);

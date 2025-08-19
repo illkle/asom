@@ -15,14 +15,18 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
   }
 
   async get(schemaOwnerFolder: string) {
+    const def = this.fileSchema.parse(this.defaultData);
+
+    if (!schemaOwnerFolder) {
+      return def;
+    }
+
     const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
     const targetFile = path.join(targetFolder, this.fileName);
 
     if (!(await fs.exists(targetFolder))) {
       await fs.mkdir(targetFolder, { recursive: true });
     }
-
-    const def = this.fileSchema.parse(this.defaultData);
 
     try {
       const text = await fs.readTextFile(targetFile);

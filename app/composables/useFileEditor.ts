@@ -6,7 +6,7 @@ import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file } from '~/api/tauriActions';
 import { useCodeMirror } from '~/composables/CodeMirror/useCodeMirror';
-import { useTabsStoreV2, type IOpenedFile } from '~/composables/stores/useTabsStoreV2';
+import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 
 const useSyncedValue = <T>({
   remoteValue,
@@ -69,10 +69,10 @@ const useSyncedValue = <T>({
   return { editableProxy, performUpdate, lastSyncedTimestamp, pauseWatcher, resumeWatcher };
 };
 
-export const OPENED_FILE_KEY = (opened: IOpenedFile) => ['files', opened._type, opened._path];
+export const OPENED_FILE_KEY = (opened: IOpened) => ['files', opened._type, opened._path];
 
 export const useFileEditorV2 = (
-  opened: IOpenedFile,
+  opened: IOpened,
   editorTemplateRef: Readonly<ShallowRef<HTMLDivElement | null>>,
 ) => {
   const fileQ = useQuery({

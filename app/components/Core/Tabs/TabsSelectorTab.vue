@@ -68,11 +68,7 @@ const text = computed(() => {
     return opened._path.split(/[\\/]/).pop();
   }
 
-  if (opened._type === 'innerPage') {
-    return capitalize(opened._path);
-  }
-
-  return '';
+  return opened._type;
 });
 </script>
 

@@ -45,55 +45,41 @@ export const removeIndexesKeepingPointer = (
  * Each tab is zTabEntry. Each tab has id and content
  * Content can(and should) be updated on navigations.
  *
- * Tabs store history of all content changes and can naviage back and forward.
- * History is also stored for active tabs chages.
+ * Tabs store history of all content changes and can navigate back and forward.
+ * History is also stored for active tabs changes.
  * Navigating back means going back through tab history, then to previous tab, then through it's history etc.
  *
- * If you close the tab it gets removed from history, though we also store deletion histrory and can restore closed tabs.
+ * If you close the tab it gets removed from history, though we also store deletion history and can restore closed tabs.
  */
 
 /**
- * Never mutate items prefixed with _ they must be modifiend via actions.
+ * Never mutate items prefixed with _ they must be modified via actions.
  * Other values can be mutated and v-model-ed.
  */
 
-const zPathCore = z.object({
-  _type: z.literal('folder'),
+const zCore = z.object({
+  _type: z.enum([
+    'folder',
+    'file',
+    'innerPage/goodreadsImporter',
+    'settings',
+    'settings/schema',
+    'settings/layout',
+    'settings/api',
+  ]),
   _path: z.string(),
 });
 
-export const zOpenedPath = zPathCore.extend({
+const zPathV2 = zCore.extend({
   scrollPositionY: z.number(),
   scrollPositionX: z.number(),
 
-  details: z.object({
-    searchQuery: z.string(),
-  }),
+  details: z.record(z.string(), z.string()),
 });
 
-const zFileCore = z.object({
-  _type: z.literal('file'),
-  _path: z.string(),
-});
+export const zOpened = zPathV2;
 
-export const zOpenedFile = zFileCore.extend({
-  scrollPositionY: z.number(),
-  scrollPositionX: z.number(),
-});
-
-const zInnerPageCore = z.object({
-  _type: z.literal('innerPage'),
-  _path: z.enum(['goodreadsImporter', 'testPage']),
-});
-
-const zCore = z.discriminatedUnion('_type', [zFileCore, zInnerPageCore, zPathCore]);
-
-export const zOpenedInnerPage = zInnerPageCore.extend({
-  scrollPositionY: z.number(),
-  scrollPositionX: z.number(),
-});
-
-export const zOpened = z.discriminatedUnion('_type', [zOpenedFile, zOpenedInnerPage, zOpenedPath]);
+/** ------------------------------------------------------------ */
 
 export const zTabEntry = z.object({
   id: z.string(),
@@ -109,9 +95,6 @@ export const ZOpenedTabs = z.object({
   focusHistoryPointer: z.number(),
 });
 
-export type IOpenedPath = z.infer<typeof zOpenedPath>;
-export type IOpenedFile = z.infer<typeof zOpenedFile>;
-export type IOpenedInnerPage = z.infer<typeof zOpenedInnerPage>;
 export type IOpened = z.infer<typeof zOpened>;
 export type ITabEntry = z.infer<typeof zTabEntry>;
 export type IOpenedTabs = z.infer<typeof ZOpenedTabs>;
@@ -364,35 +347,13 @@ export const useTabsStoreV2 = defineStore('tabs', {
       { _type, _path }: ICoreBase,
       mode: 'here' | 'last' | 'lastUnfocused' = 'here',
     ) {
-      let data: IOpened;
-
-      if (_type === 'folder') {
-        data = {
-          _type: 'folder',
-          _path: _path,
-          scrollPositionY: 0,
-          scrollPositionX: 0,
-          details: {
-            searchQuery: '',
-          },
-        };
-      } else if (_type === 'file') {
-        data = {
-          _type: 'file',
-          _path: _path,
-          scrollPositionX: 0,
-          scrollPositionY: 0,
-        };
-      } else if (_type === 'innerPage') {
-        data = {
-          _type: 'innerPage',
-          _path: _path,
-          scrollPositionY: 0,
-          scrollPositionX: 0,
-        };
-      } else {
-        throw new Error('Unknown type');
-      }
+      const data: IOpened = {
+        _type: _type,
+        _path: _path,
+        scrollPositionX: 0,
+        scrollPositionY: 0,
+        details: {},
+      };
 
       if (mode === 'here') {
         if (this.openedTab) {
@@ -557,8 +518,8 @@ export const useScrollRestorationOnMount = (
     mounted.value = true;
   });
 
-  watch([condition, mounted], ([v, v2]) => {
-    if (!v2 || !element.value || !v) return;
+  watch([condition, mounted], ([iscCondition, isMounted]) => {
+    if (!isMounted || !element.value || !iscCondition) return;
 
     if (!element.value) return;
 

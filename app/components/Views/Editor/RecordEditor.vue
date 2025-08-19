@@ -3,7 +3,7 @@
     ref="scrollElement"
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
-    <div class="max-w-2xl mx-auto w-full">
+    <div class="max-w-3xl mx-auto w-full">
       <template v-if="!editMode">
         <BreadcrumbList
           class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"
@@ -184,7 +184,7 @@ import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
-  type IOpenedFile,
+  type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../../Modules/DynamicView/helpers';
 import MetaEditor from './MetaEditor.vue';
@@ -193,7 +193,7 @@ const separator = tauriPath.sep();
 
 const props = defineProps({
   opened: {
-    type: Object as PropType<IOpenedFile>,
+    type: Object as PropType<IOpened>,
     required: true,
   },
 });

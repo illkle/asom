@@ -57,6 +57,7 @@ export const useEditableRef = <T>(
     q.isPending,
     (newIsPending) => {
       if (!newIsPending) {
+        console.log('q.data.value', q.data.value);
         proxyRef.value = q.data.value;
       }
     },

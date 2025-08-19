@@ -4,39 +4,30 @@ import {
   removeIndexesKeepingPointer,
   spliceKeepingPointer,
   useTabsStoreV2,
-  zOpenedFile,
-  zOpenedPath,
-  type IOpenedFile,
-  type IOpenedPath,
+  zOpened,
+  type IOpened,
 } from '../useTabsStoreV2';
 
 const mockFileID = (id: string) => {
-  return zOpenedFile.parse({
+  return zOpened.parse({
     _type: 'file',
     _path: `/path/to/file${id}.txt`,
     scrollPositionY: 0,
     scrollPositionX: 0,
-  } satisfies IOpenedFile);
+    details: {},
+  } satisfies IOpened);
 };
 
 const mockPath = (path: string, type: 'file' | 'folder' = 'file') => {
-  if (type === 'folder') {
-    return zOpenedPath.parse({
-      _type: type,
-      _path: path,
-      details: {
-        searchQuery: '',
-      },
-      scrollPositionY: 0,
-      scrollPositionX: 0,
-    } satisfies IOpenedPath);
-  }
-  return zOpenedFile.parse({
+  return zOpened.parse({
     _type: type,
     _path: path,
+    details: {
+      searchQuery: '',
+    },
     scrollPositionY: 0,
     scrollPositionX: 0,
-  } satisfies IOpenedFile);
+  } satisfies IOpened);
 };
 
 const logDegug = (store: ReturnType<typeof useTabsStoreV2>, info?: string) => {

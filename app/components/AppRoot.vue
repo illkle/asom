@@ -7,11 +7,9 @@
       :class="{ 'bg-background': store.view === 'schemas' }"
     >
       <div class="h-[0.5rem] shrink-0"></div>
-      <TabsSelector v-if="store.view === 'app' && appState.status === 'ok'" class="shrink-0" />
-      <!-- Editing schemas-->
-      <AppSchemaEditorRouter v-if="store.view === 'schemas' && appState.status !== 'noRootPath'" />
+      <TabsSelector v-if="appState.status === 'ok'" class="shrink-0" />
       <!-- InitQ returned a root path, show app -->
-      <RouterMain v-else-if="appState.status === 'ok'" />
+      <RouterMain v-if="appState.status === 'ok'" />
       <!-- loading\no root\error -->
       <div v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
         <div class="bg-background rounded-md p-4">
@@ -23,7 +21,6 @@
 </template>
 
 <script setup lang="ts">
-import AppSchemaEditorRouter from '~/components/Routing/RouterSchema.vue';
 import { useIsAppUsable } from '~/composables/queries';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import AppSidebar from './Core/AppSidebar.vue';

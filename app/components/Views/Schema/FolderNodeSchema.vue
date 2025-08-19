@@ -1,29 +1,3 @@
-<script setup lang="ts">
-import { ChevronDown, FileIcon, FolderIcon } from 'lucide-vue-next';
-import path from 'path-browserify';
-import { TreeItem, type FlattenedItem } from 'reka-ui';
-
-import { c_delete_to_trash } from '~/api/tauriActions';
-import type { FolderNode } from '~/components/FileTree/filePathsToTree';
-
-const props = defineProps<{
-  item: FlattenedItem<FolderNode>;
-}>();
-
-const emit = defineEmits<{
-  (e: 'editSchema', path: string): void;
-  (e: 'addNewSchema', name: string, path: string): void;
-  (e: 'createFolder', path: string): void;
-}>();
-
-const isCreatingFolder = ref(false);
-const newFolderName = ref('');
-
-const createFromTemplate = async (schema: DefaultSchemaPack) => {
-  await createDefaultSchema(schema, props.item.value.rawPath);
-};
-</script>
-
 <template>
   <TreeItem v-bind="item.bind" v-slot="{ isExpanded }" @click="isCreatingFolder = true">
     <ContextMenu :modal="false">
@@ -120,3 +94,28 @@ const createFromTemplate = async (schema: DefaultSchemaPack) => {
     </ContextMenu>
   </TreeItem>
 </template>
+
+<script setup lang="ts">
+import { ChevronDown, FileIcon, FolderIcon } from 'lucide-vue-next';
+import path from 'path-browserify';
+import { TreeItem, type FlattenedItem } from 'reka-ui';
+
+import { c_delete_to_trash } from '~/api/tauriActions';
+import type { FolderNode } from '~/components/FileTree/filePathsToTree';
+
+const props = defineProps<{
+  item: FlattenedItem<FolderNode>;
+}>();
+
+const emit = defineEmits<{
+  (e: 'editSchema', path: string): void;
+  (e: 'addNewSchema', name: string, path: string): void;
+  (e: 'createFolder', path: string): void;
+}>();
+
+const isCreatingFolder = ref(false);
+
+const createFromTemplate = async (schema: DefaultSchemaPack) => {
+  await createDefaultSchema(schema, props.item.value.rawPath);
+};
+</script>

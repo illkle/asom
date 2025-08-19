@@ -42,15 +42,13 @@
         <CollapsibleContent>
           <SidebarMenuButton
             @click="
-              tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'goodreadsImporter' }, 'last')
+              tabsStore.openNewThingFast(
+                { _type: 'innerPage/goodreadsImporter', _path: '' },
+                'last',
+              )
             "
           >
             <ImportIcon /> Goodreads importer
-          </SidebarMenuButton>
-          <SidebarMenuButton
-            @click="tabsStore.openNewThingFast({ _type: 'innerPage', _path: 'testPage' }, 'last')"
-          >
-            <TestTubeIcon /> Test page
           </SidebarMenuButton>
         </CollapsibleContent>
         <CollapsibleTrigger asChild>
@@ -64,10 +62,13 @@
         </CollapsibleTrigger>
       </Collapsible>
 
-      <SidebarMenuButton class="w-full" variant="outline" @click="store.setView('schemas')">
+      <SidebarMenuButton
+        class="w-full"
+        variant="outline"
+        @click="tabsStore.openNewThingFast({ _type: 'settings', _path: '' }, 'last')"
+      >
         <CogIcon /> Root Path & Schema
       </SidebarMenuButton>
-
       <ColorModeSelector />
     </SidebarFooter>
   </Sidebar>
@@ -81,7 +82,6 @@ import {
   CogIcon,
   ImportIcon,
   PlusIcon,
-  TestTubeIcon,
   WrenchIcon,
 } from 'lucide-vue-next';
 import RecordAdder from '~/components/Views/Add/RecordAdder.vue';

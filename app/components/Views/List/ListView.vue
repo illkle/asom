@@ -21,7 +21,7 @@ import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
-  type IOpenedPath,
+  type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IViewSettings } from '~/composables/useViewSettings';
 import BookItemDisplay from './ListItemDisplay.vue';
@@ -29,7 +29,7 @@ import SimpleDNDList from './SimpleDNDList.vue';
 
 const props = defineProps({
   opened: {
-    type: Object as PropType<IOpenedPath>,
+    type: Object as PropType<IOpened>,
     required: true,
   },
   viewSettings: {
