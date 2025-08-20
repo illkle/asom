@@ -2,53 +2,11 @@
   <motion.div layout class="w-full">
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
-      <motion.div layout class="flex justify-between items-center pl-2 border-b">
-        <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"></motion.div>
-        <motion.div layout="preserve-aspect" class="flex">
-          <Button
-            variant="outline"
-            size="sm"
-            class="rounded-none border-t-0 border-b-0"
-            @click.stop="
-              () => {
-                if (props.item.type === 'group') {
-                  props.item.content.push({
-                    id: generateUniqId(),
-                    type: 'group',
-                    style: {
-                      direction: 'column',
-                      gap: '4',
-                      align: 'start',
-                      justify: 'start',
-                      sizeUnits: '1',
-                    },
-                    content: [],
-                  });
-                }
-              }
-            "
-            @pointerdown.stop
-          >
-            <SquarePlus />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button
-                size="sm"
-                variant="outline"
-                class="rounded-none border-0 border-r-0 rounded-tr-md"
-                @click.stop
-                @pointerdown.stop
-              >
-                <CogIcon />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownConfigMenu v-model="props.item.style" />
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </motion.div>
-      </motion.div>
+      <RenderDynamicEditorTopMenu @addItem="addItem">
+        <template #config>
+          <DropdownConfigMenu v-model="props.item.style" />
+        </template>
+      </RenderDynamicEditorTopMenu>
       <!-- Content-->
       <div :style="getStyle(props.item)" class="p-2">
         <template v-if="props.item.content.length">
@@ -69,6 +27,7 @@
             ]"
           >
             <template #default="{ isDraggingMe, isOver, quadrant }">
+              <!-- (when dragging) White lines to show where you will place the item on release -->
               <template v-if="isOver && !isDraggingMe">
                 <motion.div
                   v-if="props.item.style.direction === 'column'"
@@ -108,7 +67,7 @@
             </template>
           </Orderable>
         </template>
-
+        <!-- Drop target for empty group -->
         <DropTarget
           v-else
           :id="props.item.id + '-first-item'"
@@ -128,13 +87,13 @@
 </template>
 
 <script setup lang="ts">
-import { CogIcon, SquarePlus } from 'lucide-vue-next';
 import { motion } from 'motion-v';
 import type { ItemInfoCore } from '~/components/Modules/NestedDrag/common';
 import { DropTarget, Orderable } from '../NestedDrag';
 import DropdownConfigMenu from './DropdownConfigMenu.vue';
 import type { IDynamicItem } from './helpers';
 import { getStyle } from './helpers';
+import RenderDynamicEditorTopMenu from './RenderDynamicEditorTopMenu.vue';
 
 const commonType = 'test';
 
@@ -148,4 +107,21 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'delete', id: ItemInfoCore): void;
 }>();
+
+const addItem = () => {
+  if (props.item.type === 'group') {
+    props.item.content.push({
+      id: generateUniqId(),
+      type: 'group',
+      style: {
+        direction: 'column',
+        gap: '4',
+        align: 'start',
+        justify: 'start',
+        sizeUnits: '1',
+      },
+      content: [],
+    });
+  }
+};
 </script>
