@@ -1,27 +1,25 @@
 <template>
   <PageTemplate :data-pending="q.isPending.value">
-    <div class="flex items-center justify-between">
-      <h1 class="mb-4 font-serif text-3xl">Api Connection</h1>
-    </div>
+    <template #title> Api Connection </template>
 
-    <div>Select api to connect to this schema:</div>
+    <template #header>
+      <Select
+        v-if="apiData"
+        :model-value="apiData.type"
+        @update:model-value="(v) => (apiData.type = v as ApiSettings['type'])"
+      >
+        <SelectTrigger class="mt-2 w-full">
+          <SelectValue placeholder="Select an API" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="type in API_Types" :key="type" :value="type">
+            {{ type }}
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </template>
 
-    <Select
-      v-if="apiData"
-      :model-value="apiData.type"
-      @update:model-value="(v) => (apiData.type = v as ApiSettings['type'])"
-    >
-      <SelectTrigger class="mt-4">
-        <SelectValue placeholder="Select an API" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem v-for="type in API_Types" :key="type" :value="type">
-          {{ type }}
-        </SelectItem>
-      </SelectContent>
-    </Select>
-
-    <div v-if="schema.data.value && apiData" class="mt-4">
+    <div v-if="schema.data.value && apiData" class="mt-4 pb-4">
       <IGDB
         v-if="apiData.type === 'twitchigdb'"
         v-model="apiData"
@@ -32,9 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import IGDB from '~/components/Api/IGDB/Settings.vue';
 import type { ApiSettings } from '~/components/Api/apis';
 import { API_Types } from '~/components/Api/apis';
+import IGDB from '~/components/Api/IGDB/Settings.vue';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import PageTemplate from './PageTemplate.vue';
 

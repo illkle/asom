@@ -1,79 +1,44 @@
 <template>
   <PageTemplate :data-pending="isPending">
-    <div class="flex items-center justify-between">
-      <h1 class="mb-4 font-serif text-3xl">Directories & Schemas</h1>
-    </div>
+    <template #title> Root path & Schema </template>
 
-    <div class="flex items-center justify-between mt-4">
-      <div class="flex flex-col gap-1">
-        <div>Root path:</div>
-        <div class="font-mono text-xs opacity-30 w-1/2">
+    <div class="flex items-stretch justify-between mt-4">
+      <div
+        class="flex flex-col gap-1 border w-full p-2 rounded-md rounded-r-none rounded-b-none border-b-0"
+      >
+        <div class="font-mono text-xs opacity-30">Root path:</div>
+        <div class="font-mono text-xs">
           {{ rootPath.data.value }}
         </div>
       </div>
-      <Button variant="outline" @click="changeRootPathHandler">Change root path</Button>
+      <Button
+        variant="outline"
+        size="none"
+        class="px-3 border-l-0 rounded-l-none border-b-0 rounded-b-none"
+        @click="changeRootPathHandler"
+      >
+        <FolderIcon :size="12" />
+      </Button>
     </div>
 
-    <div class="grid grid-cols-2 mt-6 gap-4">
-      <div class="flex flex-col gap-2 pt-8">
-        <div
-          v-for="schema in existingSchemas.schemasArray.value"
-          :key="schema[0]"
-          class="px-2 border py-2 rounded-md"
-        >
-          <div class="font-mono text-xl">
-            {{ schema[1].name }}
-          </div>
-
-          <div class="flex gap-2 mt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              @click="
-                tabsStore.openNewThingFast({ _type: 'settings/schema', _path: schema[0] }, 'here')
-              "
-            >
-              Schema
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              @click="
-                tabsStore.openNewThingFast({ _type: 'settings/layout', _path: schema[0] }, 'here')
-              "
-            >
-              Layout Editor
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              @click="
-                tabsStore.openNewThingFast({ _type: 'settings/api', _path: schema[0] }, 'here')
-              "
-              >API</Button
-            >
-          </div>
-        </div>
-      </div>
-
+    <div class="gap-4">
       <div>
-        <Button
-          variant="outline"
-          size="sm"
-          class="ml-auto w-fit bg-transparent dark:bg-transparent border-b-0 rounded-b-none"
-          @click="
-            () => {
-              folderCreationPath = rootPath.data.value ?? '';
-              isNewFolderDialogOpen = true;
-            }
-          "
-        >
-          <PlusIcon :size="12" class="mr-2" />
-          Create folder
-        </Button>
+        <div :class="cn('rounded-lg border px-4 py-6 rounded-t-none ')">
+          <Button
+            variant="outline"
+            size="sm"
+            class="bg-transparent w-full mb-2"
+            @click="
+              () => {
+                folderCreationPath = rootPath.data.value ?? '';
+                isNewFolderDialogOpen = true;
+              }
+            "
+          >
+            <PlusIcon :size="12" class="mr-2" />
+            Create folder
+          </Button>
 
-        <div :class="cn('rounded-lg border px-4 py-6 rounded-tl-none ')">
           <TreeRoot
             v-if="!isPending"
             v-slot="{ flattenItems }"

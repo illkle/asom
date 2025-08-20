@@ -1,231 +1,206 @@
 <template>
-  <div class="col-span-4 flex items-stretch gap-2">
-    <div class="flex w-11 items-center justify-center">
-      <div class="h-full w-[1px] bg-muted"></div>
+  <template v-if="item.value.type === 'Text'">
+    <RadioGroup v-model="item.value.settings.size">
+      <RadioGroupItem value="S">S</RadioGroupItem>
+      <RadioGroupItem value="M">M</RadioGroupItem>
+      <RadioGroupItem value="L">L</RadioGroupItem>
+    </RadioGroup>
+
+    <RadioGroup v-model="item.value.settings.font">
+      <RadioGroupItem value="Serif">Serif</RadioGroupItem>
+      <RadioGroupItem value="Sans">Sans</RadioGroupItem>
+    </RadioGroup>
+
+    <RadioGroup v-model="item.value.settings.weight">
+      <RadioGroupItem value="Light">Light</RadioGroupItem>
+      <RadioGroupItem value="Normal">Normal</RadioGroupItem>
+      <RadioGroupItem value="Bold">Bold</RadioGroupItem>
+      <RadioGroupItem value="Black">Black</RadioGroupItem>
+    </RadioGroup>
+
+    <div class="flex items-center gap-2">
+      <Checkbox id="isMultiline" v-model="item.value.settings.isMultiline" />
+      <label for="isMultiline">Multiline</label>
     </div>
-    <div class="flex w-full flex-col gap-2">
-      <template v-if="item.value.type === 'Text'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
+  </template>
 
-        <h5 class="text-xs text-muted-foreground">Size</h5>
-        <Select v-model:model-value="item.value.settings.size" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings?.size || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="S">S</SelectItem>
-            <SelectItem value="M">M</SelectItem>
-            <SelectItem value="L">L</SelectItem>
-          </SelectContent>
-        </Select>
+  <template v-else-if="item.value.type === 'Number'">
+    <RadioGroup v-model="item.value.settings.size">
+      <RadioGroupItem value="S">S</RadioGroupItem>
+      <RadioGroupItem value="M">M</RadioGroupItem>
+      <RadioGroupItem value="L">L</RadioGroupItem>
+    </RadioGroup>
+    <RadioGroup v-model="item.value.settings.style">
+      <RadioGroupItem value="Default">Default</RadioGroupItem>
+      <RadioGroupItem value="Stars">Stars</RadioGroupItem>
+      <RadioGroupItem value="Slider">Slider</RadioGroupItem>
+    </RadioGroup>
 
-        <h5 class="text-xs text-muted-foreground">Font</h5>
-        <Select v-model:model-value="item.value.settings.font" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings?.font || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Serif">Serif</SelectItem>
-            <SelectItem value="Sans">Sans</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <h5 class="text-xs text-muted-foreground">Weight</h5>
-        <Select v-model:model-value="item.value.settings.weight" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings.weight || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Light">Light</SelectItem>
-            <SelectItem value="Normal">Normal</SelectItem>
-            <SelectItem value="Bold">Bold</SelectItem>
-            <SelectItem value="Black">Black</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div class="mt-2 flex items-center gap-2">
-          <Checkbox id="isMultiline" v-model="item.value.settings.isMultiline" />
-          <label for="isMultiline">Allow multiple lines</label>
-        </div>
-      </template>
-
-      <template v-else-if="item.value.type === 'Number'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-
-        <h5 class="text-xs text-muted-foreground">Size</h5>
-        <Select v-model:model-value="item.value.settings.size" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings?.size || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="S">S</SelectItem>
-            <SelectItem value="M">M</SelectItem>
-            <SelectItem value="L">L</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <h5 class="text-xs text-muted-foreground">Min value</h5>
+    <template v-if="item.value.settings.style !== 'Stars'">
+      <div class="flex">
+        <h5
+          class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+        >
+          Decimal places
+        </h5>
         <NumberField
-          :max="item.value.settings.max"
-          :model-value="item.value.settings.min"
+          :min="0"
+          :model-value="item.value.settings.decimalPlaces"
           @update:model-value="
             (v) => {
               if (item.value.type !== 'Number') return;
-              item.value.settings.min = typeof v === 'number' && !isNaN(v) ? v : undefined;
+              item.value.settings.decimalPlaces =
+                typeof v === 'number' && !isNaN(v) ? v : undefined;
             }
           "
           class="w-fit"
         >
           <NumberFieldContent>
             <NumberFieldDecrement />
-            <NumberFieldInput />
+            <NumberFieldInput class="rounded-l-none" />
             <NumberFieldIncrement />
           </NumberFieldContent>
         </NumberField>
-        <h5 class="text-xs text-muted-foreground">Max value</h5>
+      </div>
+    </template>
+    <template v-else>
+      <div class="flex">
+        <h5
+          class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+        >
+          Stars
+        </h5>
         <NumberField
-          :min="item.value.settings.min"
-          :model-value="item.value.settings.max"
-          @update:model-value="
-            (v) => {
-              if (item.value.type !== 'Number') return;
-              item.value.settings.max = typeof v === 'number' && !isNaN(v) ? v : undefined;
-            }
-          "
-          class="w-fit"
+          :min="1"
+          :default-value="5"
+          :model-value="item.value.settings.starsCount"
+          @update:model-value="item.value.settings.starsCount = $event"
         >
           <NumberFieldContent>
             <NumberFieldDecrement />
-            <NumberFieldInput />
+            <NumberFieldInput class="rounded-none" />
             <NumberFieldIncrement />
           </NumberFieldContent>
         </NumberField>
 
-        <h5 class="text-xs text-muted-foreground">Style</h5>
-        <Select v-model:model-value="item.value.settings.style" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings.style || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Default">Default</SelectItem>
-            <SelectItem value="Stars">Stars</SelectItem>
-            <SelectItem value="Slider">Slider</SelectItem>
-          </SelectContent>
-        </Select>
+        <Tooltip>
+          <TooltipTrigger class="border px-2 rounded-r-md border-l-0">
+            <InfoIcon class="w-4 h-4" />
+          </TooltipTrigger>
+          <TooltipContent class="max-w-xs">
+            For example, min=0, max=5, stars=5 will display 5 stars and make two and a a half star
+            equal to 2.5 in frontmatter.<br /><br />
+            While min=10, max=20, stars=10 will display 10 stars and make five Stars equal to 15 in
+            frontmatter.
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </template>
 
-        <template v-if="item.value.settings.style !== 'Stars'">
-          <h5 class="text-xs text-muted-foreground">Decimal places</h5>
-          <NumberField
-            :min="0"
-            :model-value="item.value.settings.decimalPlaces"
-            @update:model-value="
-              (v) => {
-                if (item.value.type !== 'Number') return;
-                item.value.settings.decimalPlaces =
-                  typeof v === 'number' && !isNaN(v) ? v : undefined;
-              }
-            "
-            class="w-fit"
-          >
-            <NumberFieldContent>
-              <NumberFieldDecrement />
-              <NumberFieldInput />
-              <NumberFieldIncrement />
-            </NumberFieldContent>
-          </NumberField>
-        </template>
-        <template v-else>
-          <h5 class="text-xs text-muted-foreground">Stars count</h5>
-          <NumberField
-            :min="1"
-            :model-value="item.value.settings.starsCount"
-            @update:model-value="item.value.settings.starsCount = $event"
-          >
-            <NumberFieldContent>
-              <NumberFieldDecrement />
-              <NumberFieldInput />
-              <NumberFieldIncrement />
-            </NumberFieldContent>
-          </NumberField>
-          <div class="text-xs text-muted-foreground">
-            Note that min and max values still matter. And must correspond to number of stars,
-            unless you want to select intermediate values.
-          </div>
-        </template>
-      </template>
-
-      <template v-else-if="item.value.type === 'TextCollection'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-
-        <h5 class="text-xs text-muted-foreground">Size</h5>
-        <Select v-model:model-value="item.value.settings.size" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings.size || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="S">S</SelectItem>
-            <SelectItem value="M">M</SelectItem>
-            <SelectItem value="L">L</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <h5 class="text-xs text-muted-foreground">Font</h5>
-        <Select v-model:model-value="item.value.settings.font" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings?.font || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Serif">Serif</SelectItem>
-            <SelectItem value="Sans">Sans</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <h5 class="text-xs text-muted-foreground">Weight</h5>
-        <Select v-model:model-value="item.value.settings.weight" class="w-full">
-          <SelectTrigger class="w-full">
-            {{ item.value.settings.weight || 'Default' }}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Light">Light</SelectItem>
-            <SelectItem value="Normal">Normal</SelectItem>
-            <SelectItem value="Bold">Bold</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <h5 class="text-xs text-muted-foreground">Prefix</h5>
-        <Input v-model="item.value.settings.prefix" />
-      </template>
-
-      <template v-else-if="item.value.type === 'Image'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-        <h5 class="text-xs text-muted-foreground">Aspect Ratio</h5>
-        <Input v-model="item.value.settings.aspectRatio" />
-        <div class="text-xs text-muted-foreground">
-          Formatted as "width / height". Example: "16 / 9"
-        </div>
-      </template>
-
-      <template v-else-if="item.value.type === 'Date'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-      </template>
-      <template v-else-if="item.value.type === 'DateCollection'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-      </template>
-      <template v-else-if="item.value.type === 'DatesPairCollection'">
-        <h5 class="text-xs text-muted-foreground">Display Name</h5>
-        <Input v-model="item.value.settings.displayName" />
-      </template>
+    <div class="flex">
+      <h5
+        class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+      >
+        Min
+      </h5>
+      <NumberField
+        :max="item.value.settings.max"
+        :model-value="item.value.settings.min"
+        @update:model-value="
+          (v) => {
+            if (item.value.type !== 'Number') return;
+            item.value.settings.min = typeof v === 'number' && !isNaN(v) ? v : undefined;
+          }
+        "
+        class="w-fit"
+      >
+        <NumberFieldContent>
+          <NumberFieldDecrement />
+          <NumberFieldInput class="rounded-l-none" />
+          <NumberFieldIncrement />
+        </NumberFieldContent>
+      </NumberField>
     </div>
-  </div>
+
+    <div class="flex">
+      <h5
+        class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+      >
+        Max
+      </h5>
+      <NumberField
+        :min="item.value.settings.min"
+        :model-value="item.value.settings.max"
+        @update:model-value="
+          (v) => {
+            if (item.value.type !== 'Number') return;
+            item.value.settings.max = typeof v === 'number' && !isNaN(v) ? v : undefined;
+          }
+        "
+        class="w-fit"
+      >
+        <NumberFieldContent>
+          <NumberFieldDecrement />
+          <NumberFieldInput class="rounded-l-none" />
+          <NumberFieldIncrement />
+        </NumberFieldContent>
+      </NumberField>
+    </div>
+  </template>
+
+  <template v-else-if="item.value.type === 'TextCollection'">
+    <RadioGroup v-model="item.value.settings.size">
+      <RadioGroupItem value="S">S</RadioGroupItem>
+      <RadioGroupItem value="M">M</RadioGroupItem>
+      <RadioGroupItem value="L">L</RadioGroupItem>
+    </RadioGroup>
+
+    <RadioGroup v-model="item.value.settings.font">
+      <RadioGroupItem value="Serif">Serif</RadioGroupItem>
+      <RadioGroupItem value="Sans">Sans</RadioGroupItem>
+    </RadioGroup>
+
+    <RadioGroup v-model="item.value.settings.weight">
+      <RadioGroupItem value="Light">Light</RadioGroupItem>
+      <RadioGroupItem value="Normal">Normal</RadioGroupItem>
+      <RadioGroupItem value="Bold">Bold</RadioGroupItem>
+    </RadioGroup>
+
+    <div class="flex">
+      <h5
+        class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+      >
+        Prefix
+      </h5>
+      <Input v-model="item.value.settings.prefix" class="rounded-l-none" />
+    </div>
+  </template>
+
+  <template v-else-if="item.value.type === 'Image'">
+    <div class="flex">
+      <h5
+        class="text-sm border whitespace-nowrap flex items-center px-3 rounded-l-md border-r-0 text-muted-foreground"
+      >
+        Aspect Ratio
+      </h5>
+      <Input v-model="item.value.settings.aspectRatio" class="rounded-none" />
+      <Tooltip>
+        <TooltipTrigger class="border px-2 rounded-r-md border-l-0">
+          <InfoIcon class="w-4 h-4" />
+        </TooltipTrigger>
+        <TooltipContent>Formatted as "width / height". Example: "16 / 9"</TooltipContent>
+      </Tooltip>
+    </div>
+  </template>
+
+  <template v-else-if="item.value.type === 'Date'"> </template>
+  <template v-else-if="item.value.type === 'DateCollection'"> </template>
+  <template v-else-if="item.value.type === 'DatesPairCollection'"> </template>
 </template>
 
 <script setup lang="ts">
+import { InfoIcon } from 'lucide-vue-next';
+import { RadioGroup, RadioGroupItem } from '~/components/Modules/CustomRadio';
 import type { SchemaItem } from '~/types';
 
 const item = defineModel<SchemaItem>({ required: true });

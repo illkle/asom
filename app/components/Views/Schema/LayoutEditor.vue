@@ -1,13 +1,6 @@
 <template>
   <PageTemplate :data-pending="viewLayoutQ.isPending.value || viewSettingsQ.isPending.value">
-    <div class="flex items-center justify-between">
-      <h1 class="mb-4 font-serif text-3xl">Layout editor</h1>
-    </div>
-
-    <div class="flex flex-col gap-2 text-sm text-muted-foreground">
-      It's easier to edit layout on an existing file, because some properties(notably "Size Units")
-      are not reflected in layout editor
-    </div>
+    <template #title> Layout editor </template>
 
     <div v-if="editableProxy && schema.data.value && viewLayoutQ.data.value">
       <MetaEditor

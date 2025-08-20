@@ -23,11 +23,14 @@ export class ConfigStoredInRootFolder<T extends z.ZodSchema> {
     const targetFolder = path.join(rootPath, '/.asom_internal/');
     const targetFile = path.join(targetFolder, this.fileName);
 
-    const f = (await fs.exists(targetFile))
-      ? JSON.parse(await fs.readTextFile(targetFile))
-      : this.fileSchema.parse({});
-
-    return this.fileSchema.parse(f);
+    try {
+      const text = await fs.readTextFile(targetFile);
+      const f = JSON.parse(text);
+      return this.fileSchema.parse(f);
+    } catch (e) {
+      console.error('Error reading ConfigTiedToSchema ' + this.fileName, e);
+    }
+    return this.fileSchema.parse({});
   }
 
   async set(data: z.infer<T>) {

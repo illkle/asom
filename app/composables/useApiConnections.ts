@@ -1,4 +1,5 @@
 import type { UseQueryReturn } from '@pinia/colada';
+import { watchPausable } from '@vueuse/core';
 import z from 'zod/v4';
 import { zApiSettings } from '~/components/Api/apis';
 
@@ -57,16 +58,23 @@ export const useEditableRef = <T>(
     q.isPending,
     (newIsPending) => {
       if (!newIsPending) {
-        console.log('q.data.value', q.data.value);
+        pause();
         proxyRef.value = q.data.value;
+        resume();
       }
     },
     { once: true },
   );
 
-  watch(
+  const skipUpdate = ref(true);
+
+  const { pause, resume } = watchPausable(
     proxyRef,
     async (newData) => {
+      if (skipUpdate.value) {
+        skipUpdate.value = false;
+        return;
+      }
       await update(newData);
     },
     { deep: true },

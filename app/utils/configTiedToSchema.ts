@@ -32,11 +32,15 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
       const text = await fs.readTextFile(targetFile);
       const f = JSON.parse(text);
       return this.fileSchema.parse(f);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error reading ConfigTiedToSchema ' + this.fileName, e);
+    }
     return def;
   }
 
   async set(schemaOwnerFolder: string, data: z.infer<T>) {
+    console.log('trying to set', schemaOwnerFolder, data);
+
     const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
     const targetFile = path.join(targetFolder, this.fileName);
     if (!(await fs.exists(targetFolder))) {

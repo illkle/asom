@@ -1,25 +1,25 @@
 <template>
   <PageTemplate :data-pending="!schema">
-    <template v-if="schema">
-      <!-- Header -->
-      <div class="sticky -top-5 z-10 pb-2 rounded-b-md bg-background">
-        <div class="flex justify-between items-center gap-2">
-          <h2 class="text-3xl font-serif">Edit schema</h2>
-          <div class="text-xs text-muted-foreground max-w-1/2">
-            {{ shortPath }}
-          </div>
+    <template #title> Schema editor </template>
+    <template #header>
+      <div class="flex justify-between items-center gap-2 mt-2"></div>
+      <div class="flex items-center gap-2">
+        <div class="flex items-stretch grow">
+          <h5
+            class="text-xs text-muted-foreground border border-r-0 rounded-l-md whitespace-nowrap flex items-center px-2"
+          >
+            Schema name
+          </h5>
+          <Input class="font-serif rounded-l-none" v-if="schema" v-model="schema.name" />
+          <Input v-else class="font-serif rounded-l-none" />
         </div>
-        <div class="flex items-center gap-2 mt-4">
-          <Input class="font-serif" v-model="schema.name" />
-          <Button variant="destructive" @click="goBack"> Discard </Button>
+        <Button variant="destructive" class="grow" @click="goBack"> Discard </Button>
 
-          <Button variant="outline" @click="save">Save</Button>
-        </div>
+        <Button variant="outline" class="grow" @click="save">Save</Button>
       </div>
-
-      <!-- Editor -->
-
-      <div class="flex flex-col gap-x-2 gap-y-2 mt-4">
+    </template>
+    <template v-if="schema">
+      <div class="flex flex-col gap-x-2 gap-y-2">
         <SchemaItem
           v-for="(_, i) in schema.items"
           v-model:model-value="schema.items[i]!"

@@ -1,57 +1,54 @@
 <template>
-  <div class="w-full gap-4 flex border-b py-4">
-    <div class="w-full">
-      <div class="flex flex-col gap-1 w-full">
-        <div class="flex gap-2 flex-col justify-between">
-          <h5 class="text-xs text-muted-foreground">Item key</h5>
-          <Input
-            v-model="item.name"
-            placeholder="Name"
-            class="w-full"
-            autofocus
-            @blur="editing = false"
-          />
-        </div>
-        <div class="flex flex-col gap-2 mt-2">
-          <h5 class="text-xs text-muted-foreground">Type</h5>
-          <div class="flex gap-2 items-center">
-            <Select v-model:model-value="item.value.type">
-              <SelectTrigger class="w-full">
-                {{ item.value.type }}
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="k in SchemaItemKeys" :value="k">{{ k }}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" @click="emit('delete')">
-              <DeleteIcon class="w-5" /> Delete
-            </Button>
-          </div>
-        </div>
-      </div>
+  <div class="w-full">
+    <div class="gap-2 w-full grid grid-cols-4 px-2 py-4 border rounded-t-md">
+      <h5 class="text-xs text-muted-foreground">Key</h5>
+      <h5 class="text-xs text-muted-foreground">Label</h5>
+      <h5 class="text-xs text-muted-foreground">Type</h5>
+      <div></div>
 
-      <h5 class="text-xs text-muted-foreground mt-4 mb-2">Preview</h5>
-      <div class="p-4 border rounded-lg flex items-center justify-center">
-        <AttributesRouter
-          v-model:model-value="value"
-          :schema-item="item"
-          :disabled="item.value.type === 'Image'"
-          hide-label
-          class="mt-2 w-full"
-        />
-      </div>
-      <span v-if="item.value.type === 'Image'" class="text-xs text-muted-foreground">
-        Sorry, working preview for image type is not implemented yet :(
-      </span>
+      <Input
+        v-model="item.name"
+        placeholder="Name"
+        class="w-full"
+        autofocus
+        @blur="editing = false"
+      />
+
+      <Input v-model="item.value.settings.displayName" />
+
+      <Select v-model:model-value="item.value.type">
+        <SelectTrigger class="w-full">
+          {{ item.value.type }}
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="k in SchemaItemKeys" :value="k">{{ k }}</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Button variant="outline" @click="emit('delete')"> <TrashIcon class="w-5" /> Delete </Button>
     </div>
-    <div class="w-full">
+
+    <div
+      class="w-full flex items-center flex-wrap gap-2 justify-center border border-b-0 border-t-0 px-2 py-4 empty:hidden"
+    >
       <SchemaItemParams v-model:model-value="item" />
+    </div>
+
+    <div class="p-4 border rounded-lg flex items-center justify-center rounded-t-none">
+      <AttributesRouter
+        v-model:model-value="value"
+        :schema-item="item"
+        :disabled="item.value.type === 'Image'"
+        hide-label
+        class="mt-2 w-full"
+        :class="{ 'max-w-xs': item.value.type === 'Image' }"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { XIcon as DeleteIcon } from 'lucide-vue-next';
+import { TrashIcon } from 'lucide-vue-next';
 import type { AttrValue, SchemaItem } from '~/types';
 import { SchemaItemKeys } from '~/types';
 import AttributesRouter from '../Editor/AttributesRouter.vue';
