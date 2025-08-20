@@ -8,6 +8,7 @@ export const useAppearingInputFocuser = (refName: string) => {
   watchEffect(
     () => {
       if (ref.value) {
+        console.log('focusing', ref.value.inputRef);
         ref.value.inputRef?.focus();
       }
     },

@@ -1,3 +1,6 @@
+import { exists, mkdir, writeFile } from '@tauri-apps/plugin-fs';
+import { fetch } from '@tauri-apps/plugin-http';
+import path from 'path-browserify';
 import z from 'zod';
 import { defineExApiSchema, type ExApiData, type ExApiSchema } from '~/components/Api/base';
 import { igdbAPISchema, zAPIIGDB } from '~/components/Api/IGDB';
@@ -29,11 +32,17 @@ export type InferApiData<T extends ApiKey> = ExApiData<ApiDataMapping[T]>;
 
 export const API_Types = Object.keys(ApiDataMap) as ApiKey[];
 
-export const makeFileAttrsFromApi = <T extends ApiSettings>(
+export const makeFileAttrsFromApi = async <T extends ApiSettings>(
   apiSettings: T,
   apiData: InferApiData<T['type']>,
   mapping: Record<string, string | null | undefined>,
-): RecordFromDb['attrs'] => {
+  rootPath: string,
+  recordName: string,
+): Promise<RecordFromDb['attrs']> => {
+  if (!rootPath) {
+    throw new Error('Root path is required');
+  }
+
   const result: RecordFromDb['attrs'] = {};
 
   const apiSchema = ApiDataMap[apiSettings.type];
@@ -67,9 +76,11 @@ export const makeFileAttrsFromApi = <T extends ApiSettings>(
         };
         break;
       case 'Image':
+        const imageName = await saveImage(value as string, rootPath, recordName);
+
         result[mappedKey] = {
           type: 'String',
-          value: value as string,
+          value: imageName,
         };
         break;
       case 'Date':
@@ -88,4 +99,31 @@ export const makeFileAttrsFromApi = <T extends ApiSettings>(
   }
 
   return result;
+};
+
+const saveImage = async (
+  imageUrl: string,
+  rootPath: string,
+  recordName: string,
+): Promise<string> => {
+  const folder = path.join(rootPath, '.assets');
+
+  const folderExists = await exists(folder);
+  if (!folderExists) {
+    await mkdir(folder, { recursive: true });
+  }
+
+  const fileName = `${recordName}-${generateUniqId()}.jpg`;
+
+  const image = await fetch(imageUrl);
+
+  const imageBlob = await image.blob();
+
+  const imageBuffer = await imageBlob.arrayBuffer();
+
+  const imagePath = path.join(folder, fileName);
+
+  await writeFile(imagePath, new Uint8Array(imageBuffer));
+
+  return fileName;
 };

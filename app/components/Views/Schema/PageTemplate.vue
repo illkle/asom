@@ -3,7 +3,7 @@
     ref="scrollElementRef"
     class="w-full overflow-y-auto overflow-x-hidden bg-background overscroll-none h-full scrollbarMod gutter-stable"
   >
-    <div class="max-w-3xl mx-auto w-full px-4">
+    <div class="max-w-3xl mx-auto w-full px-4 pb-4">
       <div
         class="sticky top-0 z-10 empty:hidden pb-4 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)]"
       >

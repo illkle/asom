@@ -69,6 +69,10 @@
                 <Trash2Icon /> Delete
               </DropdownMenuItem>
 
+              <DropdownMenuItem @click="fillFromApiDialog = true">
+                <CloudDownload /> Fill from API
+              </DropdownMenuItem>
+
               <DropdownMenuItem
                 @click="
                   viewSettingsUpdater('labelsHidden', !viewSettingsQ.data.value?.labelsHidden)
@@ -93,6 +97,27 @@
           </DropdownMenu>
         </BreadcrumbList>
       </template>
+
+      <Dialog v-if="hasApi" v-model:open="fillFromApiDialog">
+        <DialogContent @open-auto-focus="focusInputOnDialogOpen">
+          <DialogHeader>
+            <DialogTitle>Fill from API</DialogTitle>
+          </DialogHeader>
+
+          <ApiSearchRouter
+            :connection="apiConnection.q.data.value"
+            @select="
+              (_, attrs) => {
+                editableProxy.record.attrs = {
+                  ...editableProxy.record.attrs,
+                  ...attrs,
+                };
+                fillFromApiDialog = false;
+              }
+            "
+          />
+        </DialogContent>
+      </Dialog>
 
       <Dialog v-model:open="renameDialog">
         <DialogContent>
@@ -173,13 +198,21 @@
 </template>
 
 <script lang="ts" setup>
-import { EditIcon, EllipsisVerticalIcon, EyeIcon, PencilIcon, Trash2Icon } from 'lucide-vue-next';
+import {
+  CloudDownload,
+  EditIcon,
+  EllipsisVerticalIcon,
+  EyeIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-vue-next';
 
 import path from 'path-browserify';
 import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
 import { c_delete_to_trash } from '~/api/tauriActions';
+import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
@@ -296,6 +329,13 @@ const showLayoutWarning = computed(() => {
     !editMode.value
   );
 });
+
+const apiConnection = useApiConnection(computed(() => schema.value?.owner_folder));
+const hasApi = computed(() => {
+  return apiConnection.q.data?.value && apiConnection.q.data.value.type !== 'none';
+});
+
+const fillFromApiDialog = ref(false);
 </script>
 
 <style>

@@ -22,12 +22,14 @@ const delegatedProps = computed(() => {
 });
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const contentRef = useTemplateRef<HTMLInputElement>('inputRef');
 </script>
 
 <template>
   <DialogPortal>
     <DialogOverlay />
     <DialogContent
+      ref="contentRef"
       data-slot="dialog-content"
       v-bind="forwarded"
       :class="

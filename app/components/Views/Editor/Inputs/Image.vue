@@ -16,11 +16,11 @@
   </ContextMenu>
   <div
     v-else-if="imageName"
-    class="flex h-full w-full items-center justify-center border p-1.5 rounded-md text-xs text-muted-foreground text-center"
+    class="flex flex-col shrink-1 items-center justify-center border p-1.5 rounded-md text-xs text-muted-foreground text-center"
     :style="ar"
     @click="changeImageHandler"
   >
-    File not found: {{ imageName }}
+    File not found
   </div>
   <div
     class="relative w-full rounded-md border flex items-center flex-col justify-center"

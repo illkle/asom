@@ -1,12 +1,12 @@
 import path from 'path-browserify';
 import { c_get_files_path } from '~/api/tauriActions';
-import type { IOpenedPath } from '~/composables/stores/useTabsStoreV2';
+import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import type { RecordFromDb, RecordListGetResult, SortOrder } from '~/types';
 
-export const FILES_LIST_KEY = (opened: IOpenedPath, searchQuery: string, sort: SortOrder) => [
+export const FILES_LIST_KEY = (opened: IOpened, searchQuery: string, sort: SortOrder) => [
   'files',
   opened._type,
   opened._path,
@@ -20,7 +20,7 @@ export const useFlesListV2 = ({
   searchQuery,
   sort,
 }: {
-  opened: IOpenedPath;
+  opened: IOpened;
   searchQuery: Ref<string>;
   sort: Ref<SortOrder>;
 }) => {

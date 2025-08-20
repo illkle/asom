@@ -4,32 +4,35 @@
       <slot />
     </DialogTrigger>
 
-    <DialogContent class="">
-      <DialogTitle> Create new file </DialogTitle>
+    <DialogContent>
+      <div ref="dialogRef" class="flex flex-col gap-4">
+        <DialogTitle> Create new file </DialogTitle>
 
-      <ApiSearchRouter
-        v-if="apiConnection.q.data.value"
-        :connection="apiConnection.q.data.value"
-        @select="(id, attrs) => addThing(id, attrs)"
-      />
-
-      <div class="flex flex-col gap-2">
-        <Input ref="inputRef" autofocus v-model:model-value="newFileName" placeholder="Filename" />
-
-        <div class="flex" v-if="schemasArray.length > 1">
-          <Button
+        <RadioGroup v-if="schemasArray.length > 1" v-model="selectedSchemaIndex" class="w-full">
+          <RadioGroupItem
             v-for="(schema, index) in schemasArray"
             :key="schema[0]"
-            :variant="selectedSchemaIndex === index ? 'default' : 'outline'"
-            class="first:rounded-l-md rounded-none grow last:rounded-r-md border-r-0 last:border-r"
-            @click="selectedSchemaIndex = index"
+            :value="index"
+            :label="schema[1].name"
+            class="w-full"
           >
             {{ schema[1].name }}
-          </Button>
-        </div>
-      </div>
+          </RadioGroupItem>
+        </RadioGroup>
 
-      <Button variant="outline" size="default" @click="() => addThing()"> Create </Button>
+        <template v-if="apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none'">
+          <ApiSearchRouter
+            :connection="apiConnection.q.data.value"
+            @select="(id, attrs) => addThing(id, attrs)"
+          />
+        </template>
+
+        <Input v-model:model-value="newFileName" placeholder="Filename" autofocus />
+
+        <Button variant="outline" size="default" @click="() => addThing()"> Create </Button>
+
+        <DialogDescription></DialogDescription>
+      </div>
     </DialogContent>
   </Dialog>
 </template>
@@ -37,11 +40,12 @@
 <script lang="ts" setup>
 import { path as tauriPath } from '@tauri-apps/api';
 import { exists } from '@tauri-apps/plugin-fs';
-import { useEventListener } from '@vueuse/core';
 import path from 'path-browserify';
 import { toast } from 'vue-sonner';
 import { c_save_file } from '~/api/tauriActions';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
+import { RadioGroup } from '~/components/Modules/CustomRadio';
+import RadioGroupItem from '~/components/Modules/CustomRadio/RadioGroupItem.vue';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import type { RecordFromDb } from '~/types';
 
@@ -70,30 +74,26 @@ const pathFromTab = computed(() => {
   return '';
 });
 
-const sc = useSchemaByPath(pathFromTab);
-
+const schemaFromActiveTab = useSchemaByPath(pathFromTab);
 const apiConnection = useApiConnection(computed(() => selectedSchema.value?.[0]));
 
-watch(newFileOpened, (v) => {
-  console.log('newFileOpened', v);
-  if (v) {
-    selectedSchemaIndex.value = null;
+const schemaFromActiveTabIndex = computed(() => {
+  return schemasArray.value.findIndex(([p]) => p === schemaFromActiveTab.data.value?.owner_folder);
+});
 
-    if (sc.data.value) {
-      const index = schemasArray.value.findIndex(([p]) => p === sc.data.value?.owner_folder);
-      if (index !== -1) {
-        selectedSchemaIndex.value = index;
-      }
+watch(newFileOpened, (v) => {
+  if (v) {
+    if (schemaFromActiveTabIndex.value >= 0) {
+      selectedSchemaIndex.value = schemaFromActiveTabIndex.value;
+    } else {
+      selectedSchemaIndex.value = 0;
     }
   }
 });
 
-const ts = useTabsStoreV2();
-
 const newFileName = ref('');
 
 const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) => {
-  console.log('addThing', nameInput, attrsInput);
   const name = nameInput ?? newFileName.value;
 
   const actualName = name.endsWith('.md') ? name : name + '.md';
@@ -104,13 +104,12 @@ const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) 
     return;
   }
 
-  if (!pathFromTab.value) {
-    console.log('no path');
-    toast.error('Please open a folder to save the file');
-    return;
-  }
+  const saveTo =
+    selectedSchemaIndex.value === schemaFromActiveTabIndex.value
+      ? pathFromTab.value
+      : selectedSchema.value[0];
 
-  const finalPath = await tauriPath.join(pathFromTab.value, actualName);
+  const finalPath = await tauriPath.join(saveTo, actualName);
 
   const ex = await exists(finalPath);
   if (ex) {
@@ -126,16 +125,34 @@ const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) 
     modified: null,
   });
 
-  ts.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
+  tabsStore.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
   newFileOpened.value = false;
 };
 
 const isMacOS = useIsMac();
-useEventListener('keydown', (e) => {
-  const commandKey = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
 
-  if (commandKey && e.key === 'n') {
-    newFileOpened.value = true;
-  }
+const hasApi = computed(() => {
+  return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';
 });
+
+const dialogRef = useTemplateRef<HTMLDivElement>('dialogRef');
+
+const focusHandler = () => {
+  if (!dialogRef.value) return;
+
+  const a = dialogRef.value?.querySelector(`input[autofocus]`);
+  if (a) {
+    (a as HTMLInputElement).focus();
+  }
+};
+
+watch(
+  [selectedSchemaIndex, newFileOpened],
+  ([_, opened]) => {
+    if (opened) {
+      focusHandler();
+    }
+  },
+  { flush: 'post' },
+);
 </script>

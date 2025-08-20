@@ -83,6 +83,9 @@ pub async fn get_files_by_path(
             SchemaAttrType::DateCollection(_) => {
                 format!("files.attributes->'$.{}.value[0]'", sort.key)
             }
+            SchemaAttrType::Number(_) => {
+                format!("CAST(files.attributes->'$.{}.value' AS REAL)", sort.key)
+            }
             _ => format!("files.attributes->'$.{}.value'", sort.key),
         },
         _ => "path".to_string(),

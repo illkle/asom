@@ -1,18 +1,27 @@
 <template>
   <div>
-    <Input v-model="search" placeholder="Search for a game" class="w-full" />
+    <Input
+      v-model="search"
+      autofocus
+      placeholder="Search for a game from IGDB"
+      class="w-full"
+      :class="{ 'rounded-b-none': games.length > 0 }"
+    />
 
-    <div class="flex flex-col mt-2 max-h-[300px] overflow-y-auto">
+    <div
+      v-if="games.length > 0"
+      class="flex flex-col max-h-[300px] overflow-y-auto scrollbarMod border border-t-0 rounded-b-md"
+    >
       <button
         v-for="game in games"
         :key="game.id"
-        class="flex gap-4 hover:bg-muted py-2"
+        class="flex gap-4 hover:bg-muted py-2 px-2"
         @click="emit('select', game)"
       >
         <img
           v-if="game.cover"
           :src="game.cover"
-          class="w-18 h-24 object-cover block rounded-sm overflow-hidden"
+          class="w-18 h-24 object-cover block rounded-sm overflow-hidden shrink-0"
         />
         <div v-else class="w-18 h-24 block rounded-sm overflow-hidden bg-muted opacity-10"></div>
 
@@ -39,11 +48,11 @@ import { getGamesFromIGDB } from '~/components/Api/IGDB/igdb';
 const data = defineModel<ApiSettingsIGDB>();
 
 const search = ref('');
-const debouncedSearch = refDebounced(search, 500);
+const debouncedSearch = refDebounced(search, 100);
 
 const q = useQuery({
   key: () => ['igdb', 'search', debouncedSearch.value],
-  query: async () => {
+  query: async (a) => {
     const games = await getGamesFromIGDB({
       token: data.value.accessToken ?? '',
       clientId: data.value.clientId,
