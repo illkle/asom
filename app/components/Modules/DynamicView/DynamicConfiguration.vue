@@ -1,17 +1,11 @@
 <template>
   <LayoutGroup>
-    <div class="flex gap-2 mt-2">
-      <Button variant="outline" class="grow" @click="emit('update:layout', innerValue)">
-        <SaveIcon /> Save
-      </Button>
-      <Button variant="outline" class="grow" @click="emit('discard')"> <XIcon /> Discard </Button>
-    </div>
     <MotionConfig :transition="{ duration: 0.2, type: 'tween' }">
       <RenderDynamicEditor
-        :item="innerValue"
+        :item="layoutValue"
         :level="0"
         :index="0"
-        class="border rounded-md grow data-[is-over=true]:bg-accent mt-4"
+        class="border rounded-md rounded-b-none grow data-[is-over=true]:bg-accent mt-4"
         @delete="onDelete"
         :parentIds="[]"
       >
@@ -24,10 +18,14 @@
         id="toDelete"
         :parentIds="[]"
         :index="0"
-        class="mr-2 mt-2 border rounded-md flex items-center justify-center h-10 gap-2 data-[disabled=true]:opacity-30 data-[disabled=true]:cursor-not-allowed transition-opacity data-[is-over=true]:bg-accent"
+        class="group rounded-t-none border border-t-0 text-sm rounded-md flex items-center justify-center h-10 data-[disabled=true]:cursor-not-allowed transition-colors data-[is-over=true]:bg-accent"
         :data-disabled="!draggedItem"
       >
-        <Trash2Icon :size="16" /> Drag here to delete
+        <span
+          class="group-data-[disabled=true]:opacity-30 flex gap-2 items-center transition-opacity"
+        >
+          <Trash2Icon :size="16" /> Drag here to delete
+        </span>
       </DropTarget>
 
       <div class="flex flex-col gap-2 w-fit">
@@ -47,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { SaveIcon, Trash2Icon, XIcon } from 'lucide-vue-next';
+import { Trash2Icon } from 'lucide-vue-next';
 import { useProvideDNDContext, type ItemInfoCore } from '~/components/Modules/NestedDrag/common';
 import type { Schema } from '~/types';
 import { Draggable, DropTarget } from '../NestedDrag';
@@ -66,18 +64,13 @@ const props = defineProps<{
   schema: Schema;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:layout', layout: IDynamicViewGroup): void;
-  (e: 'discard'): void;
-}>();
-
-const innerValue = ref(props.layout);
+const layoutValue = defineModel<IDynamicViewGroup>('layout');
 
 const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
   onMove: (draggedItem, hoveredItem, quadrant) => {
     console.log('onMove', draggedItem, hoveredItem);
     if (hoveredItem.id === 'toDelete') {
-      const i = findAndRemoveItem(innerValue.value, draggedItem);
+      const i = findAndRemoveItem(layoutValue.value, draggedItem);
 
       if (!i) {
         throw new Error('Item not found ' + draggedItem.id);
@@ -93,17 +86,17 @@ const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
         throw new Error('Item not found ' + draggedItem.id);
       }
 
-      insertItemIntoGroup(innerValue.value, i, hoveredItem, quadrant);
+      insertItemIntoGroup(layoutValue.value, i, hoveredItem, quadrant);
 
       return;
     }
 
-    swapItems(innerValue.value, draggedItem, hoveredItem, quadrant);
+    swapItems(layoutValue.value, draggedItem, hoveredItem, quadrant);
   },
 });
 
 const flatItems = computed(() => {
-  return new Set(getFlatItems(innerValue.value).map((v) => v.id));
+  return new Set(getFlatItems(layoutValue.value).map((v) => v.id));
 });
 
 const availableItems = computed<ILayoutItem[]>(() => {
@@ -116,6 +109,6 @@ const availableItems = computed<ILayoutItem[]>(() => {
 });
 
 const onDelete = (info: ItemInfoCore) => {
-  findAndRemoveItem(innerValue.value, info);
+  findAndRemoveItem(layoutValue.value, info);
 };
 </script>

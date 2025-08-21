@@ -4,99 +4,91 @@
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
     <div class="max-w-3xl mx-auto w-full">
-      <template v-if="!editMode">
-        <BreadcrumbList
-          class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"
-        >
-          <template v-if="!breadcrumbItems.all">
+      <BreadcrumbList
+        class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"
+      >
+        <template v-if="!breadcrumbItems.all">
+          <BreadcrumbItem
+            class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+            :class="'shrink cursor-pointer'"
+            @click="ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })"
+          >
+            {{ breadcrumbItems.start[0].label }}
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem> ... </BreadcrumbItem>
+          <template v-for="(item, i) in breadcrumbItems.end">
+            <BreadcrumbSeparator />
+
             <BreadcrumbItem
-              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-              :class="'shrink cursor-pointer'"
+              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
+              :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
               @click="
-                ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })
+                i !== breadcrumbItems.end.length - 1 &&
+                ts.openNewThingFast({ _type: 'folder', _path: item.path })
               "
             >
-              {{ breadcrumbItems.start[0].label }}
+              {{ item.label }}
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem> ... </BreadcrumbItem>
-            <template v-for="(item, i) in breadcrumbItems.end">
-              <BreadcrumbSeparator />
-
-              <BreadcrumbItem
-                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
-                :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-                @click="
-                  i !== breadcrumbItems.end.length - 1 &&
-                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
-                "
-              >
-                {{ item.label }}
-              </BreadcrumbItem>
-            </template>
           </template>
+        </template>
 
-          <template v-if="breadcrumbItems.all">
-            <template v-for="(item, i) in breadcrumbItems.all">
-              <BreadcrumbSeparator v-if="i > 1" />
+        <template v-if="breadcrumbItems.all">
+          <template v-for="(item, i) in breadcrumbItems.all">
+            <BreadcrumbSeparator v-if="i > 1" />
 
-              <BreadcrumbItem
-                class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-                :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-                @click="
-                  i !== breadcrumbItems.all.length - 1 &&
-                  ts.openNewThingFast({ _type: 'folder', _path: item.path })
-                "
-              >
-                {{ item.label }}
-              </BreadcrumbItem>
-            </template>
+            <BreadcrumbItem
+              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
+              :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
+              @click="
+                i !== breadcrumbItems.all.length - 1 &&
+                ts.openNewThingFast({ _type: 'folder', _path: item.path })
+              "
+            >
+              {{ item.label }}
+            </BreadcrumbItem>
           </template>
+        </template>
 
-          <div class="grow"></div>
-          <DropdownMenu class="ml-auto">
-            <DropdownMenuTrigger as-child>
-              <Button variant="outline" size="icon">
-                <EllipsisVerticalIcon :size="14" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem @click="editMode = true">
-                <EditIcon /> Edit Layout
-              </DropdownMenuItem>
-              <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
-              <DropdownMenuItem @click="deleteDialog = true">
-                <Trash2Icon /> Delete
-              </DropdownMenuItem>
+        <div class="grow"></div>
+        <DropdownMenu class="ml-auto">
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" size="icon">
+              <EllipsisVerticalIcon :size="14" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem @click="openEditMode"> <EditIcon /> Edit Layout </DropdownMenuItem>
+            <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
+            <DropdownMenuItem @click="deleteDialog = true">
+              <Trash2Icon /> Delete
+            </DropdownMenuItem>
 
-              <DropdownMenuItem @click="fillFromApiDialog = true">
-                <CloudDownload /> Fill from API
-              </DropdownMenuItem>
+            <DropdownMenuItem @click="fillFromApiDialog = true">
+              <CloudDownload /> Fill from API
+            </DropdownMenuItem>
 
-              <DropdownMenuItem
-                @click="
-                  viewSettingsUpdater('labelsHidden', !viewSettingsQ.data.value?.labelsHidden)
-                "
-              >
-                <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
-              </DropdownMenuItem>
+            <DropdownMenuItem
+              @click="viewSettingsUpdater('labelsHidden', !viewSettingsQ.data.value?.labelsHidden)"
+            >
+              <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
+            </DropdownMenuItem>
 
-              <DropdownMenuItem
-                v-if="viewSettingsQ.data.value?.layoutWarningsHidden"
-                @click="
-                  viewSettingsUpdater(
-                    'layoutWarningsHidden',
-                    !viewSettingsQ.data.value?.layoutWarningsHidden,
-                  )
-                "
-              >
-                <EyeIcon /> {{ viewSettingsQ.data.value?.layoutWarningsHidden ? 'Show' : 'Hide' }}
-                warnings
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </BreadcrumbList>
-      </template>
+            <DropdownMenuItem
+              v-if="viewSettingsQ.data.value?.layoutWarningsHidden"
+              @click="
+                viewSettingsUpdater(
+                  'layoutWarningsHidden',
+                  !viewSettingsQ.data.value?.layoutWarningsHidden,
+                )
+              "
+            >
+              <EyeIcon /> {{ viewSettingsQ.data.value?.layoutWarningsHidden ? 'Show' : 'Hide' }}
+              warnings
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </BreadcrumbList>
 
       <Dialog v-if="hasApi" v-model:open="fillFromApiDialog">
         <DialogContent @open-auto-focus="focusInputOnDialogOpen">
@@ -157,7 +149,7 @@
         You have {{ inviSchemaItms.length }} item{{ inviSchemaItms.length === 1 ? '' : 's' }}
         in schema that are not visible in the view:
         <br />
-        <span class="cursor-pointer underline ml-4" @click="editMode = true">Edit Layout</span>
+        <span class="cursor-pointer underline ml-4" @click="openEditMode">Edit Layout</span>
         <span
           class="cursor-pointer underline ml-4"
           @click="viewSettingsUpdater('layoutWarningsHidden', true)"
@@ -170,20 +162,6 @@
         v-model:opened-file="editableProxy.record"
         :view-layout="viewLayoutQ.data.value"
         :hide-labels="viewSettingsQ.data.value?.labelsHidden"
-        @update:layout="
-          (v) => {
-            updateViewLayout(v);
-            editMode = false;
-          }
-        "
-        @edit-mode="editMode = true"
-        @discard="
-          () => {
-            console.log('discard');
-            editMode = false;
-          }
-        "
-        :edit-mode="editMode"
         :schema="schema.schema"
         class="py-2"
       />
@@ -260,7 +238,6 @@ const editorWrapper = useTemplateRef('editorWrapper');
 
 const colorMode = useColorMode();
 
-const editMode = ref(false);
 const deleteDialog = ref(false);
 const renameDialog = ref(false);
 const newName = ref('');
@@ -323,11 +300,7 @@ const inviSchemaItms = computed(() => {
   );
 });
 const showLayoutWarning = computed(() => {
-  return (
-    !viewSettingsQ.data.value?.layoutWarningsHidden &&
-    inviSchemaItms.value.length &&
-    !editMode.value
-  );
+  return !viewSettingsQ.data.value?.layoutWarningsHidden && inviSchemaItms.value.length;
 });
 
 const apiConnection = useApiConnection(computed(() => schema.value?.owner_folder));
@@ -336,6 +309,10 @@ const hasApi = computed(() => {
 });
 
 const fillFromApiDialog = ref(false);
+
+const openEditMode = () => {
+  console.log('openEditMode');
+};
 </script>
 
 <style>

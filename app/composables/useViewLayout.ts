@@ -47,3 +47,38 @@ export const useViewLayout = (schemaOwnerFolder: Ref<string>) => {
 export const saveViewLayout = async (schemaOwnerFolder: string, viewLayout: IDynamicViewGroup) => {
   await disk.set(schemaOwnerFolder, viewLayout);
 };
+
+export const useViewLayoutEditable = (schemaOwnerFolder: Ref<string>) => {
+  const root = useRootPath();
+  const data = ref<IDynamicViewGroup | null>(null);
+  const dataKey = ref<string | null>(null);
+  const qc = useQueryCache();
+
+  watch(
+    schemaOwnerFolder,
+    async (newFolder) => {
+      const viewLayout = await disk.get(newFolder);
+      data.value = viewLayout;
+    },
+    { immediate: true },
+  );
+
+  watch(
+    data,
+    (newData) => {
+      if (dataKey.value !== schemaOwnerFolder.value) {
+        dataKey.value = schemaOwnerFolder.value;
+        return;
+      }
+
+      void saveViewLayout(schemaOwnerFolder.value, newData);
+
+      qc.setQueryData(VIEW_LAYOUT_KEY(root.data.value, schemaOwnerFolder.value), {
+        ...newData,
+      });
+    },
+    { deep: true },
+  );
+
+  return data;
+};

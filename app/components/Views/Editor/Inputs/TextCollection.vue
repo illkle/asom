@@ -1,5 +1,5 @@
 <template>
-  <div ref="containerDiv" class="relative flex flex-wrap items-stretch gap-1 select-none">
+  <div ref="containerDiv" class="relative flex flex-wrap items-center gap-1 select-none">
     <CommonLabel
       v-if="!hideLabel"
       :class="

@@ -1,7 +1,12 @@
 <template>
   <slot name="header" :group="group" />
-  <div class="" :style="getStyle(group)">
-    <template v-for="(subcategory, index) in group.content">
+  <div class="" :style="getStyleWrapper(group)" :id="`wrapper-${group.id}`">
+    <div
+      v-for="(subcategory, index) in group.content"
+      :id="`group-${subcategory.id}`"
+      class="w-full"
+      :style="getStyleGroup(subcategory)"
+    >
       <template v-if="subcategory.type === 'item'">
         <slot :data="subcategory" :group="group" :index="index" />
       </template>
@@ -15,14 +20,14 @@
           <slot name="header" :group="group" />
         </template>
       </RenderDynamic>
-    </template>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { IDynamicViewGroup } from './helpers';
 
-import { getStyle } from './helpers';
+import { getStyleGroup, getStyleWrapper } from './helpers';
 
 const props = defineProps<{
   group: IDynamicViewGroup;

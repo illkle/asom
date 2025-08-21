@@ -39,7 +39,7 @@ export const useApiConnection = (schemaOwnerFolder: Ref<string>) => {
     void disk.set(schemaOwnerFolder.value, data);
   };
 
-  const editableData = useEditableRef(q, update);
+  const editableData = useEditableRef(q, schemaOwnerFolder, update);
 
   return {
     q,
@@ -50,20 +50,22 @@ export const useApiConnection = (schemaOwnerFolder: Ref<string>) => {
 
 export const useEditableRef = <T>(
   q: UseQueryReturn<T, Error, undefined>,
+  key: Ref<string>,
   update: (newData: T) => Promise<void>,
 ) => {
   const proxyRef = ref<T | null>(q.data.value ?? null);
 
+  const savedLastKey = ref<string | null>(null);
+
   watch(
-    q.isPending,
-    (newIsPending) => {
-      if (!newIsPending) {
-        pause();
+    [q.isPending, key],
+    ([newIsPending, newKey]) => {
+      if (!newIsPending && savedLastKey.value !== newKey) {
         proxyRef.value = q.data.value;
-        resume();
+        savedLastKey.value = newKey;
       }
     },
-    { once: true },
+    { immediate: true },
   );
 
   const skipUpdate = ref(true);
@@ -72,12 +74,13 @@ export const useEditableRef = <T>(
     proxyRef,
     async (newData) => {
       if (skipUpdate.value) {
+        console.log('skip update');
         skipUpdate.value = false;
         return;
       }
       await update(newData);
     },
-    { deep: true },
+    { deep: true, immediate: true },
   );
 
   return proxyRef;

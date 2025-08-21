@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isDraggingMe" ref="measureRef"></div>
+  <div ref="measureRef"></div>
   <motion.div
     ref="constraintsRef"
     v-bind="$attrs"

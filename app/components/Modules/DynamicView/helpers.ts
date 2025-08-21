@@ -47,13 +47,29 @@ export const mapJustify: Record<IDynamicViewGroup['style']['justify'], string> =
   evenly: 'space-evenly',
 };
 
-export const getStyle = (group: IDynamicViewGroup) => {
+export const getStyleWrapper = (group: IDynamicItem) => {
+  if (group.type === 'item') {
+    return {};
+  }
+
   return {
     display: 'flex',
     flexDirection: group.style.direction,
     gap: group.style.gap + 'px',
     alignItems: mapAlign[group.style.align],
     justifyContent: mapJustify[group.style.justify],
+    flex: `${group.style.sizeUnits} 1 0`,
+  };
+};
+
+export const getStyleGroup = (group: IDynamicItem) => {
+  if (group.type === 'item') {
+    return {
+      flex: '1 1 0',
+    };
+  }
+
+  return {
     flex: `${group.style.sizeUnits} 1 0`,
   };
 };
