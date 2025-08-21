@@ -204,8 +204,6 @@ export const useGlobalInvalidators = () => {
   useListenToEvent('SchemasUpdated', async () => {
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas'] });
     await qc.invalidateQueries({ key: [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'folders'] });
-    await qc.invalidateQueries({ key: USABLE_SCHEMAS_KEY(root.data.value) });
-    await qc.invalidateQueries({ key: EXISTING_SCHEMAS_KEY(root.data.value) });
   });
 
   useListenToEvent('EventOverflow', async ({ c }) => {
