@@ -26,7 +26,7 @@ import { useMainStore } from '~/composables/stores/useMainStore';
 import AppSidebar from './Core/AppSidebar.vue';
 import InitProcess from './Core/InitProcess.vue';
 import TabsSelector from './Core/Tabs/TabsSelector.vue';
-import RouterMain from './Routing/RouterMain.vue';
+import RouterMain from './RouterMain.vue';
 const appState = useIsAppUsable();
 
 const store = useMainStore();

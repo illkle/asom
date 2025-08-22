@@ -4,12 +4,14 @@ import path from 'path-browserify';
 import z from 'zod';
 import { defineExApiSchema, type ExApiData, type ExApiSchema } from '~/components/Api/base';
 import { igdbAPISchema, zAPIIGDB } from '~/components/Api/IGDB';
+import { openLibraryAPISchema, zAPIOpenLibrary } from '~/components/Api/OpenLibrary';
 import type { RecordFromDb } from '~/types';
 
 /** Settings are stored on disk for each schema */
 
 export const zApiSettings = z.discriminatedUnion('type', [
   zAPIIGDB,
+  zAPIOpenLibrary,
   z.object({
     type: z.literal('none'),
   }),
@@ -23,6 +25,7 @@ type ApiKey = ApiSettings['type'];
 
 const ApiDataMap = {
   twitchigdb: igdbAPISchema,
+  openlibrary: openLibraryAPISchema,
   none: defineExApiSchema({}),
 } satisfies Record<ApiKey, ExApiSchema>;
 

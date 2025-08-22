@@ -19,9 +19,14 @@
       </Select>
     </template>
 
-    <div v-if="schema.data.value && apiData" class="mt-4 pb-4">
-      <IGDB
+    <div v-if="schema.data.value && apiData" class="">
+      <IGDBSettings
         v-if="apiData.type === 'twitchigdb'"
+        v-model="apiData"
+        :schema="schema.data.value.schema"
+      />
+      <OpenLibrarySettings
+        v-if="apiData.type === 'openlibrary'"
         v-model="apiData"
         :schema="schema.data.value.schema"
       />
@@ -32,7 +37,8 @@
 <script setup lang="ts">
 import type { ApiSettings } from '~/components/Api/apis';
 import { API_Types } from '~/components/Api/apis';
-import IGDB from '~/components/Api/IGDB/Settings.vue';
+import IGDBSettings from '~/components/Api/IGDB/Settings.vue';
+import OpenLibrarySettings from '~/components/Api/OpenLibrary/Settings.vue';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import PageTemplate from './PageTemplate.vue';
 

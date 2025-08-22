@@ -72,11 +72,11 @@
 import GoodreadsImporter from '~/components/Api/Goodreads/GoodreadsImporter.vue';
 import RecordEditor from '~/components/Views/Editor/RecordEditor.vue';
 import ListViewWrapper from '~/components/Views/List/ListViewWrapper.vue';
+import ApiConnection from '~/components/Views/Schema/ApiConnection.vue';
+import LayoutEditor from '~/components/Views/Schema/LayoutEditor.vue';
 import SchemaEditor from '~/components/Views/Schema/SchemaEditor.vue';
+import SchemaFieldsEditor from '~/components/Views/Schema/SchemaFieldsEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
-import ApiConnection from '../Views/Schema/ApiConnection.vue';
-import LayoutEditor from '../Views/Schema/LayoutEditor.vue';
-import SchemaFieldsEditor from '../Views/Schema/SchemaFieldsEditor.vue';
 
 const tabsStore = useTabsStoreV2();
 
