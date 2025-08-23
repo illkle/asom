@@ -2,6 +2,7 @@ import path from 'path-browserify';
 import { z } from 'zod';
 
 import * as fs from '@tauri-apps/plugin-fs';
+import { throttle } from 'lodash-es';
 
 export class ConfigTiedToSchema<T extends z.ZodSchema> {
   private readonly fileName: string;
@@ -11,14 +12,17 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
   constructor(fileName: string, fileSchema: T, defaultData: z.infer<T>) {
     this.fileName = fileName;
     this.fileSchema = fileSchema;
-    this.defaultData = defaultData;
+    try {
+      this.defaultData = fileSchema.parse(defaultData);
+    } catch (e) {
+      console.error(e);
+      throw new Error('Error parsing ConfigTiedToSchema DEFAULT DATA ' + this.fileName);
+    }
   }
 
   async get(schemaOwnerFolder: string) {
-    const def = this.fileSchema.parse(this.defaultData);
-
     if (!schemaOwnerFolder) {
-      return def;
+      return this.defaultData;
     }
 
     const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
@@ -35,11 +39,16 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
     } catch (e) {
       console.error('Error reading ConfigTiedToSchema ' + this.fileName, e);
     }
-    return def;
+
+    return this.defaultData;
   }
 
   async set(schemaOwnerFolder: string, data: z.infer<T>) {
     console.log('trying to set', schemaOwnerFolder, data);
+
+    if (!schemaOwnerFolder) {
+      return;
+    }
 
     const targetFolder = path.join(schemaOwnerFolder, '/.asom/');
     const targetFile = path.join(targetFolder, this.fileName);
@@ -51,3 +60,73 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
 }
 
 export type IConfigTiedToSchema<T extends z.ZodSchema> = z.infer<T>;
+
+/** Having an editable ref instead of get\set via useQuery makes things significantly simpler.
+ * The downside is that we don't have invalidation on external file\data changes.
+ * Though it's probably not a issue, at least until we have split view.
+ */
+export const makeConfigTiedToSchemaHook = <T extends z.ZodSchema>(
+  configTiedToSchema: ConfigTiedToSchema<T>,
+) => {
+  return (schemaOwnerFolder: Ref<string>, manualSave: boolean = false) => {
+    const data = ref<z.infer<T> | undefined>(undefined);
+    const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle');
+
+    const load = async () => {
+      if (!schemaOwnerFolder.value || status.value === 'loading') {
+        return;
+      }
+
+      status.value = 'loading';
+      try {
+        data.value = await configTiedToSchema.get(schemaOwnerFolder.value);
+        status.value = 'ready';
+      } catch (e) {
+        console.error(e);
+        status.value = 'error';
+      }
+    };
+
+    watch(
+      schemaOwnerFolder,
+      async (v) => {
+        await load();
+      },
+      { immediate: true },
+    );
+
+    const save = async (v: z.infer<T>) => {
+      if (!schemaOwnerFolder.value || status.value === 'loading') {
+        return;
+      }
+      await configTiedToSchema.set(schemaOwnerFolder.value, v);
+    };
+
+    const throttledSave = throttle(save, 400, { trailing: true });
+
+    onBeforeUnmount(() => {
+      throttledSave.flush();
+    });
+
+    watch(
+      data,
+      async (v) => {
+        if (manualSave) {
+          return;
+        }
+
+        if (!schemaOwnerFolder.value || status.value === 'loading') {
+          return;
+        }
+        throttledSave(v);
+      },
+      { deep: true },
+    );
+
+    return {
+      data,
+      status,
+      save,
+    };
+  };
+};

@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 // Based on https://github.com/hl037/vue-contenteditable/blob/master/src/components/contenteditable.vue.d.ts
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { NUMBERS_REGEX } from '~/utils/index.ts';
+import { NUMBERS_REGEX } from '~/utils/index';
 
 const props = defineProps({
   disabled: {

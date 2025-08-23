@@ -187,6 +187,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
         focusHistory: this.focusHistory,
         focusHistoryPointer: this.focusHistoryPointer,
       });
+      console.log('saving tabs', tabs);
 
       await openedTabsFile.set(tabs);
     },
@@ -449,12 +450,15 @@ const useTabsPreservation = () => {
     { immediate: true },
   );
 
-  const saveTabsDebounced = useThrottleFn(store._saveOpened, 5000);
+  const saveTabsDebounced = useThrottleFn(store._saveOpened, 5000, true);
 
   let unsubscribe: () => void;
 
   onMounted(() => {
-    unsubscribe = store.$subscribe(saveTabsDebounced);
+    unsubscribe = store.$subscribe(async () => {
+      console.log('tabs change');
+      await saveTabsDebounced();
+    });
   });
 
   onUnmounted(() => {
@@ -506,6 +510,7 @@ export const useNavigationBlock = (isBlocked: Ref<boolean>) => {
   return isBlocked;
 };
 
+/** Hook for restoring scroll position. Element is ref to scrollable element. Condition is a boolean that becomes true only after content is loaded(and it makes sense to restore scroll position). */
 export const useScrollRestorationOnMount = (
   element: Ref<HTMLDivElement | null>,
   condition: Ref<boolean>,
@@ -533,6 +538,7 @@ export const useScrollRestorationOnMount = (
   });
 };
 
+/** Hook for watching scroll position and saving it to tabs store. */
 export const useScrollWatcher = (item: ShallowRef<HTMLDivElement | null>) => {
   const tabsStore = useTabsStoreV2();
 

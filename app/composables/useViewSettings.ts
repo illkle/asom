@@ -1,11 +1,12 @@
+import type { SortingState, Updater } from '@tanstack/vue-table';
 import { z } from 'zod';
 
-const zSorting = z
-  .object({
-    descending: z.boolean(),
-    key: z.string(),
-  })
-  .nullable();
+const zSorting = z.array(
+  z.object({
+    desc: z.boolean(),
+    id: z.string(),
+  }),
+);
 
 const zVisibilityState = z.record(z.string(), z.boolean());
 
@@ -13,37 +14,6 @@ const zSizingState = z.record(z.string(), z.number());
 
 type ISizingState = Record<string, number>;
 type ComputedColumnSizes = Record<string, number>;
-
-export const getSizesForColumns = (spaceAwailable: number, columns: ISizingState) => {
-  const totalSize = Object.values(columns).reduce((acc, v) => acc + v, 0);
-
-  const unit = spaceAwailable / totalSize;
-
-  const s: ComputedColumnSizes = {};
-
-  for (const [index, c] of Object.entries(columns)) {
-    s[index] = c * unit;
-  }
-
-  return s;
-};
-
-export const adjustSizeForColumn = (
-  spaceAwailable: number,
-  columns: ISizingState,
-  add: number,
-  addTarget: string,
-  subtractTarget: string,
-) => {
-  const totalSize = Object.values(columns).reduce((acc, v) => acc + v, 0);
-  const unit = spaceAwailable / totalSize;
-
-  const unitsToAdd = add * unit;
-  columns[addTarget] += unitsToAdd;
-  columns[subtractTarget] -= unitsToAdd;
-
-  return columns;
-};
 
 const zOrderState = z.array(z.string());
 
@@ -60,7 +30,7 @@ export type IViewSettings = z.infer<typeof zViewSettings>;
 
 export const DEFAULT_VIEW_SETTINGS = () =>
   ({
-    sorting: undefined,
+    sorting: [] as SortingState,
     columnVisibility: {},
     columnSizing: {},
     columnOrder: [],
@@ -86,7 +56,10 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
 
   const q = useQuery({
     key: () => VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value),
-    query: () => viewSettingsOnDisk.get(schemaOwnerFolder.value),
+    query: async () => {
+      const res = await viewSettingsOnDisk.get(schemaOwnerFolder.value);
+      return res;
+    },
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     refetchOnReconnect: true,
@@ -96,11 +69,15 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
 
   const viewSettingsUpdater = async <T extends keyof IViewSettings>(
     key: T,
-    newValue: IViewSettings[T],
+    newValue: Updater<IViewSettings[T]> | IViewSettings[T],
   ) => {
     const before =
       qc.getQueryData<IViewSettings>(VIEW_SETTINGS_KEY(root.data.value, schemaOwnerFolder.value)) ??
       DEFAULT_VIEW_SETTINGS();
+
+    if (typeof newValue === 'function') {
+      newValue = newValue(before[key]);
+    }
 
     const after = { ...before, [key]: newValue };
 
@@ -113,3 +90,5 @@ export const useViewSettings = (schemaOwnerFolder: Ref<string>) => {
     viewSettingsUpdater,
   };
 };
+
+export const useViewSettingsProxy = makeConfigTiedToSchemaHook(viewSettingsOnDisk);

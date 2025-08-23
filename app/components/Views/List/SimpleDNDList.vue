@@ -2,7 +2,7 @@
 import { Reorder } from 'motion-v';
 import { ref } from 'vue';
 
-type IItem = { id: string; label: string; isVisible: boolean };
+type IItem = { id: string; name: string; type: string; isVisible: boolean };
 
 const props = defineProps<{
   initialItems: IItem[];
@@ -37,9 +37,16 @@ watch(
         class="border px-2 py-1 bg-background relative w-full rounded-md cursor-grab flex justify-between items-center"
         :class="{ 'opacity-50': !element.isVisible }"
       >
-        <span>
-          {{ element.label ?? element.id }}
-        </span>
+        <div class="flex flex-col">
+          <span class="text-sm">
+            {{ element.name ?? element.id }}
+          </span>
+
+          <span class="text-xs text-muted-foreground">
+            {{ element.type }}
+          </span>
+        </div>
+
         <span v-if="!element.isVisible" class="text-xs text-muted-foreground">
           Currently hidden
         </span>

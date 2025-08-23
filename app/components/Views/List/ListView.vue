@@ -1,31 +1,33 @@
 <script setup lang="ts">
 import type { Input } from '#components';
+import {
+  FlexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useVueTable,
+  type ColumnDef,
+  type Updater,
+} from '@tanstack/vue-table';
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { onKeyStroke, useEventListener } from '@vueuse/core';
-import { cloneDeep, debounce } from 'lodash-es';
-import {
-  ChevronDownIcon,
-  CornerUpRightIcon,
-  ListOrdered,
-  MoveDown,
-  MoveUp,
-  SquareDashedMousePointer,
-  TrashIcon,
-  XIcon,
-} from 'lucide-vue-next';
-import type { SchemaItem, SchemaResult } from 'types/index';
-import { ref, type ShallowRef } from 'vue';
+import { onKeyStroke } from '@vueuse/core';
+import { ArrowDown, ArrowUp } from 'lucide-vue-next';
+import type { AttrValue, RecordFromDb, SchemaResult } from 'types/index';
+import { type ShallowRef } from 'vue';
 import { c_delete_to_trash } from '~/api/tauriActions';
+import ContextMenuTrigger from '~/components/ui/context-menu/ContextMenuTrigger.vue';
+import ListViewContextMenu from '~/components/Views/List/ListViewContextMenu.vue';
+import ListViewTopControls from '~/components/Views/List/ListViewTopControls.vue';
+
 import {
-  useNavigationBlock,
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
   type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IViewSettings } from '~/composables/useViewSettings';
-import BookItemDisplay from './ListItemDisplay.vue';
-import SimpleDNDList from './SimpleDNDList.vue';
+import { baseSizeByType, getSortFunction } from './helpers';
+import ListItemDisplay from './ListItemDisplay.vue';
 
 const props = defineProps({
   opened: {
@@ -42,147 +44,163 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits<{
-  <T extends keyof IViewSettings>(
-    e: 'update:viewSettings',
-    key: T,
-    newValue: IViewSettings[T],
-  ): void;
-}>();
-
-const searchQuery = ref('');
-watch(
-  () => props.opened.details.searchQuery,
-  debounce(() => {
-    searchQuery.value = props.opened.details.searchQuery;
-  }, 200),
-);
-
 /**
  * Schema is included in files query below, however since files query depends on searchQuery
  * it's better to keep stable schema separately to avoid visual flickering on search change.
  */
 
+const searchQuery = ref('было');
+
 const { files: q, filesMemo } = useFlesListV2({
   opened: props.opened,
-  searchQuery: searchQuery,
-  sort: computed(
-    () =>
-      props.viewSettings.value?.sorting ?? {
-        key: 'title',
-        descending: false,
-      },
-  ),
+  searchQuery: toRef(''),
+  sort: computed(() => ({
+    key: 'title',
+    descending: false,
+  })),
 });
 
-const columnsAll = computed(() => {
-  const sortIndexes =
-    props.viewSettings.value?.columnOrder.reduce(
-      (acc, v, i) => {
-        acc[v] = i;
-        return acc;
-      },
-      {} as Record<string, number>,
-    ) ?? {};
+const visibleSchemaItems = computed(
+  () => props.schema.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
+);
 
-  const cols = [];
-
-  for (const si of props.schema.value?.schema.items ?? []) {
-    if (si.value.type === 'Image') {
-      continue;
-    }
-
-    cols.push({
-      id: si.name,
-      label: si.value.settings.displayName ?? si.name,
-      type: si.value.type,
-      si: si.value,
-    });
-  }
-
-  cols.sort((a, b) => {
-    const ai = sortIndexes[a.id] ?? 9999;
-    const bi = sortIndexes[b.id] ?? 9999;
-    return ai - bi;
-  });
-
-  return cols;
+const mapIdToSchemaItem = computed(() => {
+  return new Map(visibleSchemaItems.value.map((v) => [v.name, v.value]));
 });
 
-const columnsVisible = computed(() => {
-  return columnsAll.value.filter((v) => props.viewSettings.value?.columnVisibility[v.id] !== false);
-});
-
-const getSizeForColumn = (id: string, type: SchemaItem['value']['type']) => {
-  return props.viewSettings.value?.columnSizing?.[id] ?? baseSizeByType(type);
+const getDisplayName = (id: string) => {
+  return mapIdToSchemaItem.value.get(id)?.settings.displayName ?? id;
 };
 
-const baseSizeByType = (type: SchemaItem['value']['type']) => {
-  switch (type) {
-    case 'Text':
-      return 200;
-    case 'Date':
-      return 75;
-    case 'TextCollection':
-      return 150;
-    case 'DateCollection':
-      return 150;
-    case 'DatesPairCollection':
-      return 150;
-    default:
-      return 100;
+const cols = computed<ColumnDef<RecordFromDb>[]>(() =>
+  visibleSchemaItems.value.map((v) => ({
+    enableResizing: true,
+    id: v.name,
+    accessorKey: `attrs.${v.name}`,
+    header: getDisplayName(v.name),
+    size: baseSizeByType(v.value.type),
+    meta: {
+      type: v.value.type,
+    },
+    enableColumnFilter: true,
+    sortingFn: getSortFunction(v.value.type),
+    cell: ({ cell, column }) => {
+      return h(ListItemDisplay, {
+        value: cell.getValue() as AttrValue,
+        type: v.value,
+      });
+    },
+  })),
+);
+
+const viewSettingsUpdater = <T extends keyof IViewSettings>(
+  key: T,
+  newValue: Updater<IViewSettings[T]>,
+) => {
+  props.viewSettings.value[key] =
+    typeof newValue === 'function' ? newValue(props.viewSettings.value[key]) : newValue;
+};
+
+const rowSelection = ref({});
+const rowSelectionUpdater = (updaterOrValue: Updater<typeof rowSelection.value>) => {
+  if (typeof updaterOrValue === 'function') {
+    rowSelection.value = updaterOrValue(rowSelection.value);
+  } else {
+    rowSelection.value = updaterOrValue;
   }
 };
 
-const rowSelection = ref<Record<string, boolean>>({});
+const table = useVueTable({
+  get data() {
+    return q.data.value?.records ?? [];
+  },
+  get columns() {
+    return cols.value;
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
 
-const isSelecting = ref<{ lastSelectedIndex: number | null } | null>(null);
+  globalFilterFn: () => {
+    console.log('globalFilterFn');
+    return false;
+  },
+  /*
+  globalFilterFn: (row, columnId, value, addMeta) => {
+    console.log('globalFilterFn', row, columnId, value, addMeta);
+    const rowValue = row.getValue(columnId) as AttrValue;
+    const itemRank = rankItem(attrValueToStringForFuzzyFiltering(rowValue), value);
+    addMeta({ itemRank });
 
-const scrollElementRef = useTemplateRef<HTMLDivElement>('scrollElementRef');
+    return itemRank.passed;
+  },*/
+
+  onSortingChange: (updaterOrValue) => viewSettingsUpdater('sorting', updaterOrValue),
+  onColumnVisibilityChange: (updaterOrValue) =>
+    viewSettingsUpdater('columnVisibility', updaterOrValue),
+  onColumnOrderChange: (updaterOrValue) => viewSettingsUpdater('columnOrder', updaterOrValue),
+  onRowSelectionChange: (updaterOrValue) => rowSelectionUpdater(updaterOrValue),
+  onColumnSizingChange: (updaterOrValue) => viewSettingsUpdater('columnSizing', updaterOrValue),
+
+  columnResizeMode: 'onChange',
+
+  onGlobalFilterChange: (updaterOrValue) => {
+    searchQuery.value =
+      typeof updaterOrValue === 'function' ? updaterOrValue(searchQuery.value) : updaterOrValue;
+  },
+
+  state: {
+    get globalFilter() {
+      return searchQuery.value;
+    },
+
+    get columnSizing() {
+      return props.viewSettings.value?.columnSizing;
+    },
+
+    get sorting() {
+      return props.viewSettings.value?.sorting;
+    },
+
+    get columnVisibility() {
+      return props.viewSettings.value?.columnVisibility;
+    },
+
+    get columnOrder() {
+      return props.viewSettings.value?.columnOrder;
+    },
+    get rowSelection() {
+      return rowSelection.value;
+    },
+  },
+});
+
+const rows = computed(() => table.getRowModel().rows);
+
+const scrollElementRef = ref<HTMLDivElement | null>(null);
 useScrollWatcher(scrollElementRef);
 useScrollRestorationOnMount(
   scrollElementRef,
-  computed(() => !!scrollElementRef.value),
-);
-
-const itemsForSorting = computed(() =>
-  columnsAll.value.map((v) => ({
-    id: v.id,
-    label: v.label,
-    isVisible: props.viewSettings.value?.columnVisibility[v.id] !== false,
-  })),
+  computed(() => !!scrollElementRef.value && !!q.data.value?.records),
 );
 
 /**
  * Virtual
  */
 
-const rows = computed(() => filesMemo.value?.records ?? []);
-
-//The virtualizer needs to know the scrollable container element
-
-const tableContainerRef = ref<HTMLDivElement | null>(null);
-
 const rowVirtualizerOptions = computed(() => {
   return {
     count: rows.value.length,
-    estimateSize: () => 37, //estimate row height for accurate scrollbar dragging
-    getScrollElement: () => scrollElementRef?.value as HTMLDivElement,
-    overscan: 5,
+    estimateSize: () => 37,
+    getScrollElement: () => scrollElementRef.value as HTMLDivElement,
+    overscan: 10,
   };
 });
-
 const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
-
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
 
-const ts = useTabsStoreV2();
-
-const sortingDialogOpened = ref(false);
-useNavigationBlock(sortingDialogOpened);
-
-const hoveringRowIndex = ref<number | null>(null);
+/** Dropdown */
 
 const dropdownRowLock = ref<number | null>(null);
 
@@ -190,7 +208,9 @@ const dropdownOpened = ref(false);
 
 const lastSelectedIndex = ref<number | null>(null);
 
-const isMacOS = useIsMac();
+/** Selection */
+
+const isSelecting = ref<boolean>(false);
 
 onKeyStroke('Escape', () => {
   if (isSelecting.value) {
@@ -199,23 +219,39 @@ onKeyStroke('Escape', () => {
   }
 });
 
+const ts = useTabsStoreV2();
+
+const isMacOS = useIsMac();
+
 const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
   e.preventDefault();
 
   if (dropdownOpened.value) return;
 
-  const path = rows.value[index]?.path;
+  const row = rows.value[index];
+  if (!row) return;
+
+  const path = row.original.path;
   if (!path) return;
 
   const LMB = e.button === 0;
+  const RMB = e.button === 2;
+
+  if (RMB) {
+    /**
+     * Opening with be handled by ContextMenuTrigger. Two handlers might theoretically cause issues, switch to tracking hovered row by mouseenter if any appear.
+     */
+    dropdownRowLock.value = index;
+    return;
+  }
 
   const targetRow = rows.value[index];
   if (!targetRow) return;
 
   const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
 
+  /* Opening cases */
   if (!isSelecting.value && !wantSelection) {
-    // Open in new tab
     const openNewTabKeyboard = ((isMacOS && e.metaKey) || (!isMacOS && e.altKey)) && LMB;
     const middleClick = e.button === 1;
 
@@ -230,27 +266,28 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
   if (!LMB) return;
 
   if (!isSelecting.value) {
-    isSelecting.value = { lastSelectedIndex: null };
+    isSelecting.value = true;
   }
 
+  /* Selection mode */
   if (e.shiftKey && lastSelectedIndex.value) {
     const ls = clamp(lastSelectedIndex.value, 0, rows.value.length - 1);
 
     if (ls > index) {
       for (let i = ls - 1; i >= index; i--) {
-        const p = rows.value[i]?.path;
+        const p = rows.value[i];
         if (!p) continue;
-        rowSelection.value[p] = !rowSelection.value[p];
+        row.toggleSelected();
       }
     } else {
       for (let i = ls + 1; i <= index; i++) {
-        const p = rows.value[i]?.path;
+        const p = rows.value[i];
         if (!p) continue;
-        rowSelection.value[p] = !rowSelection.value[p];
+        row.toggleSelected();
       }
     }
   } else {
-    rowSelection.value[path] = !rowSelection.value[path];
+    row.toggleSelected();
   }
   lastSelectedIndex.value = index;
 };
@@ -261,44 +298,6 @@ const deleteSelected = async () => {
   await Promise.allSettled(paths.map((v) => c_delete_to_trash(v)));
   rowSelection.value = {};
 };
-
-const startColumnsSizing = (e: MouseEvent, index: number) => {
-  const initialState = cloneDeep(props.viewSettings.value?.columnSizing ?? {});
-
-  const initialX = e.clientX;
-
-  const col = columnsVisible.value[index];
-  if (!col) return;
-
-  const myId = col.id;
-
-  const myInitialSize = getSizeForColumn(myId, col.type);
-
-  const moveHandler = (e: MouseEvent) => {
-    const delta = e.clientX - initialX;
-
-    const ns = { ...initialState };
-
-    ns[myId] = myInitialSize + delta;
-
-    emit('update:viewSettings', 'columnSizing', ns);
-  };
-
-  document.addEventListener('mousemove', moveHandler);
-  document.addEventListener('mouseup', () => {
-    document.removeEventListener('mousemove', moveHandler);
-  });
-};
-
-const searchInputRef = useTemplateRef<InstanceType<typeof Input>>('searchInputRef');
-
-useEventListener('keydown', (e) => {
-  const commandKey = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
-
-  if (commandKey && e.key === 'f') {
-    searchInputRef.value?.$el.focus();
-  }
-});
 </script>
 
 <template>
@@ -306,254 +305,127 @@ useEventListener('keydown', (e) => {
     class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2"
     :class="$attrs.class"
   >
-    <Input ref="searchInputRef" v-model="searchQuery" />
+    <Input v-model="searchQuery" />
 
-    <Toggle
-      :model-value="isSelecting !== null"
-      variant="outline"
-      @update:model-value="
-        (v) => {
-          if (!v) {
-            isSelecting = null;
-          } else {
-            isSelecting = { lastSelectedIndex: null };
-          }
-        }
-      "
-    >
-      <SquareDashedMousePointer :size="16" />
-    </Toggle>
+    {{ table.getState().globalFilter }}
 
-    <Dialog v-model:open="sortingDialogOpened">
-      <DialogContent>
-        <DialogTitle>Sort Columns</DialogTitle>
-        <DialogDescription> </DialogDescription>
-        <SimpleDNDList
-          :initial-items="itemsForSorting"
-          @order-change="
-            (update) => {
-              // @ts-ignore vue is being dumb for some reason
-              const mapped = update.map((v) => v.id);
-              emit('update:viewSettings', 'columnOrder', mapped);
+    {{ table.getRowModel().rows.length }}
 
-              sortingDialogOpened = false;
-            }
-          "
-        />
-      </DialogContent>
-    </Dialog>
-    <DropdownMenu>
-      <DropdownMenuTrigger as-child>
-        <Button variant="outline" class="ml-auto">
-          Columns <ChevronDownIcon class="ml-2 h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem @click="sortingDialogOpened = true">
-          <ListOrdered :size="16" /> Reorder
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-
-        <DropdownMenuLabel>Toggle Visibility</DropdownMenuLabel>
-
-        <DropdownMenuCheckboxItem
-          v-for="column in itemsForSorting"
-          :key="column.id"
-          class="capitalize"
-          :model-value="column.isVisible"
-          @update:model-value="
-            (value) => {
-              emit('update:viewSettings', 'columnVisibility', {
-                ...props.viewSettings.value?.columnVisibility,
-                [column.id]: value,
-              });
-            }
-          "
-        >
-          {{ column.label }}
-        </DropdownMenuCheckboxItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ListViewTopControls
+      :columns="table.getAllColumns()"
+      @update-order="viewSettingsUpdater('columnOrder', $event)"
+    />
   </div>
   <div
     ref="scrollElementRef"
     class="w-full overflow-auto bg-background overscroll-none h-full scrollbarMod gutter-stable"
   >
-    <table
-      class="w-full px-2 caption-bottom text-sm relative"
-      :style="{ height: `${totalSize}px` }"
-    >
-      <TableHead class="grid sticky top-0 z-10 bg-background h-fit p-0">
+    <table class="text-sm grid">
+      <!-- Table Header -->
+      <thead class="grid sticky top-0 z-1">
         <tr
-          ref="tableContainerRef"
-          class="mt-1 group transition-opacity duration-200"
-          :style="{ display: 'flex', width: '100%' }"
-          :class="{
-            'opacity-50': !q.data.value,
-          }"
+          v-for="headerGroup in table.getHeaderGroups()"
+          :key="headerGroup.id"
+          class="group pb-2 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)] flex w-full"
         >
           <TableHeader
-            v-for="(column, index) in columnsVisible"
-            :key="column.id"
-            :colspan="1"
-            class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2 cursor-pointer select-none"
-            :style="{
-              width: `${getSizeForColumn(column.id, column.type)}px`,
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            :colspan="header.colSpan"
+            class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2"
+            :class="{
+              'cursor-pointer select-none': header.column.getCanSort(),
             }"
-            @mousedown="
-              (e: MouseEvent) => {
-                if (e.button !== 0) return;
-                if (props.viewSettings.value?.sorting?.key === column.id) {
-                  emit('update:viewSettings', 'sorting', {
-                    key: column.id,
-                    descending: !props.viewSettings.value?.sorting?.descending,
-                  });
-                } else {
-                  emit('update:viewSettings', 'sorting', {
-                    key: column.id,
-                    descending: false,
-                  });
-                }
-              }
-            "
+            :style="{
+              width: `${table.getColumn(header.column.id)?.getSize()}px`,
+            }"
+            @mousedown="() => header.column.toggleSorting()"
           >
-            <template v-if="props.viewSettings.value?.sorting?.key === column.id">
-              <MoveDown
-                :size="12"
-                v-if="props.viewSettings.value?.sorting.descending"
-                class="shrink-0"
-              />
-              <MoveUp :size="12" v-else class="shrink-0" />
-            </template>
-            <div class="overflow-hidden text-ellipsis flex gap-2 items-center">
-              {{ column.label }}
-            </div>
+            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" />
+            <ArrowUp :size="16" v-else-if="header.column.getIsSorted() === 'asc'" />
 
             <div
-              class="h-full w-1 rounded-full bg-accent ml-auto cursor-col-resize shrink-0"
-              v-if="index !== columnsVisible.length - 1"
-              @mousedown.stop.prevent="(e) => startColumnsSizing(e, index)"
-            ></div>
+              v-if="!header.isPlaceholder"
+              class="overflow-hidden text-ellipsis flex gap-2 items-center"
+            >
+              <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
+            </div>
+
+            <span
+              @click.stop
+              @mousedown.stop="
+                (e) => {
+                  header.getResizeHandler()(e);
+                }
+              "
+              class="bg-accent w-1 rounded-xl h-3/4 opacity-20 group-hover:opacity-100 transition-all absolute right-0 cursor-col-resize z-10"
+            >
+            </span>
           </TableHeader>
         </tr>
-      </TableHead>
-      <ContextMenu
-        v-model:open="dropdownOpened"
-        @update:open="
-          (v) => {
-            if (v) {
-              dropdownRowLock = hoveringRowIndex;
-            }
-          }
-        "
-      >
+      </thead>
+      <ContextMenu v-model:open="dropdownOpened">
         <ContextMenuTrigger>
+          <!-- Table Body -->
           <tbody
             data-slot="table-body"
-            class="[&_tr:last-child]:border-0"
+            class="[&_tr:last-child]:border-0 flex relative"
             :style="{
               height: `${totalSize}px`,
-              position: 'relative',
             }"
-            @mouseleave="hoveringRowIndex = null"
           >
             <tr
               v-for="vRow in virtualRows"
-              :data-index="vRow.index"
-              :key="vRow.index"
-              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
+              :key="rows[vRow.index].id"
+              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors flex absolute w-full"
               :class="{
-                'bg-muted hover:bg-muted/80': rowSelection[rows[vRow.index]?.path ?? ''],
-                'cursor-pointer': !isSelecting,
-                'cursor-copy': isSelecting,
+                'bg-muted hover:bg-muted/80': rows[vRow.index].getIsSelected(),
               }"
               :style="{
-                display: 'flex',
-                position: 'absolute',
-                height: `${vRow.size}px`,
                 transform: `translateY(${vRow.start}px)`,
-                width: '100%',
               }"
-              @pointerdown="(e) => handlePointerDownOnRow(vRow.index, e)"
-              @mouseover="hoveringRowIndex = vRow.index"
             >
               <td
                 data-slot="table-cell"
-                v-for="cell in columnsVisible"
+                v-for="cell in rows[vRow.index].getVisibleCells()"
                 :key="cell.id"
-                class="h-9 px-2 whitespace-nowrap"
-                :style="{
-                  display: 'flex',
-                  flexShrink: 0,
-                  width: `${getSizeForColumn(cell.id, cell.type)}px`,
-                }"
+                class="h-9 px-2 whitespace-nowrap flex shrink-0"
+                :style="{ width: `${cell.column.getSize()}px` }"
+                @pointerdown="handlePointerDownOnRow(vRow.index, $event)"
               >
-                <BookItemDisplay :value="rows[vRow.index]?.attrs[cell.id]" :type="cell.si" />
+                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </td>
             </tr>
           </tbody>
         </ContextMenuTrigger>
-        <ContextMenuContent v-if="dropdownRowLock !== null">
-          <ContextMenuItem
-            @click="
+        <ContextMenuContent>
+          <!-- Right Click Menu-->
+          <ListViewContextMenu
+            :selection-mode="isSelecting"
+            @open-in-new-tab="
               () => {
                 if (typeof dropdownRowLock !== 'number') return;
-
                 ts.openNewThingFast(
-                  { _type: 'file', _path: rows[dropdownRowLock]?.path ?? '' },
+                  { _type: 'file', _path: rows[dropdownRowLock]?.original.path ?? '' },
                   'lastUnfocused',
                 );
               }
             "
-          >
-            <CornerUpRightIcon :size="16" /> Open In New Tab
-          </ContextMenuItem>
-
-          <template v-if="!isSelecting">
-            <ContextMenuItem
-              @click="
-                () => {
-                  if (typeof dropdownRowLock !== 'number') return;
-                  isSelecting = { lastSelectedIndex: dropdownRowLock };
-                  rowSelection[rows[dropdownRowLock]?.path ?? ''] = true;
-                }
-              "
-            >
-              <SquareDashedMousePointer :size="16" /> Select
-            </ContextMenuItem>
-            <ContextMenuItem
-              @click="
-                () => {
-                  if (typeof dropdownRowLock !== 'number') return;
-                  c_delete_to_trash(rows[dropdownRowLock]?.path ?? '');
-                }
-              "
-            >
-              <TrashIcon :size="16" />
-              Delete
-            </ContextMenuItem>
-          </template>
-
-          <template v-else>
-            <ContextMenuSeparator />
-            <ContextMenuLabel>
-              {{ Object.values(rowSelection).filter((v) => v).length }} selected
-            </ContextMenuLabel>
-            <ContextMenuItem
-              @click="
-                () => {
-                  isSelecting = null;
-                  rowSelection = {};
-                }
-              "
-            >
-              <XIcon :size="16" /> Clear selection
-            </ContextMenuItem>
-            <ContextMenuItem @click="deleteSelected">
-              <TrashIcon :size="16" />
-              Delete
-            </ContextMenuItem>
-          </template>
+            @select="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
+                isSelecting = true;
+                lastSelectedIndex = dropdownRowLock;
+                rows[dropdownRowLock].toggleSelected();
+              }
+            "
+            @delete="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
+                c_delete_to_trash(rows[dropdownRowLock]?.original.path ?? '');
+              }
+            "
+          />
         </ContextMenuContent>
       </ContextMenu>
     </table>
