@@ -109,7 +109,8 @@ export const getSortFunction = (
   return () => 0;
 };
 
-export const attrValueToStringForFuzzyFiltering = (value: AttrValue) => {
+export const attrValueToStringForFuzzyFiltering = (value?: AttrValue) => {
+  if (!value) return '';
   if (value.type === 'String') return value.value;
   if (value.type === 'StringVec') return value.value.join(' ');
   if (value.type === 'Float') return String(value.value);

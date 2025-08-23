@@ -11,7 +11,7 @@ import {
 } from '@tanstack/vue-table';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { onKeyStroke } from '@vueuse/core';
-import { ArrowDown, ArrowUp } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, TrashIcon, XIcon } from 'lucide-vue-next';
 import type { AttrValue, RecordFromDb, SchemaResult } from 'types/index';
 import { type ShallowRef } from 'vue';
 import { c_delete_to_trash } from '~/api/tauriActions';
@@ -19,6 +19,8 @@ import ContextMenuTrigger from '~/components/ui/context-menu/ContextMenuTrigger.
 import ListViewContextMenu from '~/components/Views/List/ListViewContextMenu.vue';
 import ListViewTopControls from '~/components/Views/List/ListViewTopControls.vue';
 
+import { rankItem } from '@tanstack/match-sorter-utils';
+import { debounce } from 'lodash-es';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
@@ -49,7 +51,14 @@ const props = defineProps({
  * it's better to keep stable schema separately to avoid visual flickering on search change.
  */
 
-const searchQuery = ref('было');
+const searchQuery = ref(props.opened.details.searchQuery);
+
+watch(
+  searchQuery,
+  debounce(() => {
+    props.opened.details.searchQuery = searchQuery.value;
+  }, 100),
+);
 
 const { files: q, filesMemo } = useFlesListV2({
   opened: props.opened,
@@ -76,17 +85,17 @@ const cols = computed<ColumnDef<RecordFromDb>[]>(() =>
   visibleSchemaItems.value.map((v) => ({
     enableResizing: true,
     id: v.name,
-    accessorKey: `attrs.${v.name}`,
+    accessorKey: `attrs.${v.name}.value`,
     header: getDisplayName(v.name),
     size: baseSizeByType(v.value.type),
     meta: {
       type: v.value.type,
     },
-    enableColumnFilter: true,
+    enableColumnFilter: v.value.type === 'Text' || v.value.type === 'Number',
     sortingFn: getSortFunction(v.value.type),
-    cell: ({ cell, column }) => {
+    cell: ({ row }) => {
       return h(ListItemDisplay, {
-        value: cell.getValue() as AttrValue,
+        value: row.original.attrs[v.name] as AttrValue,
         type: v.value,
       });
     },
@@ -121,19 +130,13 @@ const table = useVueTable({
   getSortedRowModel: getSortedRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
 
-  globalFilterFn: () => {
-    console.log('globalFilterFn');
-    return false;
-  },
-  /*
   globalFilterFn: (row, columnId, value, addMeta) => {
-    console.log('globalFilterFn', row, columnId, value, addMeta);
-    const rowValue = row.getValue(columnId) as AttrValue;
-    const itemRank = rankItem(attrValueToStringForFuzzyFiltering(rowValue), value);
+    const rowValue = row.getValue(columnId);
+    const itemRank = rankItem(rowValue, value);
     addMeta({ itemRank });
 
     return itemRank.passed;
-  },*/
+  },
 
   onSortingChange: (updaterOrValue) => viewSettingsUpdater('sorting', updaterOrValue),
   onColumnVisibilityChange: (updaterOrValue) =>
@@ -210,14 +213,23 @@ const lastSelectedIndex = ref<number | null>(null);
 
 /** Selection */
 
-const isSelecting = ref<boolean>(false);
+const selectionMode = ref<boolean>(false);
 
 onKeyStroke('Escape', () => {
-  if (isSelecting.value) {
-    isSelecting.value = null;
+  if (selectionMode.value) {
+    selectionMode.value = null;
     rowSelection.value = {};
   }
 });
+
+const selectedRows = computed(() => table.getFilteredSelectedRowModel().rows);
+watch(selectedRows, (v) => {
+  if (v.length === 0) {
+    selectionMode.value = false;
+  }
+});
+
+/** --- */
 
 const ts = useTabsStoreV2();
 
@@ -251,7 +263,7 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
   const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
 
   /* Opening cases */
-  if (!isSelecting.value && !wantSelection) {
+  if (!selectionMode.value && !wantSelection) {
     const openNewTabKeyboard = ((isMacOS && e.metaKey) || (!isMacOS && e.altKey)) && LMB;
     const middleClick = e.button === 1;
 
@@ -265,8 +277,8 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 
   if (!LMB) return;
 
-  if (!isSelecting.value) {
-    isSelecting.value = true;
+  if (!selectionMode.value) {
+    selectionMode.value = true;
   }
 
   /* Selection mode */
@@ -277,13 +289,13 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
       for (let i = ls - 1; i >= index; i--) {
         const p = rows.value[i];
         if (!p) continue;
-        row.toggleSelected();
+        p.toggleSelected();
       }
     } else {
       for (let i = ls + 1; i <= index; i++) {
         const p = rows.value[i];
         if (!p) continue;
-        row.toggleSelected();
+        p.toggleSelected();
       }
     }
   } else {
@@ -293,10 +305,10 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 };
 
 const deleteSelected = async () => {
-  const paths = Object.keys(rowSelection.value);
+  const paths = selectedRows.value.map((v) => v.original.path);
 
   await Promise.allSettled(paths.map((v) => c_delete_to_trash(v)));
-  rowSelection.value = {};
+  table.resetRowSelection();
 };
 </script>
 
@@ -307,10 +319,6 @@ const deleteSelected = async () => {
   >
     <Input v-model="searchQuery" />
 
-    {{ table.getState().globalFilter }}
-
-    {{ table.getRowModel().rows.length }}
-
     <ListViewTopControls
       :columns="table.getAllColumns()"
       @update-order="viewSettingsUpdater('columnOrder', $event)"
@@ -320,6 +328,31 @@ const deleteSelected = async () => {
     ref="scrollElementRef"
     class="w-full overflow-auto bg-background overscroll-none h-full scrollbarMod gutter-stable"
   >
+    <div
+      v-if="selectionMode"
+      class="absolute bottom-6 bg-foreground text-primary-foreground shadow-xl rounded-md overflow-hidden min-w-sm left-1/2 -translate-x-1/2 z-10 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-2">
+        <Button
+          class="rounded-none border-r hover:bg-muted/10"
+          @click="
+            () => {
+              table.resetRowSelection();
+              selectionMode = false;
+            }
+          "
+        >
+          <XIcon class="text-primary-foreground" />
+        </Button>
+        <span class="text-sm block"
+          >Selected: {{ table.getFilteredSelectedRowModel().rows.length }}</span
+        >
+      </div>
+
+      <Button class="rounded-none border-l hover:bg-muted/10" @click="deleteSelected">
+        <TrashIcon class="text-primary-foreground" />
+      </Button>
+    </div>
     <table class="text-sm grid">
       <!-- Table Header -->
       <thead class="grid sticky top-0 z-1">
@@ -401,7 +434,7 @@ const deleteSelected = async () => {
         <ContextMenuContent>
           <!-- Right Click Menu-->
           <ListViewContextMenu
-            :selection-mode="isSelecting"
+            :selection-mode="selectionMode"
             @open-in-new-tab="
               () => {
                 if (typeof dropdownRowLock !== 'number') return;
@@ -414,7 +447,7 @@ const deleteSelected = async () => {
             @select="
               () => {
                 if (typeof dropdownRowLock !== 'number') return;
-                isSelecting = true;
+                selectionMode = true;
                 lastSelectedIndex = dropdownRowLock;
                 rows[dropdownRowLock].toggleSelected();
               }
