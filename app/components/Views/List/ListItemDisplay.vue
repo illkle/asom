@@ -27,7 +27,7 @@
 
     <template v-else-if="props.type.type === 'Date' && props.value.type === 'String'">
       <span class="text-ellipsis overflow-hidden whitespace-nowrap">
-        {{ mapDate(props.value.value) }}
+        {{ mapDate(props.value.value ?? '') }}
       </span>
     </template>
 

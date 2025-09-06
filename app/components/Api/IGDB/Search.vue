@@ -53,13 +53,17 @@ const debouncedSearch = refDebounced(search, 100);
 const q = useQuery({
   key: () => ['igdb', 'search', debouncedSearch.value],
   query: async (a) => {
+    if (!data.value) return [];
     const games = await getGamesFromIGDB({
       token: data.value.accessToken ?? '',
       clientId: data.value.clientId,
       clientSecret: data.value.clientSecret,
       name: debouncedSearch.value,
       limit: 25,
-      saveToken: (token) => (data.value.accessToken = token),
+      saveToken: (token) => {
+        if (!data.value) return;
+        data.value.accessToken = token;
+      },
     });
 
     return games;

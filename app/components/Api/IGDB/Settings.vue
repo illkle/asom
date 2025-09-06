@@ -1,5 +1,5 @@
 <template>
-  <div class="flex gap-4">
+  <div class="flex gap-4" v-if="data">
     <div>
       <div>Client ID</div>
       <Input v-model="data.clientId" />
@@ -10,13 +10,18 @@
     </div>
   </div>
 
-  <div class="mt-2" v-if="data.clientId && data.clientSecret">
+  <div class="mt-2" v-if="data && data.clientId && data.clientSecret">
     <IGDBSearch v-model="data" />
   </div>
 
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
-  <MappingSelector v-model:mapping="data.mapping" :schema="schema" :api-schema="igdbAPISchema" />
+  <MappingSelector
+    v-if="data"
+    v-model:mapping="data.mapping"
+    :schema="schema"
+    :api-schema="igdbAPISchema"
+  />
 </template>
 
 <script setup lang="ts">

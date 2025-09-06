@@ -5,6 +5,7 @@
     @select="
       async (v) => {
         if (props.connection.type !== 'twitchigdb') return;
+        if (!v.name || !rootPath.data.value) return;
         emit(
           'select',
           v.name,

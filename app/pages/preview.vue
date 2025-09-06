@@ -57,7 +57,7 @@ const tabs: SchemaAttrType['type'][] = [
 const r = useRoute();
 
 onMounted(() => {
-  if (!r.query.tab) {
+  if (!r.query.tab && tabs[0]) {
     r.query.tab = tabs[0];
   }
 });

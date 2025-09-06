@@ -145,14 +145,7 @@ const books = ref<GoodreadsParsedBook[]>([]);
 
 const selectedSchemaIndex = ref<number | null>(null);
 
-const mappings = ref<Record<keyof GoodreadsParsedBook, string | undefined>>({
-  title: undefined,
-  author: undefined,
-  isbn: undefined,
-  year: undefined,
-  rating: undefined,
-  read: undefined,
-});
+const mappings = ref<Record<string, string>>({});
 
 const currentSchema = computed(() => {
   if (selectedSchemaIndex.value === null) return null;

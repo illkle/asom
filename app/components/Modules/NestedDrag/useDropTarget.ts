@@ -11,7 +11,7 @@ export type DropTargetProps = {
   disabled?: boolean;
 };
 
-export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement>) => {
+export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement | null>) => {
   const pID = inject<string[]>('pID');
 
   const parentIds = computed(() => props.parentIds ?? pID ?? []);

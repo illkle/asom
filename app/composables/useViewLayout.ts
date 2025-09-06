@@ -66,6 +66,8 @@ export const useViewLayoutEditable = (schemaOwnerFolder: Ref<string>) => {
   watch(
     data,
     (newData) => {
+      if (!newData) return;
+
       if (dataKey.value !== schemaOwnerFolder.value) {
         dataKey.value = schemaOwnerFolder.value;
         return;

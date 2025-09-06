@@ -74,7 +74,8 @@ const saveTag = (index: number, tag: string) => {
       // When deleting first tag jump to second otherwise jump to previous
       const indexToSet = index === 0 ? 0 : index - 1;
 
-      const targ = tagRefs.value[indexToSet].element;
+      const targ = tagRefs.value[indexToSet]?.element;
+      if (!targ) return;
       targ.focus();
       selectElement(targ);
     });
@@ -122,7 +123,7 @@ const createNewTag = () => {
 
   // Focus and select all
   nextTick(() => {
-    const lastTag = tagRefs.value[tagRefs.value.length - 1].element;
+    const lastTag = tagRefs.value[tagRefs.value.length - 1]?.element;
     if (lastTag) {
       selectElement(lastTag);
     }
@@ -132,6 +133,7 @@ const createNewTag = () => {
 const keyDownHandler = (e: KeyboardEvent, index: number) => {
   if (!tags.value || !tags.value.length) return;
   const tagValue = tags.value[index];
+  if (!tagValue) return;
 
   if (e.code !== 'ArrowRight' && e.code !== 'ArrowLeft') return;
   const dir = e.code === 'ArrowLeft' ? -1 : 1;
@@ -142,7 +144,8 @@ const keyDownHandler = (e: KeyboardEvent, index: number) => {
   if (selection.focusOffset === 0 && dir === -1) {
     e.preventDefault();
     if (index === 0) return;
-    const tag = tagRefs.value[index - 1].element;
+    const tag = tagRefs.value[index - 1]?.element;
+    if (!tag) return;
     selectElement(tag, 'end');
     return;
   }
@@ -150,7 +153,8 @@ const keyDownHandler = (e: KeyboardEvent, index: number) => {
   if (selection.focusOffset >= tagValue.length && dir === 1) {
     e.preventDefault();
     if (index === tags.value.length - 1) return;
-    const tag = tagRefs.value[index + 1].element;
+    const tag = tagRefs.value[index + 1]?.element;
+    if (!tag) return;
 
     selectElement(tag, 'start');
     return;

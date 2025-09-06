@@ -56,7 +56,9 @@ const formatter = useDateFormatter('en');
 </script>
 
 <template>
+  <!-- @vue-expect-error Some bug in reka-ui types -->
   <CalendarRoot
+    v-if="date"
     v-slot="{ grid, weekDays }"
     data-slot="calendar"
     :class="cn('p-3', props.class)"
@@ -91,12 +93,14 @@ const formatter = useDateFormatter('en');
           </SelectContent>
         </Select>
         <NumberField
+          v-if="date"
           :model-value="date.year"
           :format-options="{
             useGrouping: false,
           }"
           @update:model-value="
             (v) => {
+              if (!date) return;
               date = date.set({ year: v });
             }
           "

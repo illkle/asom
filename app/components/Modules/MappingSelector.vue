@@ -9,11 +9,7 @@
       <div class="text-xs text-muted-foreground">{{ type }}</div>
     </div>
 
-    <Select
-      v-model="mapping[name as string | undefined]"
-      :options="availableFields[apiSchema[name]]"
-      class="w-full"
-    >
+    <Select v-model="mapping[name]" :options="availableFields[apiSchema[name]]" class="w-full">
       <SelectTrigger class="w-full">{{ mapping[name as string] || 'None' }}</SelectTrigger>
       <SelectContent>
         <SelectItem v-for="field in availableFields[apiSchema[name]]" :key="field" :value="field">
@@ -65,7 +61,7 @@ watch(
   [() => props.schema, () => props.apiSchema],
   ([schema, apiSchema]) => {
     if (!schema) {
-      mapping.value = {} as Record<keyof T, string | undefined>;
+      mapping.value = {} as Record<keyof T, string>;
       return;
     }
 
@@ -79,7 +75,7 @@ watch(
         continue;
       }
 
-      mapping.value[key] = undefined;
+      delete mapping.value[key];
     }
   },
   { immediate: true },

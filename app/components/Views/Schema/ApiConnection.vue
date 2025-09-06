@@ -6,7 +6,12 @@
       <Select
         v-if="apiData"
         :model-value="apiData.type"
-        @update:model-value="(v) => (apiData.type = v as ApiSettings['type'])"
+        @update:model-value="
+          (v) => {
+            if (!apiData) return;
+            apiData.type = v as ApiSettings['type'];
+          }
+        "
       >
         <SelectTrigger class="mt-2 w-full">
           <SelectValue placeholder="Select an API" />

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex gap-4">
+  <div v-if="data" class="flex gap-4">
     <div>
       <div>Your email</div>
       <Input v-model="data.yourEmail" />
@@ -11,13 +11,14 @@
     </div>
   </div>
 
-  <div class="mt-2" v-if="data.yourEmail">
+  <div class="mt-2" v-if="data && data.yourEmail">
     <Search v-model="data" />
   </div>
 
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
   <MappingSelector
+    v-if="data"
     v-model:mapping="data.mapping"
     :schema="schema"
     :api-schema="openLibraryAPISchema"

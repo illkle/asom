@@ -8,6 +8,10 @@ import {
   type IOpened,
 } from '../useTabsStoreV2';
 
+export function expectToBeDefined<T>(value: T | undefined): asserts value is T {
+  expect(value).toBeDefined();
+}
+
 const mockFileID = (id: string) => {
   return zOpened.parse({
     _type: 'file',
@@ -72,6 +76,7 @@ describe('useTabsStore', () => {
 
     // Check that the tab has the correct structure
     const addedTab = store.openedTabs[0];
+    expectToBeDefined(addedTab);
     expect(addedTab.id).toBeDefined();
     expect(addedTab.history).toHaveLength(1);
     expect(addedTab.history[0]).toEqual(fileTab);
@@ -106,8 +111,13 @@ describe('useTabsStore', () => {
     expect(store.openedTabs.length).toBe(4);
 
     // Check that focus is on the last (4th) tab
-    expect(store.openedTabActiveId).toBe(store.openedTabs[3].id);
+    expect(store.openedTabActiveId).toBe(store.openedTabs[3]?.id);
     expect(store.focusHistoryPointer).toBe(3);
+
+    expectToBeDefined(store.openedTabs[0]);
+    expectToBeDefined(store.openedTabs[1]);
+    expectToBeDefined(store.openedTabs[2]);
+    expectToBeDefined(store.openedTabs[3]);
 
     // Focus tab 3, then tab 2, then tab 1
     store.focusTab(store.openedTabs[2].id); // Tab 3
@@ -171,6 +181,9 @@ describe('useTabsStore', () => {
     // Check that we have 4 tabs
     expect(store.openedTabs.length).toBe(4);
 
+    expectToBeDefined(store.openedTabs[1]);
+    expectToBeDefined(store.openedTabs[3]);
+
     // Check that focus is on the last (4th) tab
     expect(store.openedTabActiveId).toBe(store.openedTabs[3].id);
     expect(store.focusHistoryPointer).toBe(3);
@@ -200,6 +213,8 @@ describe('useTabsStore', () => {
 
     // Move back one more, check that we returned to tab 1
     store.moveBack();
+
+    expectToBeDefined(store.openedTabs[0]);
 
     expect(store.openedTabActiveId).toBe(store.openedTabs[0].id);
     expect(store.focusHistoryPointer).toBe(0);
@@ -232,6 +247,7 @@ describe('useTabsStore', () => {
 
     // Check that we have 1 tab
     expect(store.openedTabs.length).toBe(1);
+    expectToBeDefined(store.openedTabs[0]);
     expect(store.openedTabActiveId).toBe(store.openedTabs[0].id);
 
     // Update its state 5 times
@@ -299,6 +315,7 @@ describe('useTabsStore', () => {
       const newState = mockFileID(`${i}`);
       store.updateTabContent(newState);
     }
+    expectToBeDefined(store.openedTabs[0]);
 
     // Lengh is 101, next one will evict 25
     expect(store.openedTabs[0].history.length).toBe(101);
@@ -349,7 +366,13 @@ describe('useTabsStore', () => {
     // Check that we have 4 tabs
     expect(store.openedTabs.length).toBe(4);
 
+    expectToBeDefined(store.openedTabs[3]);
+    expectToBeDefined(store.openedTabs[2]);
+    expectToBeDefined(store.openedTabs[1]);
+    expectToBeDefined(store.openedTabs[0]);
+
     // Check that focus is on the last (4th) tab
+
     expect(store.openedTabActiveId).toBe(store.openedTabs[3].id);
     expect(store.focusHistoryPointer).toBe(3);
 
@@ -418,6 +441,8 @@ describe('useTabsStore', () => {
     store.moveBack();
     store.moveBack();
     store.moveBack();
+
+    expectToBeDefined(store.openedTabs[0]);
 
     const tab1Id = store.openedTabs[0].id;
     store.closeTab(tab1Id);

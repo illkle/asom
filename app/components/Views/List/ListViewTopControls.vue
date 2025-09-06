@@ -29,6 +29,7 @@
       <DialogTitle>Sort Columns</DialogTitle>
       <DialogDescription> </DialogDescription>
       <SimpleDNDList
+        v-if="itemsForOrdering"
         :initial-items="itemsForOrdering"
         @order-change="
           (update) => {
@@ -67,7 +68,7 @@ const itemsForOrdering = computed(() => {
     .map((v) => ({
       index: v.getIndex(),
       id: v.id,
-      name: v.columnDef.header.toString(),
+      name: v.columnDef.header?.toString() ?? v.id,
       type: (v.columnDef.meta as { type: string }).type,
       isVisible: v.getIsVisible(),
     }))

@@ -82,6 +82,7 @@ export const useProvideDNDContext = ({
 
     for (const k of Object.keys(dropTargets.value)) {
       const t = dropTargets.value[k];
+      if (!t) continue;
 
       if (t.info.parentIds.includes(draggedItem.value.id)) continue;
 
@@ -103,7 +104,8 @@ export const useProvideDNDContext = ({
     let smallestRect: { id: string; size: number; quadrant: PointQuadrant } | null = null;
 
     for (const id of relevantTargets.value) {
-      const rect = dropTargets.value[id].position;
+      const rect = dropTargets.value[id]?.position;
+      if (!rect) continue;
 
       const quadrant = checkPointInsideRect(rect, {
         x: cursorPosition.value.x,
@@ -144,11 +146,11 @@ export const useProvideDNDContext = ({
   const finishDrag = () => {
     try {
       if (hoveredId.value && draggedItem.value && hoveredId.value.id !== draggedItem.value.id) {
-        onMove(
-          draggedItem.value,
-          dropTargets.value[hoveredId.value.id].info,
-          hoveredId.value.quadrant,
-        );
+        const t = dropTargets.value[hoveredId.value.id];
+        if (!t) {
+          throw new Error('Drop target not found ' + hoveredId.value.id);
+        }
+        onMove(draggedItem.value, t.info, hoveredId.value.quadrant);
       }
     } catch (e) {
       console.error('finishDrag', e);

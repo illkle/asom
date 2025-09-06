@@ -30,6 +30,7 @@ export const getSortFunction = (
     case 'Text':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         console.log('aValue', a.original.attrs, columnId);
         console.log('bValue', b.original.attrs, columnId);
         if (aValue.type !== 'String' || bValue.type !== 'String') {
@@ -40,6 +41,7 @@ export const getSortFunction = (
     case 'Date':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         if (aValue.type !== 'String' || bValue.type !== 'String') {
           return 0;
         }
@@ -54,6 +56,7 @@ export const getSortFunction = (
     case 'Number':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         if (
           (aValue.type !== 'Float' && aValue.type !== 'Integer') ||
           (bValue.type !== 'Float' && bValue.type !== 'Integer')
@@ -66,6 +69,7 @@ export const getSortFunction = (
     case 'TextCollection':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
           return 0;
         }
@@ -75,6 +79,7 @@ export const getSortFunction = (
     case 'DateCollection':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
           return 0;
         }
@@ -91,11 +96,12 @@ export const getSortFunction = (
     case 'DatesPairCollection':
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
+        if (!aValue || !bValue) return 0;
         if (aValue.type !== 'DatePairVec' || bValue.type !== 'DatePairVec') {
           return 0;
         }
 
-        const [av, bv] = [aValue.value?.[0].started, bValue.value?.[0].started];
+        const [av, bv] = [aValue.value?.[0]?.started, bValue.value?.[0]?.started];
 
         const [d1, d2] = [
           av ? parse(av, DATE_FORMAT, new Date()).getTime() : 0,
@@ -112,7 +118,7 @@ export const getSortFunction = (
 export const attrValueToStringForFuzzyFiltering = (value?: AttrValue) => {
   if (!value) return '';
   if (value.type === 'String') return value.value;
-  if (value.type === 'StringVec') return value.value.join(' ');
+  if (value.type === 'StringVec') return value.value?.join(' ') ?? '';
   if (value.type === 'Float') return String(value.value);
   if (value.type === 'Integer') return String(value.value);
   /** Not handling others yet, will likely implement proper filters for them later */

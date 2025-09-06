@@ -1,4 +1,4 @@
-import type { SchemaAttrType } from '~/types';
+import type { DatePair, SchemaAttrType } from '~/types';
 
 export type ExApiValueFor = {
   Text: string;
@@ -6,7 +6,7 @@ export type ExApiValueFor = {
   Number: number;
   Date: Date;
   DateCollection: Date[];
-  DatesPairCollection: null;
+  DatesPairCollection: DatePair[];
   Image: string;
   StringVec: string[];
 };

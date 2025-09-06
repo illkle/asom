@@ -13,7 +13,7 @@
             <AttributesRouter
               v-if="attributesByKey?.[item.id]"
               v-model:model-value="editableProxy.attrs[item.id]"
-              :schema-item="attributesByKey[item.id]"
+              :schema-item="attributesByKey?.[item.id]!"
               :disabled="true"
             />
           </div>

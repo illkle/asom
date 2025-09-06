@@ -33,7 +33,7 @@ export function filePathsToTree(paths: FolderListGetResult) {
           name,
           path,
           rawPath: currentFolder.path,
-          parent: byPath[parentPath],
+          parent: byPath[parentPath] ?? null,
           children: [],
           hasSchema: currentFolder.has_schema,
           ownSchema: currentFolder.own_schema,
@@ -58,7 +58,7 @@ export function filePathsToTree(paths: FolderListGetResult) {
 
 export const dropIfSingleFolder = (tree: FolderNode[]) => {
   if (tree.length === 1) {
-    return tree[0].children;
+    return tree[0]?.children ?? [];
   }
   return tree;
 };

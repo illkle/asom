@@ -4,17 +4,17 @@ import type { DatePair } from '~/types';
 
 const grabSimpleValue = (rootElement: Element, name: string) => {
   const value = rootElement
-    .getElementsByClassName('field ' + name)[0]
-    .getElementsByClassName('value')[0];
+    .getElementsByClassName('field ' + name)?.[0]
+    ?.getElementsByClassName('value')?.[0];
 
   if (name === 'title') {
-    return value.children[0].getAttribute('title') as string;
+    return value?.children[0]?.getAttribute('title') as string;
   }
 
-  if (value.children.length) {
-    return value.children[0].innerHTML.trim();
+  if (value?.children.length) {
+    return value?.children[0]?.innerHTML.trim();
   } else {
-    return value.innerHTML.trim();
+    return value?.innerHTML.trim();
   }
 };
 
@@ -34,7 +34,7 @@ const getDates = (rootElement: Element, dateFormat: string): DatePair[] => {
   const dateEls = rootElement.getElementsByClassName('editable_date');
   for (const cdateEl of dateEls) {
     const classes = cdateEl.classList;
-    hashes.add(classes[1].replace('date_started', '').replace('date_read', ''));
+    hashes.add(classes[1]?.replace('date_started', '').replace('date_read', ''));
   }
 
   const result: DatePair[] = [];
@@ -48,7 +48,7 @@ const getDates = (rootElement: Element, dateFormat: string): DatePair[] => {
     const startedEl = rootElement.getElementsByClassName('date_started' + hash);
     if (startedEl.length) {
       // StartedEl contains a span and a link, we ned span's content
-      const parsedStared = parseDate(startedEl[0].children[0].innerHTML, possibleFormats);
+      const parsedStared = parseDate(startedEl[0]?.children[0]?.innerHTML ?? '', possibleFormats);
       if (parsedStared) {
         const started = format(parsedStared, dateFormat);
         date.started = started;
@@ -57,7 +57,10 @@ const getDates = (rootElement: Element, dateFormat: string): DatePair[] => {
 
     const finishedEl = rootElement.getElementsByClassName('date_read' + hash);
     if (finishedEl.length) {
-      const parsedFinished = parseDate(finishedEl[0].children[0].innerHTML, possibleFormats);
+      const parsedFinished = parseDate(
+        finishedEl[0]?.children[0]?.innerHTML ?? '',
+        possibleFormats,
+      );
       if (parsedFinished) {
         const finished = format(parsedFinished, dateFormat);
         date.finished = finished;
@@ -82,7 +85,7 @@ const getYear = (rootElement: Element) => {
   const yearUnparsed = grabSimpleValue(rootElement, 'date_pub');
   const possibleFormats = ['MMM dd, yyyy', 'yyyy'];
 
-  const date = parseDate(yearUnparsed, possibleFormats);
+  const date = parseDate(yearUnparsed ?? '', possibleFormats);
   if (date) return date.getFullYear();
 };
 
@@ -103,8 +106,9 @@ const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBoo
     author: grabSimpleValue(rootElement, 'author'),
     isbn: grabSimpleValue(rootElement, 'isbn13'),
     year: getYear(rootElement),
-    rating: rootElement.getElementsByClassName('field rating')[0].getElementsByClassName('star on')
-      .length,
+    rating: rootElement
+      .getElementsByClassName('field rating')?.[0]
+      ?.getElementsByClassName('star on').length,
     read: getDates(rootElement, dateFormat),
   };
 
@@ -122,6 +126,7 @@ export const extractDataFromGoodreadsHTML = async (event: Event, rootPath: strin
   const parser = new DOMParser();
 
   const file = target.files[0];
+  if (!file) return;
 
   const fileContent = await readFileContent(file);
 

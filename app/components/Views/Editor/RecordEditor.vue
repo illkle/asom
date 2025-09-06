@@ -9,6 +9,7 @@
       >
         <template v-if="!breadcrumbItems.all">
           <BreadcrumbItem
+            v-if="breadcrumbItems.start[0]"
             class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
             :class="'shrink cursor-pointer'"
             @click="ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })"
@@ -21,6 +22,7 @@
             <BreadcrumbSeparator />
 
             <BreadcrumbItem
+              v-if="item"
               class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
               :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
               @click="
@@ -97,9 +99,11 @@
           </DialogHeader>
 
           <ApiSearchRouter
+            v-if="apiConnection.q.data.value"
             :connection="apiConnection.q.data.value"
             @select="
               (_, attrs) => {
+                if (!editableProxy) return;
                 editableProxy.record.attrs = {
                   ...editableProxy.record.attrs,
                   ...attrs,
@@ -217,9 +221,11 @@ const breadcrumbItems = computed(() => {
   const all = [{ label: path.basename(rootFolder), path: rootFolder }];
 
   for (const item of realPath.split(separator)) {
+    const last = all[all.length - 1];
+    if (!last) continue;
     all.push({
       label: item,
-      path: path.join(all[all.length - 1].path, item),
+      path: path.join(last.path, item),
     });
   }
 
@@ -303,7 +309,7 @@ const showLayoutWarning = computed(() => {
   return !viewSettingsQ.data.value?.layoutWarningsHidden && inviSchemaItms.value.length;
 });
 
-const apiConnection = useApiConnection(computed(() => schema.value?.owner_folder));
+const apiConnection = useApiConnection(computed(() => schema.value?.owner_folder ?? ''));
 const hasApi = computed(() => {
   return apiConnection.q.data?.value && apiConnection.q.data.value.type !== 'none';
 });

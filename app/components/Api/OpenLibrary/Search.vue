@@ -35,7 +35,7 @@
           @click="selectedKey = book.key"
         >
           <img
-            v-if="book.editions.docs[0].cover_i"
+            v-if="book.editions.docs[0]?.cover_i"
             :src="`https://covers.openlibrary.org/b/id/${book.editions.docs[0].cover_i}-M.jpg`"
             class="w-18 h-27 object-cover block rounded-sm overflow-hidden shrink-0"
           />
@@ -74,6 +74,7 @@ const id = useId();
 const q = useQuery({
   key: () => ['openlibrary', 'search', debouncedSearch.value],
   query: async ({ signal }) => {
+    if (!data.value) return [];
     const res = await getBooksFromOpenLibrary({
       yourEmail: data.value.yourEmail,
       query: debouncedSearch.value,
@@ -108,9 +109,10 @@ const selectedKey = ref<string | null>(null);
 const qE = useQuery({
   key: () => ['openlibrary', 'editions', selectedKey.value],
   query: async ({ signal }) => {
+    if (!data.value) return [];
     const res = await getEditionsFromOpenLibrary({
       yourEmail: data.value.yourEmail,
-      key: selectedKey.value,
+      key: selectedKey.value ?? '',
       signal,
     });
 

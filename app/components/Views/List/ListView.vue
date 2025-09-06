@@ -56,7 +56,7 @@ const searchQuery = ref(props.opened.details.searchQuery);
 watch(
   searchQuery,
   debounce(() => {
-    props.opened.details.searchQuery = searchQuery.value;
+    props.opened.details.searchQuery = searchQuery.value ?? '';
   }, 100),
 );
 
@@ -106,6 +106,7 @@ const viewSettingsUpdater = <T extends keyof IViewSettings>(
   key: T,
   newValue: Updater<IViewSettings[T]>,
 ) => {
+  if (!props.viewSettings.value) return;
   props.viewSettings.value[key] =
     typeof newValue === 'function' ? newValue(props.viewSettings.value[key]) : newValue;
 };
@@ -217,7 +218,7 @@ const selectionMode = ref<boolean>(false);
 
 onKeyStroke('Escape', () => {
   if (selectionMode.value) {
-    selectionMode.value = null;
+    selectionMode.value = false;
     rowSelection.value = {};
   }
 });
@@ -307,7 +308,12 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
 const deleteSelected = async () => {
   const paths = selectedRows.value.map((v) => v.original.path);
 
-  await Promise.allSettled(paths.map((v) => c_delete_to_trash(v)));
+  await Promise.allSettled(
+    paths.map((v) => {
+      if (!v) return new Promise((resolve) => resolve(undefined));
+      c_delete_to_trash(v);
+    }),
+  );
   table.resetRowSelection();
 };
 </script>
@@ -409,10 +415,10 @@ const deleteSelected = async () => {
           >
             <tr
               v-for="vRow in virtualRows"
-              :key="rows[vRow.index].id"
+              :key="rows[vRow.index]?.id"
               class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors flex absolute w-full"
               :class="{
-                'bg-muted hover:bg-muted/80': rows[vRow.index].getIsSelected(),
+                'bg-muted hover:bg-muted/80': rows[vRow.index]?.getIsSelected(),
               }"
               :style="{
                 transform: `translateY(${vRow.start}px)`,
@@ -420,7 +426,7 @@ const deleteSelected = async () => {
             >
               <td
                 data-slot="table-cell"
-                v-for="cell in rows[vRow.index].getVisibleCells()"
+                v-for="cell in rows[vRow.index]?.getVisibleCells()"
                 :key="cell.id"
                 class="h-9 px-2 whitespace-nowrap flex shrink-0"
                 :style="{ width: `${cell.column.getSize()}px` }"
@@ -449,7 +455,7 @@ const deleteSelected = async () => {
                 if (typeof dropdownRowLock !== 'number') return;
                 selectionMode = true;
                 lastSelectedIndex = dropdownRowLock;
-                rows[dropdownRowLock].toggleSelected();
+                rows[dropdownRowLock]?.toggleSelected();
               }
             "
             @delete="

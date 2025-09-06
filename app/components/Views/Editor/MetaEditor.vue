@@ -11,7 +11,7 @@
         <AttributesRouter
           v-if="attributesByKey?.[data.id]"
           v-model:model-value="openedFile.attrs[data.id]"
-          :schema-item="attributesByKey[data.id]"
+          :schema-item="attributesByKey[data.id]!"
           :hide-label="hideLabels"
         />
       </template>

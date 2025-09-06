@@ -27,13 +27,7 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
 
-  typescript: {
-    tsConfig: {
-      compilerOptions: {
-        strictNullChecks: false,
-      },
-    },
-  },
+  typescript: {},
 
   $env: {
     preview: {

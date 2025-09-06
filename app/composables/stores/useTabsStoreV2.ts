@@ -30,7 +30,12 @@ export const removeIndexesKeepingPointer = (
   indexesToRemove: number[],
 ) => {
   for (let i = indexesToRemove.length - 1; i >= 0; i--) {
-    const { pointer: newPointer } = spliceKeepingPointer(array, pointer, indexesToRemove[i]);
+    const t = indexesToRemove[i];
+    if (!t) {
+      console.error('indexToRemove is undefined', indexesToRemove);
+      continue;
+    }
+    const { pointer: newPointer } = spliceKeepingPointer(array, pointer, t);
     pointer = newPointer;
   }
 
@@ -337,7 +342,11 @@ export const useTabsStoreV2 = defineStore('tabs', {
       const max = this.openedTabs.length;
       const indexToSet = (this.openedTabActiveIndex + relative + max) % max;
 
-      this.focusTab(this.openedTabs[indexToSet].id);
+      const id = this.openedTabs[indexToSet]?.id;
+      if (!id) {
+        throw new Error(`indexToSet is undefined ${indexToSet}`);
+      }
+      this.focusTab(id);
     },
 
     /**
@@ -578,14 +587,22 @@ export const setupTabsHotkeys = () => {
     if (e.code === 'KeyT' && e[actionKey]) {
       e.preventDefault();
 
+      const _path = store.openedItem
+        ? store.openedItem._type === 'file'
+          ? path.dirname(store.openedItem._path)
+          : store.openedItem._path
+        : Object.keys(usableSchemas.data.value ?? {})[0];
+
+      if (!_path) {
+        throw new Error(
+          `Trying to open new tab with hotkey but no path for tab. Should never happen. Schemas ${JSON.stringify(Object.keys(usableSchemas.data.value ?? {}))}`,
+        );
+      }
+
       store.openNewThingFast(
         {
           _type: 'folder',
-          _path: store.openedItem
-            ? store.openedItem._type === 'file'
-              ? path.dirname(store.openedItem._path)
-              : store.openedItem._path
-            : Object.keys(usableSchemas.data.value ?? {})[0],
+          _path,
         },
         'last',
       );
@@ -593,7 +610,11 @@ export const setupTabsHotkeys = () => {
 
     if (e.code === 'KeyW' && e[actionKey]) {
       e.preventDefault();
-      store.closeTab(store.openedTabActiveId);
+      const id = store.openedTabActiveId;
+      if (!id) {
+        return;
+      }
+      store.closeTab(id);
     }
 
     if (e.code === 'BracketLeft' && e[actionKey] && e.shiftKey) {

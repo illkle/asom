@@ -1,5 +1,5 @@
 <template>
-  <LayoutGroup>
+  <LayoutGroup v-if="layoutValue">
     <MotionConfig :transition="{ duration: 0.2, type: 'tween' }">
       <RenderDynamicEditor
         :item="layoutValue"
@@ -68,6 +68,7 @@ const layoutValue = defineModel<IDynamicViewGroup>('layout');
 
 const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
   onMove: (draggedItem, hoveredItem, quadrant) => {
+    if (!layoutValue.value) return;
     console.log('onMove', draggedItem, hoveredItem);
     if (hoveredItem.id === 'toDelete') {
       const i = findAndRemoveItem(layoutValue.value, draggedItem);
@@ -96,6 +97,7 @@ const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
 });
 
 const flatItems = computed(() => {
+  if (!layoutValue.value) return new Set();
   return new Set(getFlatItems(layoutValue.value).map((v) => v.id));
 });
 
@@ -109,6 +111,7 @@ const availableItems = computed<ILayoutItem[]>(() => {
 });
 
 const onDelete = (info: ItemInfoCore) => {
+  if (!layoutValue.value) return;
   findAndRemoveItem(layoutValue.value, info);
 };
 </script>

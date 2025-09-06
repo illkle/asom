@@ -10,7 +10,7 @@
       <div v-for="value in possibleValues[key as keyof SettingsOptions<NumberSettings>]">
         <h5 class="text-sm opacity-20">{{ value ?? 'undefined' }}</h5>
         <NumberInput
-          :model-value="vals[String(key) + String(value)]"
+          :model-value="vals[String(key) + String(value)]!"
           @update:model-value="(v) => (vals[String(key) + String(value)] = v)"
           :settings="{ ...defaultNumberSettings, [key]: value }"
           name="test"
@@ -24,7 +24,7 @@
       <h5 class="text-sm opacity-20">{{ extra.label }}</h5>
 
       <NumberInput
-        v-model="vals[String(extra.label)]"
+        v-model="vals[String(extra.label)]!"
         @update:model-value="(v) => (vals[String(extra.label)] = v)"
         :settings="extra.settings"
         name="test"

@@ -75,7 +75,7 @@ const pathFromTab = computed(() => {
 });
 
 const schemaFromActiveTab = useSchemaByPath(pathFromTab);
-const apiConnection = useApiConnection(computed(() => selectedSchema.value?.[0]));
+const apiConnection = useApiConnection(computed(() => selectedSchema.value?.[0] ?? ''));
 
 const schemaFromActiveTabIndex = computed(() => {
   return schemasArray.value.findIndex(([p]) => p === schemaFromActiveTab.data.value?.owner_folder);
@@ -107,7 +107,12 @@ const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) 
   const saveTo =
     selectedSchemaIndex.value === schemaFromActiveTabIndex.value
       ? pathFromTab.value
-      : selectedSchema.value[0];
+      : (selectedSchema.value?.[0] ?? '');
+
+  if (!saveTo) {
+    console.error('no saveTo', saveTo);
+    return;
+  }
 
   const finalPath = await tauriPath.join(saveTo, actualName);
 
