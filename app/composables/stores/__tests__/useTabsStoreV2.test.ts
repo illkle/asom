@@ -79,14 +79,6 @@ describe('useTabsStore', () => {
 
     // Check that the tab is active
 
-    console.log({
-      openedTabActiveId: store.openedTabActiveId,
-      openedTabActiveIndex: store.openedTabActiveIndex,
-      openedTab: store.openedTab,
-      focusHistory: store.focusHistory,
-      focusHistoryPointer: store.focusHistoryPointer,
-    });
-
     expect(store.openedTabActiveId).toBe(addedTab.id);
 
     // Check that focus history was updated
@@ -508,8 +500,6 @@ describe('useTabsStore', () => {
 
     // Delete folder
     store._handlePathDeletion(`${root}/sub1`, true);
-
-    console.log({ bareId, nestedId, doublenestedId, sideNestedId });
 
     expect(store.openedTabs.length).toBe(1);
     expect(store.openedTabActiveId).toBe(bareId);
