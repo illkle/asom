@@ -1,3 +1,5 @@
+import { computed, inject, provide, ref, shallowRef } from 'vue';
+
 export interface ItemInfoCore {
   parentIds: string[];
   id: string;
@@ -38,7 +40,37 @@ export const useProvideDNDContext = ({
     quadrant: PointQuadrant,
   ) => void;
 }) => {
+  /** Dragged item */
   const draggedItem = ref<DraggableInfo | null>(null);
+
+  const cursorPosition = ref({
+    x: 0,
+    y: 0,
+  });
+
+  const moveDrag = (e: PointerEvent) => {
+    e.preventDefault();
+
+    cursorPosition.value.x = e.clientX;
+    cursorPosition.value.y = e.clientY;
+  };
+
+  const startDrag = (e: PointerEvent, item: DraggableInfo, t: HTMLElement) => {
+    t.setPointerCapture(e.pointerId);
+
+    draggedItem.value = item;
+
+    cursorPosition.value.x = e.clientX;
+    cursorPosition.value.y = e.clientY;
+
+    document.addEventListener('pointermove', moveDrag);
+    document.addEventListener('pointerup', finishDrag, { once: true });
+    document.addEventListener('pointercancel', finishDrag, { once: true });
+    document.addEventListener('lostpointercapture', finishDrag, { once: true });
+  };
+
+  /** Target Registration */
+
   const dropTargets = shallowRef<Record<string, RegisteredTarget>>({});
 
   const registerDropTarget = (id: string, info: DropTargetInfo) => {
@@ -71,10 +103,7 @@ export const useProvideDNDContext = ({
     }
   };
 
-  const cursorPosition = ref({
-    x: 0,
-    y: 0,
-  });
+  /** Collision detection */
 
   const relevantTargets = computed(() => {
     const targets: string[] = [];
@@ -122,26 +151,7 @@ export const useProvideDNDContext = ({
     return smallestRect ?? null;
   });
 
-  const moveDrag = (e: PointerEvent) => {
-    e.preventDefault();
-
-    cursorPosition.value.x = e.clientX;
-    cursorPosition.value.y = e.clientY;
-  };
-
-  const startDrag = (e: PointerEvent, item: DraggableInfo, t: HTMLElement) => {
-    t.setPointerCapture(e.pointerId);
-
-    draggedItem.value = item;
-
-    cursorPosition.value.x = e.clientX;
-    cursorPosition.value.y = e.clientY;
-
-    document.addEventListener('pointermove', moveDrag);
-    document.addEventListener('pointerup', finishDrag, { once: true });
-    document.addEventListener('pointercancel', finishDrag, { once: true });
-    document.addEventListener('lostpointercapture', finishDrag, { once: true });
-  };
+  /** Finish drag */
 
   const finishDrag = () => {
     try {
