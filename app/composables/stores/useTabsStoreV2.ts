@@ -31,7 +31,7 @@ export const removeIndexesKeepingPointer = (
 ) => {
   for (let i = indexesToRemove.length - 1; i >= 0; i--) {
     const t = indexesToRemove[i];
-    if (!t) {
+    if (typeof t !== 'number') {
       console.error('indexToRemove is undefined', indexesToRemove);
       continue;
     }
