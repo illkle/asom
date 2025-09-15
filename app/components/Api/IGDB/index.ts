@@ -1,13 +1,18 @@
 import { z } from 'zod';
-import { defineExApiSchema, type ExApiData } from '~/components/Api/base';
+import {
+  defineExApiSchema,
+  zApiSettingsBase,
+  zApiToSchemaMapping,
+  type ExApiData,
+} from '~/components/Api/base';
 
-export const zAPIIGDB = z.object({
+export const zAPIIGDB = zApiSettingsBase.extend({
   type: z.literal('twitchigdb'),
   clientId: z.string().default(''),
   clientSecret: z.string().default(''),
   accessToken: z.string().default(''),
   expiresAt: z.number().default(0),
-  mapping: z.record(z.string(), z.string().or(z.null())).default({}),
+  mapping: zApiToSchemaMapping,
 });
 
 export type ApiSettingsIGDB = z.infer<typeof zAPIIGDB>;

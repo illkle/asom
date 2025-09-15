@@ -1,67 +1,39 @@
 <template>
   <div class="relative">
-    <Input
+    <ApiSearch
       v-model="search"
-      autofocus
+      :query="q"
       placeholder="Search for a book from Open Library"
-      class="w-full peer"
-      :class="{ 'rounded-b-none': books.length > 0 }"
-      @keydown.down.prevent="
-        () => {
-          highlightedIndex = clamp(highlightedIndex + 1, 0, books.length - 1);
+      @select="
+        (v) => {
+          emit('select', v);
         }
       "
-      @keydown.up.prevent="
-        () => {
-          highlightedIndex = clamp(highlightedIndex - 1, 0, books.length - 1);
-        }
-      "
-    />
-
-    <div
-      class="absolute top-full left-0 w-full z-10 bg-background peer-focus:block hidden"
-      :class="{ block: books.length > 0 }"
     >
-      <div
-        v-if="books.length > 0"
-        class="flex flex-col max-h-[300px] h-full overflow-y-auto scrollbarMod border border-t-0 rounded-b-md"
-      >
-        <button
-          v-for="(book, index) in books"
-          :key="book.key"
-          :id="`${id}-${index}`"
-          class="flex gap-4 hover:bg-muted py-2 px-2"
-          :class="{ 'bg-muted': highlightedIndex === index }"
-          @click="selectedKey = book.key"
-        >
-          <img
-            v-if="book.editions.docs[0]?.cover_i"
-            :src="`https://covers.openlibrary.org/b/id/${book.editions.docs[0].cover_i}-M.jpg`"
-            class="w-18 h-27 object-cover block rounded-sm overflow-hidden shrink-0"
-          />
-          <img
-            v-else-if="book.cover_i"
-            :src="`https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`"
-            class="w-18 h-27 object-cover block rounded-sm overflow-hidden shrink-0"
-          />
-          <div v-else class="w-18 h-27 block rounded-sm overflow-hidden bg-muted opacity-10"></div>
+      <template #item="{ item }: { item: OpenLibraryApiBook }">
+        <img
+          v-if="item.cover_low_quality"
+          :src="item.cover_low_quality"
+          class="w-18 h-27 object-cover block rounded-sm overflow-hidden shrink-0"
+        />
+        <div v-else class="w-18 h-27 block rounded-sm overflow-hidden bg-muted opacity-10"></div>
 
-          <div class="flex flex-col text-left">
-            <span class="text-lg">
-              {{ book.title }}
-            </span>
-            <span class="text-regular text-muted-foreground">{{ book.first_publish_year }}</span>
-            <div class="text-sm text-muted-foreground">{{ book.author_name?.join(', ') }}</div>
-          </div>
-        </button>
-      </div>
-    </div>
+        <div class="flex flex-col text-left">
+          <span class="text-lg">
+            {{ item.title }}
+          </span>
+          <span class="text-regular text-muted-foreground">{{ item.year }}</span>
+          <div class="text-sm text-muted-foreground">{{ item.author_name?.join(', ') }}</div>
+        </div>
+      </template>
+    </ApiSearch>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { refDebounced } from '@vueuse/core';
 import type { ApiSettingsOpenLibrary, OpenLibraryApiBook } from '.';
+import ApiSearch from '../common/ApiSearch.vue';
 import { getBooksFromOpenLibrary, getEditionsFromOpenLibrary } from './openlibrary';
 
 const data = defineModel<ApiSettingsOpenLibrary>();
@@ -74,7 +46,7 @@ const id = useId();
 const q = useQuery({
   key: () => ['openlibrary', 'search', debouncedSearch.value],
   query: async ({ signal }) => {
-    if (!data.value) return [];
+    if (!data.value) return [] as OpenLibraryApiBook[];
     const res = await getBooksFromOpenLibrary({
       yourEmail: data.value.yourEmail,
       query: debouncedSearch.value,

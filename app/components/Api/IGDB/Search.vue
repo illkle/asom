@@ -1,23 +1,12 @@
 <template>
   <div>
-    <Input
+    <ApiSearch
       v-model="search"
-      autofocus
+      :query="q"
       placeholder="Search for a game from IGDB"
-      class="w-full"
-      :class="{ 'rounded-b-none': games.length > 0 }"
-    />
-
-    <div
-      v-if="games.length > 0"
-      class="flex flex-col max-h-[300px] overflow-y-auto scrollbarMod border border-t-0 rounded-b-md"
+      @select="(v) => emit('select', v)"
     >
-      <button
-        v-for="game in games"
-        :key="game.id"
-        class="flex gap-4 hover:bg-muted py-2 px-2"
-        @click="emit('select', game)"
-      >
+      <template #item="{ item: game }: { item: IgdbApiGame }">
         <img
           v-if="game.cover"
           :src="game.cover"
@@ -32,11 +21,15 @@
           <span class="text-regular text-muted-foreground">{{
             game.first_release_date?.getFullYear()
           }}</span>
-          <div class="text-sm text-muted-foreground">{{ game.companies_all.join(', ') }}</div>
-          <div class="text-xs text-muted-foreground">{{ game.platforms.join(', ') }}</div>
+          <div v-if="game.companies_all" class="text-sm text-muted-foreground">
+            {{ game.companies_all.join(', ') }}
+          </div>
+          <div v-if="game.platforms" class="text-xs text-muted-foreground">
+            {{ game.platforms.join(', ') }}
+          </div>
         </div>
-      </button>
-    </div>
+      </template>
+    </ApiSearch>
   </div>
 </template>
 
@@ -44,6 +37,7 @@
 import { refDebounced } from '@vueuse/core';
 import { type ApiSettingsIGDB, type IgdbApiGame } from '~/components/Api/IGDB';
 import { getGamesFromIGDB } from '~/components/Api/IGDB/igdb';
+import ApiSearch from '../common/ApiSearch.vue';
 
 const data = defineModel<ApiSettingsIGDB>();
 

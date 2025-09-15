@@ -93,7 +93,7 @@ export const getGamesFromIGDB = async ({
   name: string;
   limit?: number;
   saveToken: (token: string) => void;
-}) => {
+}): Promise<IgdbApiGame[]> => {
   if (!token) {
     try {
       const t = await getToken(clientId, clientSecret);

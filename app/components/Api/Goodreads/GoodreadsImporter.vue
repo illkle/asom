@@ -117,8 +117,9 @@ import {
   goodreadsApiSchema,
   type GoodreadsParsedBook,
 } from '~/components/Api/Goodreads/goodreadsHTMLParser';
-import MappingSelector from '~/components/Modules/MappingSelector.vue';
+import MappingSelector from '~/components/Api/MappingSelector.vue';
 import type { AttrValue, RecordFromDb } from '~/types';
+import type { ApiToSchemaMapping } from '../base';
 
 const usableSchemas = useUsableSchemas();
 const schemasArray = computed(() => usableSchemas.schemasArray.value);
@@ -145,7 +146,7 @@ const books = ref<GoodreadsParsedBook[]>([]);
 
 const selectedSchemaIndex = ref<number | null>(null);
 
-const mappings = ref<Record<string, string>>({});
+const mappings = ref<ApiToSchemaMapping>({});
 
 const currentSchema = computed(() => {
   if (selectedSchemaIndex.value === null) return null;
@@ -188,42 +189,42 @@ const importBooks = async () => {
     const attrs: Record<string, AttrValue> = {};
 
     if (mappings.value.author && book.author) {
-      attrs[mappings.value.author] = {
+      attrs[mappings.value.author.schemaName] = {
         type: 'String',
         value: book.author,
       };
     }
 
     if (mappings.value.title && book.title) {
-      attrs[mappings.value.title] = {
+      attrs[mappings.value.title.schemaName] = {
         type: 'String',
         value: book.title,
       };
     }
 
     if (mappings.value.isbn && book.isbn) {
-      attrs[mappings.value.isbn] = {
+      attrs[mappings.value.isbn.schemaName] = {
         type: 'String',
         value: book.isbn ?? null,
       };
     }
 
     if (mappings.value.year && book.year) {
-      attrs[mappings.value.year] = {
+      attrs[mappings.value.year.schemaName] = {
         type: 'Integer',
         value: book.year ?? null,
       };
     }
 
     if (mappings.value.rating && book.rating) {
-      attrs[mappings.value.rating] = {
+      attrs[mappings.value.rating.schemaName] = {
         type: 'Float',
         value: book.rating,
       };
     }
 
     if (mappings.value.read && book.read) {
-      attrs[mappings.value.read] = {
+      attrs[mappings.value.read.schemaName] = {
         type: 'DatePairVec',
         value: book.read,
       };

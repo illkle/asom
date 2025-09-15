@@ -20,8 +20,15 @@
           </RadioGroupItem>
         </RadioGroup>
 
-        <template v-if="apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none'">
+        <template
+          v-if="
+            apiConnection.q.data.value &&
+            apiConnection.q.data.value.type !== 'none' &&
+            selectedSchema?.[1]
+          "
+        >
           <ApiSearchRouter
+            :schema="selectedSchema?.[1]"
             :connection="apiConnection.q.data.value"
             @select="(id, attrs) => addThing(id, attrs)"
           />

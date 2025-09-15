@@ -99,8 +99,9 @@
           </DialogHeader>
 
           <ApiSearchRouter
-            v-if="apiConnection.q.data.value"
+            v-if="apiConnection.q.data.value && schema"
             :connection="apiConnection.q.data.value"
+            :schema="schema.schema"
             @select="
               (_, attrs) => {
                 if (!editableProxy) return;

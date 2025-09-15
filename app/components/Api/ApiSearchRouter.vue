@@ -6,17 +6,14 @@
       async (v) => {
         if (props.connection.type !== 'twitchigdb') return;
         if (!v.name || !rootPath.data.value) return;
-        emit(
-          'select',
-          v.name,
-          await makeFileAttrsFromApi(
-            props.connection,
-            v,
-            props.connection.mapping,
-            rootPath.data.value,
-            v.name,
-          ),
-        );
+        const attrs = await makeFileAttrsFromApi({
+          apiSettings: props.connection,
+          apiData: v,
+          schema: props.schema,
+          context: { rootPath: rootPath.data.value, recordName: v.name },
+        });
+        console.log('attrs', attrs);
+        emit('select', v.name, attrs);
       }
     "
   />
@@ -24,14 +21,15 @@
 
 <script lang="ts" setup>
 import type { ApiSettings } from '~/components/Api/apis';
-import { makeFileAttrsFromApi } from '~/components/Api/apis';
 import IGDBSearch from '~/components/Api/IGDB/Search.vue';
-import type { RecordFromDb } from '~/types';
+import type { RecordFromDb, Schema } from '~/types';
+import { makeFileAttrsFromApi } from './makeFileFromApi';
 
 const rootPath = useRootPath();
 
 const props = defineProps<{
   connection: ApiSettings;
+  schema: Schema;
 }>();
 
 const emit = defineEmits<{

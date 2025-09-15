@@ -1,5 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import z from 'zod';
+import type { OpenLibraryApiBook } from '~/components/Api/OpenLibrary';
 
 const zBook = z.object({
   title: z.string(),
@@ -65,7 +66,20 @@ export const getBooksFromOpenLibrary = async ({
 
   const books = await searchBooks({ yourEmail, query, signal });
 
-  return books;
+  return books.map((v) => {
+    const cover = v.editions.docs[0]?.cover_i ?? v.cover_i;
+    const cover_low_quality = `https://covers.openlibrary.org/b/id/${cover}-M.jpg`;
+    const cover_high_quality = `https://covers.openlibrary.org/b/id/${cover}-L.jpg`;
+    return {
+      title: v.title,
+      author_name: v.author_name,
+      year: v.first_publish_year,
+      cover_low_quality: cover_low_quality,
+      cover_high_quality: cover_high_quality,
+      id: v.key,
+      isbn: v.isbn?.[0],
+    };
+  }) satisfies OpenLibraryApiBook[];
 };
 
 const zEdition = z.object({

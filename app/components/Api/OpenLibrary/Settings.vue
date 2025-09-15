@@ -26,8 +26,8 @@
 </template>
 
 <script setup lang="ts">
+import MappingSelector from '~/components/Api/MappingSelector.vue';
 import { openLibraryAPISchema } from '~/components/Api/OpenLibrary';
-import MappingSelector from '~/components/Modules/MappingSelector.vue';
 import type { Schema } from '~/types';
 import type { ApiSettingsOpenLibrary } from '.';
 import Search from './Search.vue';

@@ -1,10 +1,15 @@
 import { z } from 'zod';
-import { defineExApiSchema, type ExApiData } from '~/components/Api/base';
+import {
+  defineExApiSchema,
+  zApiSettingsBase,
+  zApiToSchemaMapping,
+  type ExApiData,
+} from '~/components/Api/base';
 
-export const zAPIOpenLibrary = z.object({
+export const zAPIOpenLibrary = zApiSettingsBase.extend({
   type: z.literal('openlibrary'),
   yourEmail: z.string().default(''),
-  mapping: z.record(z.string(), z.string().or(z.null())).default({}),
+  mapping: zApiToSchemaMapping,
 });
 
 export type ApiSettingsOpenLibrary = z.infer<typeof zAPIOpenLibrary>;
