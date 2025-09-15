@@ -70,6 +70,7 @@
         <CogIcon /> Root Path & Schema
       </SidebarMenuButton>
       <ColorModeSelector />
+      <CheckUpdates />
     </SidebarFooter>
   </Sidebar>
 </template>
@@ -90,6 +91,7 @@ import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabs
 import { useIsMac } from '~/composables/useTools';
 import FileTree from '../FileTree/FileTree.vue';
 import ColorModeSelector from '../Modules/ColorModeSelector.vue';
+import CheckUpdates from './CheckUpdates.vue';
 
 const { schemasArray } = useUsableSchemas();
 

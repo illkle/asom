@@ -240,6 +240,8 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
 pub fn run() {
     create_app(
         tauri::Builder::default()
+            .plugin(tauri_plugin_process::init())
+            .plugin(tauri_plugin_updater::Builder::new().build())
             .plugin(tauri_plugin_http::init())
             .plugin(tauri_plugin_opener::init())
             .plugin(tauri_plugin_os::init()),
