@@ -8,11 +8,11 @@
       !updateM.error.value &&
       !updateM.isLoading.value
     "
-    class="flex items-center gap-1"
+    class="flex items-center gap-1 text-xs"
     @click="handleButtonClick"
   >
     <template v-if="updateQ.data.value">
-      <MoveRightIcon /> {{ updateQ.data.value.version }}
+      {{ currentVersion }} <MoveRightIcon /> {{ updateQ.data.value.version }}
     </template>
     <template v-else>{{ currentVersion }}</template>
 
