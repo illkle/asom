@@ -110,7 +110,11 @@ type ICoreBase = z.infer<typeof zCore>;
  * File Store
  */
 
-const openedTabsFile = new ConfigStoredInRootFolder('opened_tabs.json', ZOpenedTabs);
+const openedTabsFile = new ConfigStoredInRootFolder('opened_tabs.json', ZOpenedTabs, {
+  openedTabs: [],
+  focusHistory: [],
+  focusHistoryPointer: -1,
+});
 
 /**
  * Pinia Store

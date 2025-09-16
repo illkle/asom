@@ -1,7 +1,7 @@
 <template>
   <Sidebar variant="floating" collapsible="icon">
     <SidebarContent class="">
-      <SidebarGroup class="">
+      <SidebarGroup v-if="!noSchemas" class="">
         <div class="flex flex-row gap-1 w-full mb-4" :class="{ 'pl-16': isMac }">
           <Button
             :disabled="!tabsStore.canGoBack"
@@ -35,10 +35,16 @@
           <FileTree :schema-path="path" :schema-name="schema.name" />
         </SidebarGroupContent>
       </SidebarGroup>
+
+      <SidebarGroup v-if="noSchemas" class="py-12">
+        <SidebarGroupContent>
+          <div class="text-muted-foreground text-sm text-center">Zero valid schemas found</div>
+        </SidebarGroupContent>
+      </SidebarGroup>
     </SidebarContent>
 
     <SidebarFooter>
-      <Collapsible class="group">
+      <Collapsible v-if="!noSchemas" class="group">
         <CollapsibleContent>
           <SidebarMenuButton
             @click="
@@ -67,7 +73,7 @@
         variant="outline"
         @click="tabsStore.openNewThingFast({ _type: 'settings', _path: '' }, 'last')"
       >
-        <CogIcon /> Root Path & Schema
+        <CogIcon /> Root Path & Schemas
       </SidebarMenuButton>
       <ColorModeSelector />
       <CheckUpdates />
@@ -102,8 +108,8 @@ const store = useMainStore();
 
 const isMac = useIsMac();
 
-const openGoodreadsImporter = () => {};
-
 const settingsDialogOpened = ref(false);
 useNavigationBlock(settingsDialogOpened);
+
+const noSchemas = computed(() => schemasArray.value.length === 0);
 </script>

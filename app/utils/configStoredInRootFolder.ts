@@ -7,10 +7,17 @@ import * as fs from '@tauri-apps/plugin-fs';
 export class ConfigStoredInRootFolder<T extends z.ZodSchema> {
   private readonly fileName: string;
   private readonly fileSchema: T;
+  private readonly defaultData: z.infer<T>;
 
-  constructor(fileName: string, fileSchema: T) {
+  constructor(fileName: string, fileSchema: T, defaultData: z.infer<T>) {
     this.fileName = fileName;
     this.fileSchema = fileSchema;
+    try {
+      this.defaultData = fileSchema.parse(defaultData);
+    } catch (e) {
+      console.error(e);
+      throw new Error('Error parsing ConfigStoredInRootFolder DEFAULT DATA ' + this.fileName);
+    }
   }
 
   async get() {
@@ -28,9 +35,10 @@ export class ConfigStoredInRootFolder<T extends z.ZodSchema> {
       const f = JSON.parse(text);
       return this.fileSchema.parse(f);
     } catch (e) {
-      console.error('Error reading ConfigTiedToSchema ' + this.fileName, e);
+      console.error('Error reading ConfigStoredInRootFolder ' + this.fileName, e);
     }
-    return this.fileSchema.parse({});
+
+    return this.defaultData;
   }
 
   async set(data: z.infer<T>) {

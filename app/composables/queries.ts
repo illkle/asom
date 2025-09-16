@@ -95,9 +95,8 @@ export const useIsAppUsable = () => {
     if (
       // root path
       initQ.data.value?.length &&
-      // at least one schema
-      usableSchemasQ.data.value &&
-      Object.keys(usableSchemasQ.data.value).length
+      // usable schemas computed
+      usableSchemasQ.data.value
     ) {
       return { status: 'ok' as const };
     }
@@ -108,13 +107,6 @@ export const useIsAppUsable = () => {
 
     if (initQ.status.value === 'success' && !initQ.data.value?.length) {
       return { status: 'noRootPath' as const };
-    }
-
-    if (
-      usableSchemasQ.status.value === 'success' &&
-      !Object.keys(usableSchemasQ.data.value || {}).length
-    ) {
-      return { status: 'zeroSchemas' as const };
     }
 
     if (initQ.error.value) {
