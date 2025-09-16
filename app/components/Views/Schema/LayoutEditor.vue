@@ -1,6 +1,9 @@
 <template>
   <PageTemplate :data-pending="!viewLayoutEditableData || viewSettingsQ.isPending.value">
     <template #title> Layout editor </template>
+    <template #title-badge>
+      <TitleSchemaBadge :schema="schema.data.value?.schema" />
+    </template>
 
     <div v-if="editableProxy && schema.data.value && viewLayoutEditableData">
       <DynamicConfiguration
@@ -28,8 +31,9 @@ import DynamicConfiguration from '~/components/Modules/DynamicView/DynamicConfig
 import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
+import PageTemplate from './common/PageTemplate.vue';
+import TitleSchemaBadge from './common/TitleSchemaBadge.vue';
 import { getValByType } from './mocks';
-import PageTemplate from './PageTemplate.vue';
 
 const tabsStore = useTabsStoreV2();
 

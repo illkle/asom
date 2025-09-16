@@ -168,6 +168,7 @@
         :view-layout="viewLayoutQ.data.value"
         :hide-labels="viewSettingsQ.data.value?.labelsHidden"
         :schema="schema.schema"
+        @open-edit-mode="openEditMode"
         class="py-2"
       />
 
@@ -318,7 +319,8 @@ const hasApi = computed(() => {
 const fillFromApiDialog = ref(false);
 
 const openEditMode = () => {
-  console.log('openEditMode');
+  if (!schema.value?.owner_folder) return;
+  ts.openNewThingFast({ _type: 'settings/layout', _path: schema.value.owner_folder }, 'last');
 };
 </script>
 

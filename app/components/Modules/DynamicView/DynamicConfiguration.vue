@@ -5,7 +5,7 @@
         :item="layoutValue"
         :level="0"
         :index="0"
-        class="border rounded-md rounded-b-none grow data-[is-over=true]:bg-accent mt-4"
+        class="border rounded-md rounded-b-none grow data-[is-over=true]:bg-accent"
         @delete="onDelete"
         :parentIds="[]"
       >

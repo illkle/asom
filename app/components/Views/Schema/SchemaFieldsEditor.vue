@@ -1,6 +1,7 @@
 <template>
   <PageTemplate :data-pending="!schema">
     <template #title> Schema editor </template>
+
     <template #header>
       <div class="flex justify-between items-center gap-2 mt-2"></div>
       <div class="flex items-center gap-2">
@@ -40,7 +41,7 @@ import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriAct
 
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { ErrFR, Schema } from '~/types';
-import PageTemplate from './PageTemplate.vue';
+import PageTemplate from './common/PageTemplate.vue';
 import SchemaItem from './SchemaItem.vue';
 
 const root = useRootPath();

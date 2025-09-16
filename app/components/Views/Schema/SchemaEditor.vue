@@ -2,7 +2,7 @@
   <PageTemplate :data-pending="isPending">
     <template #title> Root path & Schema </template>
 
-    <div class="flex items-stretch justify-between mt-4">
+    <div class="flex items-stretch justify-between">
       <div
         class="flex flex-col gap-1 border w-full p-2 rounded-md rounded-r-none rounded-b-none border-b-0"
       >
@@ -97,7 +97,7 @@ import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
-import PageTemplate from './PageTemplate.vue';
+import PageTemplate from './common/PageTemplate.vue';
 
 const rootPath = useRootPath();
 const tabsStore = useTabsStoreV2();

@@ -5,8 +5,8 @@
     :opened="opened"
     :view-settings="viewSettings.data"
     :schema="schema.data"
-    @update:view-settings="viewSettingsUpdater"
   />
+  <div v-else class="h-full w-full bg-background"></div>
 </template>
 
 <script setup lang="ts">
@@ -24,8 +24,6 @@ const schemaPath = computed(() => props.opened._path);
 const schema = useSchemaByPath(schemaPath);
 
 const schemaOwnerFolder = computed(() => schema.data.value?.owner_folder ?? '');
-
-const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(schemaOwnerFolder);
 
 const viewSettings = useViewSettingsProxy(schemaOwnerFolder);
 </script>

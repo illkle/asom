@@ -3,7 +3,7 @@
     <div v-if="viewLayout.content.length === 0" class="mx-auto mb-8 mt-4 w-fit flex flex-col gap-2">
       <div class="text-sm text-muted-foreground">All schema items are hidden in current layout</div>
 
-      <Button variant="outline" @click="">Edit layout</Button>
+      <Button variant="outline" @click="emit('openEditMode')">Edit layout</Button>
     </div>
 
     <RenderDynamic v-else :group="viewLayout">
@@ -50,6 +50,10 @@ const attributesByKey = computed(() => {
     return acc;
   }, {});
 });
+
+const emit = defineEmits<{
+  (e: 'openEditMode'): void;
+}>();
 </script>
 
 <style scoped></style>

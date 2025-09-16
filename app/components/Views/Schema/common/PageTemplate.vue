@@ -8,9 +8,12 @@
         class="sticky -top-10 z-10 empty:hidden pb-4 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)]"
         :class="[$slots.header ? '-top-10' : '-top-13']"
       >
-        <h1 v-if="$slots.title" class="text-3xl font-serif whitespace-nowrap h-11 pb-2">
-          <slot name="title" />
-        </h1>
+        <div class="flex items-baseline gap-2 not-last:pb-2">
+          <h1 v-if="$slots.title" class="text-3xl font-serif whitespace-nowrap">
+            <slot name="title" />
+          </h1>
+          <slot name="title-badge" />
+        </div>
         <slot name="header" />
       </div>
 
