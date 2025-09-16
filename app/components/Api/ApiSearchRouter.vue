@@ -17,11 +17,30 @@
       }
     "
   />
+  <OpenLibrarySearch
+    v-if="props.connection.type === 'openlibrary'"
+    v-model="props.connection"
+    @select="
+      async (v) => {
+        if (props.connection.type !== 'openlibrary') return;
+        if (!v.title || !rootPath.data.value) return;
+        const attrs = await makeFileAttrsFromApi({
+          apiSettings: props.connection,
+          apiData: v,
+          schema: props.schema,
+          context: { rootPath: rootPath.data.value, recordName: v.title },
+        });
+        console.log('attrs', attrs);
+        emit('select', v.title, attrs);
+      }
+    "
+  />
 </template>
 
 <script lang="ts" setup>
 import type { ApiSettings } from '~/components/Api/apis';
 import IGDBSearch from '~/components/Api/IGDB/Search.vue';
+import OpenLibrarySearch from '~/components/Api/OpenLibrary/Search.vue';
 import type { RecordFromDb, Schema } from '~/types';
 import { makeFileAttrsFromApi } from './makeFileFromApi';
 

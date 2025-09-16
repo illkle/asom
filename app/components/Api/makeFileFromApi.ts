@@ -1,5 +1,5 @@
 import { ApiDataMap, type ApiSettings, type InferApiData } from '~/components/Api/apis';
-import { apiConverters } from '~/components/Api/base';
+import { getConverter } from '~/components/Api/base';
 import type { RecordFromDb, Schema } from '~/types';
 
 export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
@@ -26,7 +26,7 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
 
   const namedSchemaItems = Object.fromEntries(schema.items.map((item) => [item.name, item]));
 
-  for (const key in apiSchema) {
+  for (const [key, apiType] of Object.entries(apiSchema)) {
     const mapping = apiSettings.mapping[key];
     if (!mapping) {
       console.log('no mapping for', key);
@@ -39,7 +39,8 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
       continue;
     }
 
-    const apiType = apiSchema[key as keyof typeof apiType];
+    const schemaType = schemaItem.value.type;
+
     const apiValue = apiData[key as keyof typeof apiData];
 
     if (!apiValue) {
@@ -47,12 +48,14 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
       continue;
     }
 
-    const conv = await apiConverters[apiType as keyof typeof apiConverters];
+    const c = getConverter(apiType, schemaType, mapping.mode);
 
-    const resultValue = await conv({
-      apiValue: apiValue as any,
-      schemaType: schemaItem.value.type,
-      flags: mapping.converterFlags,
+    if (!c) {
+      continue;
+    }
+
+    const resultValue = await c({
+      apiValue: apiValue as never,
       context,
     });
 

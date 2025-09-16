@@ -1,79 +1,127 @@
 <template>
-  <div
-    v-for="(type, name) in apiSchema"
-    :key="name"
-    class="grid grid-cols-3 gap-2 w-full odd:bg-accent/20 p-2 items-center"
-  >
-    <div>
-      <div>{{ name }}</div>
-      <div class="text-xs text-muted-foreground">{{ type }}</div>
-    </div>
+  <div class="grid grid-cols-3 gap-y-2 gap-x-4 w-full odd:bg-accent/20 p-2 items-center">
+    <div class="text-xs text-muted-foreground">API</div>
+    <div class="text-xs text-muted-foreground">Schema</div>
+    <div class="text-xs text-muted-foreground">Conversion mode</div>
 
-    <Select
-      :model-value="mapping[name as string]?.schemaName ?? null"
-      @update:model-value="
-        (v) => {
-          if (!v) {
-            delete mapping[name as string];
-            return;
-          }
+    <template v-for="(apiFieldType, apiFieldName) in apiSchema" :key="apiFieldName" class="">
+      <div>
+        <div>{{ apiFieldName }}</div>
+        <div class="text-xs text-muted-foreground">{{ apiFieldType }}</div>
+      </div>
 
-          if (mapping[name as string]) {
-            mapping[name as string]!.schemaName = v as string;
-          } else {
-            mapping[name as string] = {
+      <Select
+        :model-value="mapping[apiFieldName as string]?.schemaName ?? null"
+        @update:model-value="
+          (v) => {
+            if (!v) {
+              delete mapping[apiFieldName as string];
+              return;
+            }
+
+            mapping[apiFieldName as string] = {
               schemaName: v as string,
-              converterFlags: {},
             };
           }
-        }
-      "
-      :options="availableFields[apiSchema[name]]"
-      class="w-full"
-    >
-      <SelectTrigger class="w-full">
-        {{ mapping[name as string]?.schemaName || 'None' }}
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem v-for="field in availableFields[apiSchema[name]]" :key="field" :value="field">
-          {{ field }}
-        </SelectItem>
-        <SelectItem :value="null" class="opacity-50"> None </SelectItem>
-      </SelectContent>
-    </Select>
-
-    <div v-if="mapping[name as string]?.schemaName">
-      <template
-        v-if="apiSchema[name] === 'Text' && getTypeForSchemaItemByName(name) === 'TextCollection'"
+        "
+        :options="availableSchemaItemsByApiFieldName[apiFieldName]"
+        class="w-full"
       >
-        Is text and {{ getTypeForSchemaItemByName(name) }}
-      </template>
-    </div>
+        <SelectTrigger class="w-full flex gap-2">
+          <span class="flex gap-2 items-baseline">
+            {{ getAssignedSchemaItemByApiName(apiFieldName) ?? 'None' }}
+            <span
+              v-if="mapping[apiFieldName as string]?.schemaName"
+              class="text-xs text-muted-foreground"
+            >
+              {{ getTypeForSchemaItemByApiName(apiFieldName) }}
+            </span>
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem
+            v-for="field in availableSchemaItemsByApiFieldName[apiFieldName]"
+            :key="field"
+            :value="field"
+          >
+            <span class="flex gap-2 items-baseline">
+              {{ field }}
+              <span class="text-xs text-muted-foreground">
+                {{ getTypeForSchemaItemBySchemaItemName(field) }}
+              </span>
+            </span>
+          </SelectItem>
+          <SelectItem :value="null" class="opacity-50"> None </SelectItem>
+        </SelectContent>
+      </Select>
+
+      <div v-if="getAssignedSchemaItemByApiName(apiFieldName)">
+        <template
+          v-for="value in [
+            getCoversionModes(
+              apiSchema[apiFieldName] ?? null,
+              getTypeForSchemaItemByApiName(apiFieldName),
+            ),
+          ]"
+        >
+          <template v-if="Array.isArray(value)">
+            <!-- Conversion mode select -->
+            <Select
+              :model-value="mapping[apiFieldName as string]?.mode ?? null"
+              @update:model-value="
+                (v) => {
+                  mapping[apiFieldName as string]!.mode = v as string;
+                }
+              "
+              :options="value"
+            >
+              <SelectTrigger class="w-full">
+                {{ mapping[apiFieldName as string]?.mode || 'Default' }}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="item in value" :key="item" :value="item">
+                  {{ item }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </template>
+        </template>
+      </div>
+      <div v-else></div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts" generic="ApiSchema extends Record<string, SchemaAttrType['type']>">
 import type { Schema, SchemaAttrType, SchemaItem } from '~/types';
-import type { ApiToSchemaMapping, ConverterFlags } from '../Api/base';
+import { getAllowedTargets, getCoversionModes, type ApiToSchemaMapping } from '../Api/base';
 
 const props = defineProps<{
   schema: Schema | null;
   apiSchema: ApiSchema;
 }>();
 
+const mapping = defineModel<ApiToSchemaMapping>('mapping', {
+  required: true,
+});
+
+watch(
+  [() => props.schema, () => props.apiSchema],
+  () => {
+    // Reset on change of schema or api schema
+    mapping.value = {} as Record<keyof ApiSchema, { schemaName: string }>;
+  },
+  { immediate: true },
+);
+
 const schemaItemsByName = computed(() => {
   if (!props.schema) return {} as Record<string, SchemaItem>;
   return Object.fromEntries(props.schema.items.map((item) => [item.name, item]));
 });
 
-const mapping = defineModel<ApiToSchemaMapping>('mapping', {
-  required: true,
-});
-
-type AvailableFields = Record<SchemaAttrType['type'], string[]>;
-
-const makeAvailableFields = (schema: Schema) => {
-  const rrr: AvailableFields = {
+const schemaFieldsByType = computed(() => {
+  if (!props.schema) return {} as Record<SchemaAttrType['type'], string[]>;
+  const rrr: Record<SchemaAttrType['type'], string[]> = {
     Text: [],
     TextCollection: [],
     Number: [],
@@ -83,47 +131,42 @@ const makeAvailableFields = (schema: Schema) => {
     Image: [],
   };
 
-  for (const item of schema.items) {
+  for (const item of props.schema.items) {
     rrr[item.value.type].push(item.name);
   }
   return rrr;
-};
-
-const availableFields = computed(() => {
-  if (!props.schema) return {} as Record<SchemaAttrType['type'], string[]>;
-  return makeAvailableFields(props.schema);
 });
 
-watch(
-  [() => props.schema, () => props.apiSchema],
-  ([schema, apiSchema]) => {
-    if (!schema) {
-      mapping.value = {} as Record<
-        keyof ApiSchema,
-        { schemaName: string; converterFlags: ConverterFlags }
-      >;
-      return;
-    }
+const availableSchemaItemsByApiFieldName = computed(() => {
+  const rrr: Record<string, string[]> = {};
 
-    const availableFields = makeAvailableFields(schema);
+  for (const [key, value] of Object.entries(props.apiSchema)) {
+    const allowed = getAllowedTargets(value);
 
-    for (const [key, value] of Object.entries(apiSchema)) {
-      const opts = availableFields[value];
-      const currentValue = mapping.value[key];
-
-      if (!currentValue || opts.includes(currentValue.schemaName)) {
-        continue;
+    for (const allowedTarget of allowed) {
+      if (rrr[key]) {
+        rrr[key].push(...schemaFieldsByType.value[allowedTarget]);
+      } else {
+        rrr[key] = [...schemaFieldsByType.value[allowedTarget]];
       }
-
-      delete mapping.value[key];
     }
-  },
-  { immediate: true },
-);
+  }
+  return rrr as Record<keyof ApiSchema, string[]>;
+});
 
-const getTypeForSchemaItemByName = (name: keyof ApiSchema) => {
-  return (
-    schemaItemsByName.value[mapping.value[name as string]?.schemaName ?? '']?.value.type ?? null
-  );
+const getTypeForSchemaItemBySchemaItemName = (name: string) => {
+  return schemaItemsByName.value[name]?.value.type ?? null;
+};
+
+const getAssignedSchemaItemByApiName = (name: keyof ApiSchema) => {
+  return mapping.value[name as string]?.schemaName ?? null;
+};
+
+const getTypeForSchemaItemByApiName = (name: keyof ApiSchema) => {
+  const schemaItemName = getAssignedSchemaItemByApiName(name);
+
+  if (!schemaItemName) return null;
+
+  return schemaItemsByName.value[schemaItemName]?.value.type ?? null;
 };
 </script>

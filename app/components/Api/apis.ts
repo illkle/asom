@@ -1,6 +1,3 @@
-import { exists, mkdir, writeFile } from '@tauri-apps/plugin-fs';
-import { fetch } from '@tauri-apps/plugin-http';
-import path from 'path-browserify';
 import z from 'zod';
 import {
   defineExApiSchema,

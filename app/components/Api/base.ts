@@ -12,116 +12,185 @@ export type ExApiValueFor = {
   Image: string;
 };
 
-type ExApiValueMapper = {
-  [K in keyof ExApiValueFor]: (v: {
-    schemaType: SchemaAttrType['type'];
-    apiValue: ExApiValueFor[K];
-    flags: ConverterFlags;
-    context: {
-      rootPath: string;
-      recordName: string;
+type ConvertFunction<K extends keyof ExApiValueFor> = ({
+  apiValue,
+}: {
+  apiValue: ExApiValueFor[K];
+  context: {
+    rootPath: string;
+    recordName: string;
+  };
+}) => Promise<AttrValue | null> | AttrValue | null;
+
+type ApiValueConverters = {
+  [ApiType in keyof ExApiValueFor]: {
+    default: ConvertFunction<ApiType>;
+    conversions: {
+      [SubType in SchemaAttrType['type']]?:
+        | ConvertFunction<ApiType>
+        | (Record<string, ConvertFunction<ApiType>> & { default: ConvertFunction<ApiType> });
     };
-  }) => Promise<AttrValue | null> | AttrValue | null;
+  };
 };
 
-type ApiValueAllowedConversions = {
-  [K in keyof ExApiValueFor]: Array<keyof ExApiValueFor>;
-};
-
-export const apiValueAllowedConversions: ApiValueAllowedConversions = {
-  Text: ['TextCollection'],
-  TextCollection: ['Text'],
-  Number: ['Text', 'TextCollection'],
-  Date: ['Text', 'TextCollection', 'Number'],
-  DateCollection: [],
-  DatesPairCollection: [],
-  Image: [],
-};
-
-export const apiConverters: ExApiValueMapper = {
-  Text: ({ schemaType, apiValue }) => {
-    switch (schemaType) {
-      case 'Text':
-        return { type: 'String', value: apiValue };
-      case 'TextCollection':
+export const apiValueConverters: ApiValueConverters = {
+  Text: {
+    default: ({ apiValue }) => {
+      return { type: 'String', value: apiValue };
+    },
+    conversions: {
+      TextCollection: ({ apiValue }) => {
         return { type: 'StringVec', value: [apiValue] };
-    }
-    return null;
+      },
+    },
   },
-  TextCollection: ({ schemaType, apiValue, flags }) => {
-    switch (schemaType) {
-      case 'TextCollection':
-        return { type: 'StringVec', value: apiValue };
-      case 'Text':
-        return {
-          type: 'String',
-          value: flags.TextToTextCollection === 'all' ? apiValue.join(', ') : (apiValue[0] ?? null),
-        };
-    }
-    return null;
+  TextCollection: {
+    default: ({ apiValue }) => {
+      return { type: 'StringVec', value: apiValue };
+    },
+    conversions: {
+      Text: {
+        default: ({ apiValue }) => {
+          return { type: 'StringVec', value: apiValue };
+        },
+        all: ({ apiValue }) => {
+          return { type: 'String', value: apiValue.join(', ') };
+        },
+        first: ({ apiValue }) => {
+          return { type: 'String', value: apiValue[0] ?? null };
+        },
+      },
+    },
   },
-  Number: ({ schemaType, apiValue }) => {
-    switch (schemaType) {
-      case 'Number':
-        return { type: 'Float', value: apiValue };
-      case 'Text':
+  Number: {
+    default: ({ apiValue }) => {
+      return { type: 'Float', value: apiValue };
+    },
+    conversions: {
+      Text: ({ apiValue }) => {
         return { type: 'String', value: String(apiValue) };
-      case 'TextCollection':
+      },
+      TextCollection: ({ apiValue }) => {
         return { type: 'StringVec', value: [String(apiValue)] };
-    }
-    return null;
+      },
+    },
   },
-  Date: ({ schemaType, apiValue, flags }) => {
-    switch (schemaType) {
-      case 'Date':
-        return { type: 'String', value: jsDateToFileString(apiValue) };
-      case 'Text':
-        switch (flags.DateToText) {
-          case 'year':
-            return { type: 'String', value: String(apiValue.getFullYear()) };
-          case 'month':
-            return { type: 'String', value: String(apiValue.getMonth()) };
-          case 'day':
-            return { type: 'String', value: String(apiValue.getDate()) };
-          case 'year-month-day':
-          default:
-            return { type: 'String', value: jsDateToFileString(apiValue) };
-        }
-      case 'Number':
-        switch (flags.DateToNumber) {
-          case 'year':
-            return { type: 'Integer', value: apiValue.getFullYear() };
-          case 'month':
-            return { type: 'Integer', value: apiValue.getMonth() };
-          case 'day':
-            return { type: 'Integer', value: apiValue.getDate() };
-        }
-    }
-    return null;
+  Date: {
+    default: ({ apiValue }) => {
+      return { type: 'String', value: jsDateToFileString(apiValue) };
+    },
+    conversions: {
+      Text: {
+        default: ({ apiValue }) => {
+          return { type: 'String', value: jsDateToFileString(apiValue) };
+        },
+        year: ({ apiValue }) => {
+          return { type: 'String', value: String(apiValue.getFullYear()) };
+        },
+        month: ({ apiValue }) => {
+          return { type: 'String', value: String(apiValue.getMonth()) };
+        },
+        day: ({ apiValue }) => {
+          return { type: 'String', value: String(apiValue.getDate()) };
+        },
+        'year-month-day': ({ apiValue }) => {
+          return { type: 'String', value: jsDateToFileString(apiValue) };
+        },
+      },
+      Number: {
+        default: ({ apiValue }) => {
+          return { type: 'Integer', value: apiValue.getFullYear() };
+        },
+        year: ({ apiValue }) => {
+          return { type: 'Integer', value: apiValue.getFullYear() };
+        },
+        month: ({ apiValue }) => {
+          return { type: 'Integer', value: apiValue.getMonth() };
+        },
+        day: ({ apiValue }) => {
+          return { type: 'Integer', value: apiValue.getDate() };
+        },
+      },
+    },
   },
-  DateCollection: ({ schemaType, apiValue }) => {
-    switch (schemaType) {
-      case 'DateCollection':
-        return { type: 'StringVec', value: apiValue.map((v) => jsDateToFileString(v)) };
-    }
-    return null;
+  DateCollection: {
+    default: ({ apiValue }) => {
+      return { type: 'StringVec', value: apiValue.map((v) => jsDateToFileString(v)) };
+    },
+    conversions: {},
   },
-  DatesPairCollection: ({ schemaType, apiValue }) => {
-    switch (schemaType) {
-      case 'DatesPairCollection':
-        return { type: 'DatePairVec', value: apiValue };
-    }
-    return null;
+  DatesPairCollection: {
+    default: ({ apiValue }) => {
+      return { type: 'DatePairVec', value: apiValue };
+    },
+    conversions: {},
   },
-  Image: async ({ schemaType, apiValue, context }) => {
-    switch (schemaType) {
-      case 'Image':
-        const imageName = await saveImage(apiValue as string, context.rootPath, context.recordName);
+  Image: {
+    default: async ({ apiValue, context }) => {
+      const imageName = await saveImage(apiValue as string, context.rootPath, context.recordName);
 
-        return { type: 'String', value: imageName };
-    }
-    return null;
+      return { type: 'String', value: imageName };
+    },
+    conversions: {},
   },
+};
+
+export const getConverter = (
+  sourceType: SchemaAttrType['type'],
+  targetType: SchemaAttrType['type'],
+  mode?: string,
+) => {
+  if (sourceType === targetType) {
+    return apiValueConverters[sourceType].default;
+  }
+
+  if (typeof apiValueConverters[sourceType].conversions[targetType] === 'function') {
+    return apiValueConverters[sourceType].conversions[targetType];
+  }
+
+  if (
+    mode &&
+    typeof apiValueConverters[sourceType].conversions[targetType]?.[mode] === 'function'
+  ) {
+    return apiValueConverters[sourceType].conversions[targetType][mode];
+  }
+
+  const res = apiValueConverters[sourceType].conversions[targetType]?.default;
+
+  if (res) {
+    return res;
+  }
+
+  console.error('no converter for', sourceType, targetType, mode);
+  return null;
+};
+
+export const getAllowedTargets = (sourceType: SchemaAttrType['type']) => {
+  return [
+    sourceType,
+    ...Object.keys(apiValueConverters[sourceType].conversions),
+  ] as SchemaAttrType['type'][];
+};
+
+export const getCoversionModes = (
+  sourceType: SchemaAttrType['type'] | null,
+  targetType: SchemaAttrType['type'] | null,
+) => {
+  if (!sourceType || !targetType) {
+    return null;
+  }
+
+  if (typeof apiValueConverters[sourceType].conversions[targetType] === 'function') {
+    return 'default';
+  }
+
+  if (!apiValueConverters[sourceType].conversions[targetType]) {
+    return 'not_allowed';
+  }
+
+  return Object.keys(apiValueConverters[sourceType].conversions[targetType]).filter(
+    (v) => v !== 'default',
+  );
 };
 
 export type ExApiSchema = Record<string, SchemaAttrType['type']>;
@@ -133,36 +202,17 @@ export type ExApiData<T extends ExApiSchema> = {
 // Needs a function to tell TS that our key-valuetype pairs are permament
 export const defineExApiSchema = <T extends ExApiSchema>(schema: T): T => schema;
 
-export const TextToTextCollection = ['all', 'first'] as const;
-export const DateToText = ['year-month-day', 'year', 'month', 'day'] as const;
-export const DateToNumber = ['year', 'month', 'day'] as const;
-
-const zConverterFlags = z
-  .object({
-    TextToTextCollection: z.enum(TextToTextCollection).optional(),
-    DateToText: z.enum(DateToText).optional(),
-    DateToNumber: z.enum(DateToNumber).optional(),
-  })
-  .default({});
-
-export type ConverterFlags = z.infer<typeof zConverterFlags>;
-
 export const zApiToSchemaMapping = z
   .record(
     z.string(),
     z.object({
       schemaName: z.string(),
-      converterFlags: zConverterFlags,
+      mode: z.string().optional(),
     }),
   )
   .default({});
 
 export type ApiToSchemaMapping = z.infer<typeof zApiToSchemaMapping>;
-
-export type ApiToSchemaMappingSpecific<T extends ExApiSchema> = Record<
-  keyof T,
-  { schemaName: string; converterFlags: ConverterFlags }
->;
 
 export const zApiSettingsBase = z.object({
   mapping: zApiToSchemaMapping,
