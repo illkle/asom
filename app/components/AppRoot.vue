@@ -6,8 +6,31 @@
       class="relative flex w-36 flex-1 flex-col h-screen max-h-screen box-border"
       :class="{ 'bg-background': store.view === 'schemas' }"
     >
-      <div class="h-[0.5rem] shrink-0"></div>
-      <TabsSelector v-if="appState.status === 'ok'" class="shrink-0" />
+      <div class="shrink-0 flex justify-between gap-2">
+        <div class="pt-[0.5rem] flex-1">
+          <TabsSelector v-if="appState.status === 'ok'" />
+        </div>
+        <div v-if="!isMac" class="h-full flex">
+          <button
+            size="icon"
+            class="flex w-12 items-center justify-center h-full rounded-none bg-transparent text-foreground hover:bg-muted-foreground/20"
+          >
+            <MinusIcon class="w-3 h-3" />
+          </button>
+          <button
+            size="icon"
+            class="flex w-12 items-center justify-center h-full rounded-none bg-transparent text-foreground hover:bg-muted-foreground/20"
+          >
+            <SquareIcon class="w-3 h-3" />
+          </button>
+          <button
+            size="icon"
+            class="flex w-12 shadow-none items-center justify-center h-full rounded-none bg-transparent hover:bg-red-500 hover:text-white text-foreground"
+          >
+            <XIcon class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
       <!-- InitQ returned a root path, show app -->
       <RouterMain v-if="appState.status === 'ok'" />
       <!-- loading\no root\error -->
@@ -21,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { MinusIcon, SquareIcon, XIcon } from 'lucide-vue-next';
 import { useIsAppUsable } from '~/composables/queries';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import AppSidebar from './Core/AppSidebar.vue';
@@ -40,6 +64,8 @@ watch(
   },
   { immediate: true },
 );
+
+const isMac = useIsMac();
 </script>
 
 <style>

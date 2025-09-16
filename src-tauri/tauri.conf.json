@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "decorations": false,
         "zoomHotkeysEnabled": true,
         "title": "asom",
         "width": 1200,
