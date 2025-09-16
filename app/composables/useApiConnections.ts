@@ -5,6 +5,7 @@ import { zApiSettings } from '~/components/Api/apis';
 
 const disk = new ConfigTiedToSchema('apiConnections.json', zApiSettings, {
   type: 'none',
+  mapping: {},
 });
 
 const API_CONNECTIONS_KEY = (root: string | null | undefined, folderPath: string) => [

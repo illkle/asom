@@ -1,5 +1,5 @@
 <template>
-  <div class="relative group">
+  <div class="relative group/search">
     <LoaderCircle
       v-if="props.query.isLoading.value"
       class="animate-spin absolute right-2 top-1/2 -translate-y-1/2"
@@ -31,7 +31,8 @@
     />
 
     <div
-      class="absolute top-full translate-y-2 left-0 w-full z-10 bg-background group-focus-within:block border-ring ring-ring/50 ring-[3px] rounded-md"
+      class="absolute top-full hidden translate-y-2 left-0 w-full z-10 bg-background border-ring ring-ring/50 ring-[3px] rounded-md"
+      :class="{ 'group-focus-within/search:block': items.length > 0 }"
     >
       <div
         class="flex flex-col max-h-[300px] h-full overflow-y-auto scrollbarMod border border-t-0 rounded-md"
@@ -40,11 +41,11 @@
           v-for="(item, index) in items"
           :key="index"
           :id="`${id}-${index}`"
+          :tabindex="index"
           class="flex gap-4 hover:bg-muted py-2 px-2"
           :class="{ 'bg-muted': highlightedIndex === index }"
           @click="
             () => {
-              console.log('click', item);
               emits('select', item);
             }
           "

@@ -35,10 +35,13 @@ export class ConfigTiedToSchema<T extends z.ZodSchema> {
     try {
       const text = await fs.readTextFile(targetFile);
       const f = JSON.parse(text);
+      console.log('returning parsed data', f);
       return this.fileSchema.parse(f);
     } catch (e) {
       console.error('Error reading ConfigTiedToSchema ' + this.fileName, e);
     }
+
+    console.log('returning default data', this.defaultData);
 
     return this.defaultData;
   }

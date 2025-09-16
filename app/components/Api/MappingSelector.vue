@@ -44,7 +44,12 @@
             :key="field"
             :value="field"
           >
-            <span class="flex gap-2 items-baseline">
+            <span
+              class="flex gap-2 items-baseline"
+              :class="{
+                'opacity-50': apiFieldType !== getTypeForSchemaItemBySchemaItemName(field),
+              }"
+            >
               {{ field }}
               <span class="text-xs text-muted-foreground">
                 {{ getTypeForSchemaItemBySchemaItemName(field) }}
@@ -105,14 +110,10 @@ const mapping = defineModel<ApiToSchemaMapping>('mapping', {
   required: true,
 });
 
-watch(
-  [() => props.schema, () => props.apiSchema],
-  () => {
-    // Reset on change of schema or api schema
-    mapping.value = {} as Record<keyof ApiSchema, { schemaName: string }>;
-  },
-  { immediate: true },
-);
+watch([() => props.schema, () => props.apiSchema], () => {
+  // Reset on change of schema or api schema
+  mapping.value = {} as Record<keyof ApiSchema, { schemaName: string }>;
+});
 
 const schemaItemsByName = computed(() => {
   if (!props.schema) return {} as Record<string, SchemaItem>;

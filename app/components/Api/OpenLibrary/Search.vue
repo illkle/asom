@@ -46,7 +46,7 @@ const id = useId();
 const q = useQuery({
   key: () => ['openlibrary', 'search', debouncedSearch.value],
   query: async ({ signal }) => {
-    if (!data.value) return [] as OpenLibraryApiBook[];
+    if (!data.value || !debouncedSearch.value) return [] as OpenLibraryApiBook[];
     const res = await getBooksFromOpenLibrary({
       yourEmail: data.value.yourEmail,
       query: debouncedSearch.value,

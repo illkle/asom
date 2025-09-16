@@ -15,16 +15,16 @@
         <div v-else class="w-18 h-24 block rounded-sm overflow-hidden bg-muted opacity-10"></div>
 
         <div class="flex flex-col text-left">
-          <span class="text-lg">
+          <span class="text">
             {{ game.name }}
           </span>
-          <span class="text-regular text-muted-foreground">{{
+          <span class="text-regular text-muted-foreground line-clamp-1 text-sm">{{
             game.first_release_date?.getFullYear()
           }}</span>
-          <div v-if="game.companies_all" class="text-sm text-muted-foreground">
+          <div v-if="game.companies_all" class="text-xs text-muted-foreground line-clamp-1">
             {{ game.companies_all.join(', ') }}
           </div>
-          <div v-if="game.platforms" class="text-xs text-muted-foreground">
+          <div v-if="game.platforms" class="text-xs mt-4 text-muted-foreground line-clamp-1">
             {{ game.platforms.join(', ') }}
           </div>
         </div>
@@ -47,7 +47,7 @@ const debouncedSearch = refDebounced(search, 100);
 const q = useQuery({
   key: () => ['igdb', 'search', debouncedSearch.value],
   query: async (a) => {
-    if (!data.value) return [];
+    if (!data.value || !debouncedSearch.value) return [];
     const games = await getGamesFromIGDB({
       token: data.value.accessToken ?? '',
       clientId: data.value.clientId,
