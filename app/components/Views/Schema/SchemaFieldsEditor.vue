@@ -20,7 +20,33 @@
       </div>
     </template>
     <template v-if="schema">
-      <div class="flex flex-col gap-x-2 gap-y-2">
+      <div class="gap-2 w-full grid grid-cols-2">
+        <h5 class="text-xs text-muted-foreground">Fill from filename</h5>
+
+        <h5 class="text-xs text-muted-foreground">Fill api search from</h5>
+        <Select v-model="schema.fill_from_filename">
+          <SelectTrigger class="w-full">
+            {{ schema.fill_from_filename ?? 'None' }}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="item in onlyTextItems" :key="item.name" :value="item.name"
+              >{{ item.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <Select v-model="schema.fill_api_search_from">
+          <SelectTrigger class="w-full">
+            {{ schema.fill_api_search_from ?? 'None' }}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="item in onlyTextItems" :key="item.name" :value="item.name"
+              >{{ item.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div class="flex flex-col gap-x-2 gap-y-2 mt-4">
         <SchemaItem
           v-for="(_, i) in schema.items"
           v-model:model-value="schema.items[i]!"
@@ -103,4 +129,8 @@ const deleteItem = (index: number) => {
   if (!schema.value) return;
   schema.value.items.splice(index, 1);
 };
+
+const onlyTextItems = computed(() => {
+  return schema.value?.items.filter((v) => v.value.type == 'Text');
+});
 </script>

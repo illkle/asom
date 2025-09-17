@@ -171,12 +171,19 @@ export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {
   return { folders: foldersRaw, isPending, refetch, throttledRefetch, foldersAsTree };
 };
 
-export const useSchemaByPath = (path: Ref<string>) => {
+export const useSchemaByPath = (path: Ref<string | undefined>) => {
   const root = useRootPath();
 
   return useQuery({
-    key: () => [...KEY_DEPENDENT_ON_ROOT(root.data.value), 'schemas', 'byPath', path.value],
-    query: async () => await c_resolve_schema_path(path.value),
+    key: () => [
+      ...KEY_DEPENDENT_ON_ROOT(root.data.value),
+      'schemas',
+      'byPath',
+      path.value ?? 'noPath',
+    ],
+    query: async () => {
+      return await c_resolve_schema_path(path.value ?? '');
+    },
   });
 };
 

@@ -18,11 +18,10 @@ const forwardedProps = useForwardProps(delegatedProps);
         :class="
           cn(
             'px-3 py-1.5 text-sm',
-            'border  shadow-xs ',
+            'border shadow-xs ',
             'peer rounded-none first:rounded-l-md last:rounded-r-md border-l-0 first:border-l ',
-            checked
-              ? 'bg-primary text-primary-foreground  hover:bg-primary/90'
-              : 'bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
+            'bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
+            'data-[state=checked]:bg-primary dark:data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:hover:bg-primary/90',
             props.class,
           )
         "

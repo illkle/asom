@@ -196,7 +196,8 @@ tags: 555
         Schema {
             name: "test".to_owned(),
             version: "1".to_owned(),
-            icon: None,
+            fill_api_search_from: None,
+            fill_from_filename: None,
             items: vec![
                 SchemaItem {
                     name: "title".to_owned(),

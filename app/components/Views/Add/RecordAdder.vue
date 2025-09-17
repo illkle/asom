@@ -1,42 +1,56 @@
 <template>
-  <Dialog v-model:open="newFileOpened" @update:open="newFileName = ''">
+  <Dialog v-model:open="newFileOpened" @update:open="mainInputValue = ''">
     <DialogTrigger class="w-full" as-child>
       <slot />
     </DialogTrigger>
 
-    <DialogContent>
-      <div ref="dialogRef" class="flex flex-col gap-4">
-        <DialogTitle> Create new file </DialogTitle>
+    <DialogContent class="p-2 gap-0 top-[20vh] translate-y-0" hide-close>
+      <DialogTitle></DialogTitle>
+      <div ref="wrapperRef">
+        <KeyboardListItem
+          is-default
+          class="data-[list-selected=true]:bg-transparent data-[list-selected=true]:border-ring data-[list-selected=true]:ring-ring/50 data-[list-selected=true]:ring-[3px] rounded-md"
+        >
+          <Input
+            v-model:model-value="mainInputValue"
+            placeholder="Filename or API search"
+            autofocus
+            class="focus-visible:ring-0"
+            @keydown.down="kb.handleMove($event, 'onDown')"
+            @keydown.up="kb.handleMove($event, 'onUp')"
+            @keydown.left="kb.handleMove($event, 'onLeft')"
+            @keydown.right="kb.handleMove($event, 'onRight')"
+            @keydown.enter="
+              () => {
+                const res = kb.handleConfirm();
 
-        <RadioGroup v-if="schemasArray.length > 1" v-model="selectedSchemaIndex" class="w-full">
-          <RadioGroupItem
-            v-for="(schema, index) in schemasArray"
-            :key="schema[0]"
-            :value="index"
-            :label="schema[1].name"
-            class="w-full"
-          >
-            {{ schema[1].name }}
-          </RadioGroupItem>
-        </RadioGroup>
+                if (!res) {
+                  handleAddEmpty();
+                }
+              }
+            "
+          />
+        </KeyboardListItem>
 
-        <template
+        <RecordAdderRadio
+          v-if="schemasArray.length > 1 && selectedSchemaIndex !== null"
+          v-model="selectedSchemaIndex"
+          :schemas-array="schemasArray"
+          class="mt-2 mb-2"
+        />
+
+        <ApiSearchRouter
           v-if="
             apiConnection.q.data.value &&
             apiConnection.q.data.value.type !== 'none' &&
             selectedSchema?.[1]
           "
-        >
-          <ApiSearchRouter
-            :schema="selectedSchema?.[1]"
-            :connection="apiConnection.q.data.value"
-            @select="(id, attrs) => addThing(id, attrs)"
-          />
-        </template>
-
-        <Input v-model:model-value="newFileName" placeholder="Filename" autofocus />
-
-        <Button variant="outline" size="default" @click="() => addThing()"> Create </Button>
+          :search="mainInputValue"
+          :schema="selectedSchema?.[1]"
+          :connection="apiConnection.q.data.value"
+          class="max-h-[300px] overflow-y-auto mt-2"
+          @select="handleAddFromApi"
+        />
 
         <DialogDescription></DialogDescription>
       </div>
@@ -45,18 +59,15 @@
 </template>
 
 <script lang="ts" setup>
-import { path as tauriPath } from '@tauri-apps/api';
-import { exists } from '@tauri-apps/plugin-fs';
 import path from 'path-browserify';
-import { toast } from 'vue-sonner';
-import { c_save_file } from '~/api/tauriActions';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
-import { RadioGroup } from '~/components/Modules/CustomRadio';
-import RadioGroupItem from '~/components/Modules/CustomRadio/RadioGroupItem.vue';
+import { provideResultGenericWrapper } from '~/components/Api/common/resultGeneric';
+import KeyboardListItem from '~/components/Modules/KeyboardList/KeyboardListItem.vue';
+import { useKeyboardListManager } from '~/components/Modules/KeyboardList/useKeyboardListManager';
+import RecordAdderRadio from '~/components/Views/Add/RecordAdderRadio.vue';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import type { RecordFromDb } from '~/types';
-
-const inputRef = useTemplateRef<HTMLInputElement>('inputRef');
+import { addThing } from './recordAdder';
 
 const newFileOpened = ref(false);
 useNavigationBlock(newFileOpened);
@@ -70,6 +81,11 @@ const selectedSchemaIndex = ref<number | null>(null);
 const selectedSchema = computed(() => {
   if (selectedSchemaIndex.value === null) return null;
   return schemasArray.value[selectedSchemaIndex.value];
+});
+
+const selectedSchemaPath = computed(() => {
+  if (!selectedSchema.value) return '';
+  return selectedSchema.value[0];
 });
 
 const pathFromTab = computed(() => {
@@ -98,73 +114,62 @@ watch(newFileOpened, (v) => {
   }
 });
 
-const newFileName = ref('');
+const mainInputValue = ref('');
 
-const addThing = async (nameInput?: string, attrsInput?: RecordFromDb['attrs']) => {
-  const name = nameInput ?? newFileName.value;
+const wrapperRef = useTemplateRef('wrapperRef');
 
-  const actualName = name.endsWith('.md') ? name : name + '.md';
+const kb = useKeyboardListManager(wrapperRef);
 
-  if (!name.length) {
-    console.log('no name', name, newFileName.value);
-    toast.error('Please enter a non empty file name');
-    return;
+provideResultGenericWrapper(KeyboardListItem);
+
+const saveTo = computed(() => {
+  if (selectedSchemaIndex.value === schemaFromActiveTabIndex.value) {
+    return pathFromTab.value;
   }
-
-  const saveTo =
-    selectedSchemaIndex.value === schemaFromActiveTabIndex.value
-      ? pathFromTab.value
-      : (selectedSchema.value?.[0] ?? '');
-
-  if (!saveTo) {
-    console.error('no saveTo', saveTo);
-    return;
-  }
-
-  const finalPath = await tauriPath.join(saveTo, actualName);
-
-  const ex = await exists(finalPath);
-  if (ex) {
-    console.log('file exists', finalPath);
-    toast.error('File with this name already exists');
-    return;
-  }
-
-  await c_save_file({
-    path: finalPath,
-    attrs: attrsInput ?? {},
-    markdown: '',
-    modified: null,
-  });
-
-  tabsStore.openNewThingFast({ _type: 'file', _path: finalPath }, 'last');
-  newFileOpened.value = false;
-};
-
-const isMacOS = useIsMac();
-
-const hasApi = computed(() => {
-  return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';
+  return selectedSchemaPath.value;
 });
 
-const dialogRef = useTemplateRef<HTMLDivElement>('dialogRef');
-
-const focusHandler = () => {
-  if (!dialogRef.value) return;
-
-  const a = dialogRef.value?.querySelector(`input[autofocus]`);
-  if (a) {
-    (a as HTMLInputElement).focus();
+const handleAddFromApi = async (name: string, attrs: RecordFromDb['attrs']) => {
+  if (!saveTo.value) {
+    return;
   }
+
+  const filePath = await addThing({
+    name,
+    attrsInput: attrs,
+    saveTo: saveTo.value,
+  });
+
+  if (!filePath) {
+    console.error('No file path returned');
+    return;
+  }
+
+  newFileOpened.value = false;
+  tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
 };
 
-watch(
-  [selectedSchemaIndex, newFileOpened],
-  ([_, opened]) => {
-    if (opened) {
-      focusHandler();
-    }
-  },
-  { flush: 'post' },
-);
+const handleAddEmpty = async () => {
+  if (!saveTo.value) {
+    return;
+  }
+
+  const fillFromFilename = selectedSchema.value?.[1].fill_from_filename;
+
+  const filePath = await addThing({
+    name: mainInputValue.value,
+    attrsInput: fillFromFilename
+      ? { [fillFromFilename]: { type: 'String', value: mainInputValue.value } }
+      : {},
+    saveTo: saveTo.value,
+  });
+
+  if (!filePath) {
+    console.error('No file path returned');
+    return;
+  }
+
+  newFileOpened.value = false;
+  tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
+};
 </script>

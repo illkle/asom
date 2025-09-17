@@ -49,6 +49,16 @@
           <SidebarMenuButton
             @click="
               tabsStore.openNewThingFast(
+                { _type: 'innerPage/test', _path: '' },
+                'last',
+              )
+            "
+          >
+            <ImportIcon /> Test page
+          </SidebarMenuButton>
+          <SidebarMenuButton
+            @click="
+              tabsStore.openNewThingFast(
                 { _type: 'innerPage/goodreadsImporter', _path: '' },
                 'last',
               )

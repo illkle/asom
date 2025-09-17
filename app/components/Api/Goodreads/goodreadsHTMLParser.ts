@@ -130,7 +130,6 @@ export const extractDataFromGoodreadsHTML = async (event: Event, rootPath: strin
 
   const fileContent = await readFileContent(file);
 
-  console.log('aaa', typeof fileContent);
   if (typeof fileContent !== 'string') throw new Error('File content is not a string');
 
   const html = parser.parseFromString(fileContent, 'text/html');

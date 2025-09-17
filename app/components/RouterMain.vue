@@ -57,6 +57,8 @@
         <GoodreadsImporter
           v-else-if="tabsStore.openedItem._type === 'innerPage/goodreadsImporter'"
         />
+
+        <TestPage v-else-if="tabsStore.openedItem._type === 'innerPage/test'" />
       </template>
     </NuxtErrorBoundary>
   </template>
@@ -77,6 +79,7 @@ import LayoutEditor from '~/components/Views/Schema/LayoutEditor.vue';
 import SchemaEditor from '~/components/Views/Schema/SchemaEditor.vue';
 import SchemaFieldsEditor from '~/components/Views/Schema/SchemaFieldsEditor.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
+import TestPage from './__preview/TestPage.vue';
 
 const tabsStore = useTabsStoreV2();
 

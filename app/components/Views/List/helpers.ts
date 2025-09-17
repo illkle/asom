@@ -31,8 +31,6 @@ export const getSortFunction = (
       return (a, b, columnId) => {
         const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
         if (!aValue || !bValue) return 0;
-        console.log('aValue', a.original.attrs, columnId);
-        console.log('bValue', b.original.attrs, columnId);
         if (aValue.type !== 'String' || bValue.type !== 'String') {
           return 0;
         }

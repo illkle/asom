@@ -67,6 +67,7 @@ const zCore = z.object({
     'folder',
     'file',
     'innerPage/goodreadsImporter',
+    'innerPage/test',
     'settings',
     'settings/schema',
     'settings/layout',
@@ -164,6 +165,15 @@ export const useTabsStoreV2 = defineStore('tabs', {
     openedItem(): IOpened | undefined {
       if (!this.openedTab) return;
       return this.openedTab.history[this.openedTab.historyPointer];
+    },
+
+    pathFromOpenedTab(): string | undefined {
+      if (!this.openedItem || !this.openedItem._path) return;
+
+      if (this.openedItem._type === 'file') return path.dirname(this.openedItem._path);
+      if (this.openedItem._type === 'folder') return this.openedItem._path;
+
+      return undefined;
     },
 
     canGoBack() {

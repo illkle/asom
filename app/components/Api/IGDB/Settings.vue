@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { igdbAPISchema, type ApiSettingsIGDB } from '~/components/Api/IGDB';
-import IGDBSearch from '~/components/Api/IGDB/Search.vue';
+import IGDBSearch from '~/components/Api/IGDB/Results.vue';
 import MappingSelector from '~/components/Api/MappingSelector.vue';
 import type { Schema } from '~/types';
 

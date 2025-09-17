@@ -121,7 +121,9 @@ pub enum SettingsTypeImage {
 #[serde_with::skip_serializing_none]
 pub struct TextSettings {
     pub settings_type: SettingsTypeText,
+
     pub display_name: Option<String>,
+
     pub size: Option<InputSize>,
     pub font: Option<TextFont>,
     pub weight: Option<TextWeight>,
@@ -152,6 +154,7 @@ pub struct NumberSettings {
     pub settings_type: SettingsTypeNumber,
 
     pub display_name: Option<String>,
+
     pub size: Option<InputSize>,
     pub min: Option<f64>,
     pub max: Option<f64>,
@@ -285,7 +288,9 @@ pub struct Schema {
     pub version: String,
 
     #[ts(optional)]
-    pub icon: Option<String>,
+    pub fill_from_filename: Option<String>,
+    #[ts(optional)]
+    pub fill_api_search_from: Option<String>,
 
     pub items: SchemaItems,
 }

@@ -30,7 +30,7 @@ import MappingSelector from '~/components/Api/MappingSelector.vue';
 import { openLibraryAPISchema } from '~/components/Api/OpenLibrary';
 import type { Schema } from '~/types';
 import type { ApiSettingsOpenLibrary } from '.';
-import Search from './Search.vue';
+import Search from './Results.vue';
 
 const props = defineProps<{
   schema: Schema;
