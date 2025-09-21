@@ -10,10 +10,6 @@
     </div>
   </div>
 
-  <div class="mt-2" v-if="data && data.clientId && data.clientSecret">
-    <IGDBSearch v-model="data" />
-  </div>
-
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
   <MappingSelector
@@ -26,7 +22,6 @@
 
 <script setup lang="ts">
 import { igdbAPISchema, type ApiSettingsIGDB } from '~/components/Api/IGDB';
-import IGDBSearch from '~/components/Api/IGDB/Results.vue';
 import MappingSelector from '~/components/Api/MappingSelector.vue';
 import type { Schema } from '~/types';
 

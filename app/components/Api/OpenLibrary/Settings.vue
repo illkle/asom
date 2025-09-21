@@ -11,10 +11,6 @@
     </div>
   </div>
 
-  <div class="mt-2" v-if="data && data.yourEmail">
-    <Search v-model="data" />
-  </div>
-
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
   <MappingSelector
@@ -30,7 +26,6 @@ import MappingSelector from '~/components/Api/MappingSelector.vue';
 import { openLibraryAPISchema } from '~/components/Api/OpenLibrary';
 import type { Schema } from '~/types';
 import type { ApiSettingsOpenLibrary } from '.';
-import Search from './Results.vue';
 
 const props = defineProps<{
   schema: Schema;
