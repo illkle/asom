@@ -14,6 +14,7 @@
     "format": "npx prettier --write \"**/*.{js,mjs,cjs,ts,mts,cts,vue,json}\"",
     "generate:types": "cd src-tauri && cargo test export_bindings && cd bindings && npx prettier --write \"*.ts\"",
     "test": "vitest",
+    "test:rust": "cd src-tauri && make test",
     "icon": "npm run tauri icon ./tools/build/icon.png"
   },
   "devDependencies": {

@@ -22,7 +22,6 @@ import type { SortOrder } from '../../src-tauri/bindings/SortOrder';
 import type { TextCollectionSettings } from '../../src-tauri/bindings/TextCollectionSettings';
 import type { TextFont } from '../../src-tauri/bindings/TextFont';
 import type { TextSettings } from '../../src-tauri/bindings/TextSettings';
-import type { TextTheme } from '../../src-tauri/bindings/TextTheme';
 import type { TextWeight } from '../../src-tauri/bindings/TextWeight';
 
 type ExtractIPCEmitEventData<T extends IPCEmitEvent['type']> = Extract<
@@ -78,6 +77,5 @@ export type {
   TextCollectionSettings,
   TextFont,
   TextSettings,
-  TextTheme,
   TextWeight,
 };

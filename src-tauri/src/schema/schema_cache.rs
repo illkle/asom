@@ -229,10 +229,3 @@ impl SchemasInMemoryCache {
         Ok(schema)
     }
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct SchemaLoadList {
-    pub schemas: HashMap<String, Schema>,
-    pub error: Option<ErrFR>,
-}

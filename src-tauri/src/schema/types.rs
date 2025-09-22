@@ -259,13 +259,6 @@ pub enum TextWeight {
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
-pub enum TextTheme {
-    Hidden,
-    Default,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
-#[ts(export)]
 pub enum NumberStyle {
     Default,
     Stars,
