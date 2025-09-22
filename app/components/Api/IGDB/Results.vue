@@ -23,15 +23,8 @@ const q = useQuery({
   query: async () => {
     if (!data.value || !props.search) return [];
     const games = await getGamesFromIGDB({
-      token: data.value.accessToken ?? '',
-      clientId: data.value.clientId,
-      clientSecret: data.value.clientSecret,
       name: props.search,
       limit: 25,
-      saveToken: (token) => {
-        if (!data.value) return;
-        data.value.accessToken = token;
-      },
     });
 
     return games;

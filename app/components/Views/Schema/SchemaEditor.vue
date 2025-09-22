@@ -134,7 +134,6 @@ const addNewSchema = async (folderName: string, folderPath: string) => {
     items: [],
     name: folderName,
     version: 'to be set by backend',
-    icon: '',
   }).catch((e) => {
     console.log(e);
   });

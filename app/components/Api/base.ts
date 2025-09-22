@@ -202,15 +202,17 @@ export type ExApiData<T extends ExApiSchema> = {
 // Needs a function to tell TS that our key-valuetype pairs are permament
 export const defineExApiSchema = <T extends ExApiSchema>(schema: T): T => schema;
 
-export const zApiToSchemaMapping = z
-  .record(
-    z.string(),
-    z.object({
-      schemaName: z.string(),
-      mode: z.string().optional(),
-    }),
-  )
-  .default({});
+const zApiToSchemaMappingItem = z
+  .object({
+    schemaName: z.string(),
+    mode: z.string().optional(),
+  })
+  .or(z.undefined())
+  .catch(() => undefined);
+
+export type ApiToSchemaMappingItem = z.infer<typeof zApiToSchemaMappingItem>;
+
+export const zApiToSchemaMapping = z.record(z.string(), zApiToSchemaMappingItem).default({});
 
 export type ApiToSchemaMapping = z.infer<typeof zApiToSchemaMapping>;
 

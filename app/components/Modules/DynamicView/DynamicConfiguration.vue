@@ -1,8 +1,8 @@
 <template>
-  <LayoutGroup v-if="layoutValue">
+  <LayoutGroup v-if="layout">
     <MotionConfig :transition="{ duration: 0.2, type: 'tween' }">
       <RenderDynamicEditor
-        :item="layoutValue"
+        :item="layout"
         :level="0"
         :index="0"
         class="border rounded-md rounded-b-none grow data-[is-over=true]:bg-accent"
@@ -45,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash-es';
 import { Trash2Icon } from 'lucide-vue-next';
 import { useProvideDNDContext, type ItemInfoCore } from '~/components/Modules/NestedDrag/common';
 import type { Schema } from '~/types';
@@ -60,45 +61,55 @@ import {
 import RenderDynamicEditor from './RenderDynamicEditor.vue';
 
 const props = defineProps<{
-  layout: IDynamicViewGroup;
   schema: Schema;
+  layout: IDynamicViewGroup;
 }>();
 
-const layoutValue = defineModel<IDynamicViewGroup>('layout');
+const emit = defineEmits<{
+  (e: 'update:layout', layout: IDynamicViewGroup): void;
+}>();
 
-const { draggedItem, dropTargets: elementRepository } = useProvideDNDContext({
+const { draggedItem } = useProvideDNDContext({
   onMove: (draggedItem, hoveredItem, quadrant) => {
-    if (!layoutValue.value) return;
-    console.log('onMove', draggedItem, hoveredItem);
+    if (!props.layout) return;
+
+    const newState = cloneDeep(props.layout);
+
     if (hoveredItem.id === 'toDelete') {
-      const i = findAndRemoveItem(layoutValue.value, draggedItem);
+      const i = findAndRemoveItem(newState, draggedItem);
 
       if (!i) {
         throw new Error('Item not found ' + draggedItem.id);
       }
-
-      return;
-    }
-
-    if (draggedItem.parentIds[0] === 'external') {
+    } else if (draggedItem.parentIds[0] === 'external') {
       const i = availableItems.value.find((id) => id.id === draggedItem.id);
 
       if (!i) {
         throw new Error('Item not found ' + draggedItem.id);
       }
 
-      insertItemIntoGroup(layoutValue.value, i, hoveredItem, quadrant);
-
-      return;
+      insertItemIntoGroup(newState, i, hoveredItem, quadrant);
+    } else {
+      swapItems(newState, draggedItem, hoveredItem, quadrant);
     }
 
-    swapItems(layoutValue.value, draggedItem, hoveredItem, quadrant);
+    emit('update:layout', newState);
   },
 });
 
+const onDelete = (info: ItemInfoCore) => {
+  if (!props.layout) return;
+
+  const newState = cloneDeep(props.layout);
+
+  findAndRemoveItem(newState, info);
+
+  emit('update:layout', newState);
+};
+
 const flatItems = computed(() => {
-  if (!layoutValue.value) return new Set();
-  return new Set(getFlatItems(layoutValue.value).map((v) => v.id));
+  if (!props.layout) return new Set();
+  return new Set(getFlatItems(props.layout).map((v) => v.id));
 });
 
 const availableItems = computed<ILayoutItem[]>(() => {
@@ -109,9 +120,4 @@ const availableItems = computed<ILayoutItem[]>(() => {
       type: 'item',
     }));
 });
-
-const onDelete = (info: ItemInfoCore) => {
-  if (!layoutValue.value) return;
-  findAndRemoveItem(layoutValue.value, info);
-};
 </script>

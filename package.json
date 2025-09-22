@@ -48,6 +48,7 @@
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/vite": "^4.1.13",
     "@tanstack/match-sorter-utils": "^8.19.4",
+    "@tanstack/vue-form": "^1.23.0",
     "@tanstack/vue-table": "^8.21.3",
     "@tanstack/vue-virtual": "^3.13.12",
     "@tauri-apps/api": "^2.8.0",

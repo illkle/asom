@@ -5,11 +5,17 @@ import {
   type ExApiData,
   type ExApiSchema,
 } from '~/components/Api/base';
-import { igdbAPISchema, zAPIIGDB } from '~/components/Api/IGDB';
-import { openLibraryAPISchema, zAPIOpenLibrary } from '~/components/Api/OpenLibrary';
+import { igdbAPISchema, zAPIIGDB, zCredentialsIGDB } from '~/components/Api/IGDB';
+import {
+  openLibraryAPISchema,
+  zAPIOpenLibrary,
+  zCredentialsOpenLibrary,
+} from '~/components/Api/OpenLibrary';
+
+/** Credentials are stored on disk for root schema */
+export const zApiCredentials = z.object({}).and(zCredentialsIGDB).and(zCredentialsOpenLibrary);
 
 /** Settings are stored on disk for each schema */
-
 export const zApiSettings = z.discriminatedUnion('type', [
   zAPIIGDB,
   zAPIOpenLibrary,
@@ -35,4 +41,3 @@ export type ApiDataMapping = typeof ApiDataMap;
 export type InferApiData<T extends ApiKey> = ExApiData<ApiDataMapping[T]>;
 
 export const API_Types = Object.keys(ApiDataMap) as ApiKey[];
-

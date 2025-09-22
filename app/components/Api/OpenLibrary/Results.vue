@@ -23,7 +23,6 @@ const q = useQuery({
   query: async ({ signal }) => {
     if (!data.value || !props.search) return [] as OpenLibraryApiBook[];
     const res = await getBooksFromOpenLibrary({
-      yourEmail: data.value.yourEmail,
       query: props.search,
       signal,
     });

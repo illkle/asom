@@ -11,10 +11,7 @@
             <li>Login into Goodreads on the web</li>
             <li>Open «My Boooks» section</li>
             <li>Click «Print» in the top right corner</li>
-            <li>
-              Increase «per page» value to 100 in the bottom left corner. You can set it event
-              higher by modifiying parameter in the url.
-            </li>
+            <li>Increase «per page» value to maximum(100) in the bottom left corner.</li>
             <li>Right click anywhere on the page and select «Save as».</li>
             <li>Save each page as a separate file somewhere on your computer</li>
           </ol>
@@ -65,8 +62,23 @@
           <MappingSelector
             v-if="currentSchema"
             :api-schema="goodreadsApiSchema"
-            v-model:mapping="mappings"
             :schema="currentSchema"
+            :mapping="mappings"
+            @setByKey="
+              (key, mapping) => {
+                mappings[key] = mapping;
+              }
+            "
+            @deleteByKey="
+              (key) => {
+                delete mappings[key];
+              }
+            "
+            @updateModeByKey="
+              (key, v) => {
+                mappings[key]!.mode = v;
+              }
+            "
           />
         </div>
       </div>
@@ -117,7 +129,7 @@ import {
   goodreadsApiSchema,
   type GoodreadsParsedBook,
 } from '~/components/Api/Goodreads/goodreadsHTMLParser';
-import MappingSelector from '~/components/Api/MappingSelector.vue';
+import MappingSelector from '~/components/Api/common/MappingSelector.vue';
 import type { AttrValue, RecordFromDb } from '~/types';
 import type { ApiToSchemaMapping } from '../base';
 

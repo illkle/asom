@@ -80,25 +80,27 @@ const igdbSearchGames = async ({
 };
 
 export const getGamesFromIGDB = async ({
-  token,
-  clientId,
-  clientSecret,
   name,
   limit = 10,
-  saveToken,
 }: {
-  token: string;
-  clientId: string;
-  clientSecret: string;
   name: string;
   limit?: number;
-  saveToken: (token: string) => void;
 }): Promise<IgdbApiGame[]> => {
-  if (!token) {
+  const c = await getApiCredentials();
+
+  if (!c) {
+    throw new Error('API credentials are not set');
+  }
+
+  if (!c.igdb_clientId || !c.igdb_clientSecret) {
+    throw new Error('Client ID or client secret is not set');
+  }
+
+  if (!c.igdb_accessToken) {
     try {
-      const t = await getToken(clientId, clientSecret);
-      token = t.access_token;
-      saveToken(token);
+      const t = await getToken(c.igdb_clientId, c.igdb_clientSecret);
+      c.igdb_accessToken = t.access_token;
+      await setApiCredentials(c);
     } catch (e) {
       if (isOurError(e)) {
         console.log('our error', e);
@@ -117,13 +119,23 @@ export const getGamesFromIGDB = async ({
   let gamesSource: IGDBGame[] = [];
 
   try {
-    gamesSource = await igdbSearchGames({ token, clientId, name, limit });
+    gamesSource = await igdbSearchGames({
+      token: c.igdb_accessToken,
+      clientId: c.igdb_clientId,
+      name,
+      limit,
+    });
   } catch (e) {
-    const t = await getToken(clientId, clientSecret);
-    token = t.access_token;
-    saveToken(token);
+    const t = await getToken(c.igdb_clientId, c.igdb_clientSecret);
+    c.igdb_accessToken = t.access_token;
+    await setApiCredentials(c);
     try {
-      gamesSource = await igdbSearchGames({ token, clientId, name, limit });
+      gamesSource = await igdbSearchGames({
+        token: c.igdb_accessToken,
+        clientId: c.igdb_clientId,
+        name,
+        limit,
+      });
     } catch (e) {
       useRustErrorNotification({
         isError: true,

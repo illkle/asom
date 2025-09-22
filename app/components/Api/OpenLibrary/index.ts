@@ -6,9 +6,12 @@ import {
   type ExApiData,
 } from '~/components/Api/base';
 
+export const zCredentialsOpenLibrary = z.object({
+  olb_yourEmail: z.string().default(''),
+});
+
 export const zAPIOpenLibrary = zApiSettingsBase.extend({
   type: z.literal('openlibrary'),
-  yourEmail: z.string().default(''),
   mapping: zApiToSchemaMapping,
 });
 

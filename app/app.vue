@@ -7,16 +7,18 @@
 
   <!-- App -->
   <NuxtLayout>
-    <NuxtPage />
+    <ErrorModal />
   </NuxtLayout>
   <Toaster :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
-  <ErrorModal />
 
+  <NuxtPage />
   <div id="customTeleport" class="absolute top-[-1000px]"></div>
 </template>
 
 <script setup lang="ts">
+import 'vue-sonner/style.css';
 import { Toaster } from '~/components/ui/sonner/';
+import { useGlobalInvalidators } from '~/composables/data/queries';
 import ErrorModal from './components/Modules/Error/ErrorModal.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
 

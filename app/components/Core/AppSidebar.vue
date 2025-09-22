@@ -48,11 +48,13 @@
         <CollapsibleContent>
           <SidebarMenuButton
             @click="
-              tabsStore.openNewThingFast(
-                { _type: 'innerPage/test', _path: '' },
-                'last',
-              )
+              tabsStore.openNewThingFast({ _type: 'settings/apiCredentials', _path: '' }, 'last')
             "
+          >
+            <KeyIcon /> Api credentials
+          </SidebarMenuButton>
+          <SidebarMenuButton
+            @click="tabsStore.openNewThingFast({ _type: 'innerPage/test', _path: '' }, 'last')"
           >
             <ImportIcon /> Test page
           </SidebarMenuButton>
@@ -98,6 +100,7 @@ import {
   ChevronLeft,
   CogIcon,
   ImportIcon,
+  KeyIcon,
   PlusIcon,
   WrenchIcon,
 } from 'lucide-vue-next';

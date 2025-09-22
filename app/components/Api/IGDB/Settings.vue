@@ -1,33 +1,39 @@
 <template>
-  <div class="flex gap-4" v-if="data">
-    <div>
-      <div>Client ID</div>
-      <Input v-model="data.clientId" />
-    </div>
-    <div>
-      <div>Client secret</div>
-      <Input v-model="data.clientSecret" />
-    </div>
-  </div>
-
   <h4 class="text-lg font-serif mt-4 mb-2">Mapping</h4>
 
   <MappingSelector
-    v-if="data"
-    v-model:mapping="data.mapping"
+    v-if="apiConnectionData.q.data.value"
+    v-model:mapping="apiConnectionData.q.data.value.mapping"
     :schema="schema"
     :api-schema="igdbAPISchema"
+    @setByKey="
+      (key, mapping) =>
+        apiConnectionData.mutateUpdater((vv) => {
+          vv.mapping[key] = mapping;
+          return vv;
+        })
+    "
+    @deleteByKey="
+      (key) =>
+        apiConnectionData.mutateUpdater((vv) => {
+          delete vv.mapping[key];
+          return vv;
+        })
+    "
+    @updateModeByKey="
+      (key, v) =>
+        apiConnectionData.mutateUpdater((vv) => {
+          vv.mapping[key]!.mode = v;
+          return vv;
+        })
+    "
   />
 </template>
 
 <script setup lang="ts">
-import { igdbAPISchema, type ApiSettingsIGDB } from '~/components/Api/IGDB';
-import MappingSelector from '~/components/Api/MappingSelector.vue';
-import type { Schema } from '~/types';
+import MappingSelector from '~/components/Api/common/MappingSelector.vue';
+import { igdbAPISchema } from '~/components/Api/IGDB';
+import type { ApiSettingsComponentProps } from '../common/apiTypes';
 
-const props = defineProps<{
-  schema: Schema;
-}>();
-
-const data = defineModel<ApiSettingsIGDB>();
+const props = defineProps<ApiSettingsComponentProps>();
 </script>

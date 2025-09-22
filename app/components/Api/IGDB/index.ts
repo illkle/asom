@@ -6,12 +6,15 @@ import {
   type ExApiData,
 } from '~/components/Api/base';
 
+export const zCredentialsIGDB = z.object({
+  igdb_clientId: z.string().default(''),
+  igdb_clientSecret: z.string().default(''),
+  igdb_accessToken: z.string().default(''),
+  igdb_expiresAt: z.number().default(0),
+});
+
 export const zAPIIGDB = zApiSettingsBase.extend({
   type: z.literal('twitchigdb'),
-  clientId: z.string().default(''),
-  clientSecret: z.string().default(''),
-  accessToken: z.string().default(''),
-  expiresAt: z.number().default(0),
   mapping: zApiToSchemaMapping,
 });
 

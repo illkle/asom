@@ -11,9 +11,10 @@ import {
   ContextMenuTrigger,
 } from '~/components/ui/context-menu';
 
-import { mkdir, remove, rename } from '@tauri-apps/plugin-fs';
+import { mkdir, rename } from '@tauri-apps/plugin-fs';
 
 import path from 'path-browserify';
+import { c_delete_to_trash } from '~/api/tauriActions';
 import type { FolderNode } from '~/components/FileTree/filePathsToTree';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 
@@ -130,7 +131,7 @@ const fileManagerName = useFileManagerName();
             <Button
               :variant="isSelected ? 'default' : 'ghost'"
               size="sm"
-              class="flex-1 w-full text-left justify-start"
+              class="flex-1 w-full text-left justify-start duration-0"
               :class="hasChildren && 'rounded-l-none pl-1.5'"
               @click="ts.openNewThingFast({ _type: 'folder', _path: item.value.rawPath }, 'here')"
               @click.alt.exact="
@@ -160,7 +161,7 @@ const fileManagerName = useFileManagerName();
         <ContextMenuItem
           @click="
             async () => {
-              await remove(item.value.rawPath, { recursive: true });
+              await c_delete_to_trash(item.value.rawPath);
             }
           "
         >

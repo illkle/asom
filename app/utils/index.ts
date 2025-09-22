@@ -22,3 +22,5 @@ export const ISBN10to13 = (isbn: number) => {
 
   return Number(numbers.join(''));
 };
+
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

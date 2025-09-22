@@ -96,9 +96,17 @@ export const useFileEditorV2 = (
 
   const schemaPath = computed(() => fileQ.data.value?.schema.owner_folder ?? '');
 
-  const { q: viewSettingsQ, viewSettingsUpdater } = useViewSettings(schemaPath);
+  const {
+    q: viewSettingsQ,
+    m: viewSettingsM,
+    partialUpdater: viewSettingsUpdaterPartial,
+  } = useViewSettings(schemaPath);
 
-  const { q: viewLayoutQ, update: updateViewLayout } = useViewLayout(schemaPath);
+  const {
+    q: viewLayoutQ,
+    m: viewLayoutM,
+    partialUpdater: updateViewLayoutPartial,
+  } = useViewLayout(schemaPath);
 
   const changesTracker = ref(0);
 
@@ -171,9 +179,11 @@ export const useFileEditorV2 = (
     editableProxy,
     performUpdate,
     viewSettingsQ,
-    viewSettingsUpdater,
+    viewSettingsM,
+    viewSettingsUpdaterPartial,
     viewLayoutQ,
-    updateViewLayout,
+    viewLayoutM,
+    updateViewLayoutPartial,
     changesTracker,
     lastSyncedTimestamp,
     onRename,

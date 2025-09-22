@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="q.isPending.value">
+  <PageTemplate :data-pending="apiConnectionData.q.isPending.value">
     <template #title> Api Connection </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />
@@ -7,12 +7,14 @@
 
     <template #header>
       <Select
-        v-if="apiData"
-        :model-value="apiData.type"
+        v-if="apiConnectionData.q.data.value"
+        :model-value="apiConnectionData.q.data.value?.type"
         @update:model-value="
           (v) => {
-            if (!apiData) return;
-            apiData.type = v as ApiSettings['type'];
+            apiConnectionData.mutateUpdater((vv) => {
+              vv.type = v as ApiSettings['type'];
+              return vv;
+            });
           }
         "
       >
@@ -27,15 +29,15 @@
       </Select>
     </template>
 
-    <div v-if="schema.data.value && apiData" class="">
+    <div v-if="schema.data.value && apiConnectionData.q.data.value" class="">
       <IGDBSettings
-        v-if="apiData.type === 'twitchigdb'"
-        v-model="apiData"
+        v-if="apiConnectionData.q.data.value.type === 'twitchigdb'"
+        :api-connection-data="apiConnectionData"
         :schema="schema.data.value.schema"
       />
       <OpenLibrarySettings
-        v-if="apiData.type === 'openlibrary'"
-        v-model="apiData"
+        v-if="apiConnectionData.q.data.value.type === 'openlibrary'"
+        :api-connection-data="apiConnectionData"
         :schema="schema.data.value.schema"
       />
     </div>
@@ -60,5 +62,5 @@ const props = defineProps({
 
 const schema = useSchemaByPath(computed(() => props.opened._path));
 
-const { editableData: apiData, q } = useApiConnection(computed(() => props.opened._path));
+const apiConnectionData = useApiConnection(computed(() => props.opened._path));
 </script>

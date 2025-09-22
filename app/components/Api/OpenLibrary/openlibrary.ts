@@ -54,15 +54,21 @@ const searchBooks = async ({
 };
 
 export const getBooksFromOpenLibrary = async ({
-  yourEmail,
   query,
   signal,
 }: {
-  yourEmail: string;
   query: string;
   signal: AbortSignal;
 }) => {
   if (!query) return [];
+
+  const creds = await getApiCredentials();
+
+  const yourEmail = creds?.olb_yourEmail;
+
+  if (!yourEmail) {
+    throw new Error('Your email is not set');
+  }
 
   const books = await searchBooks({ yourEmail, query, signal });
 

@@ -15,13 +15,12 @@
         @update:model-value="
           (v) => {
             if (!v) {
-              delete mapping[apiFieldName as string];
-              return;
+              emit('deleteByKey', apiFieldName as string);
             }
 
-            mapping[apiFieldName as string] = {
+            emit('setByKey', apiFieldName as string, {
               schemaName: v as string,
-            };
+            });
           }
         "
         :options="availableSchemaItemsByApiFieldName[apiFieldName]"
@@ -75,7 +74,7 @@
               :model-value="mapping[apiFieldName as string]?.mode ?? null"
               @update:model-value="
                 (v) => {
-                  mapping[apiFieldName as string]!.mode = v as string;
+                  emit('updateModeByKey', apiFieldName as string, v as string);
                 }
               "
               :options="value"
@@ -98,22 +97,25 @@
 </template>
 
 <script setup lang="ts" generic="ApiSchema extends Record<string, SchemaAttrType['type']>">
+import {
+  getAllowedTargets,
+  getCoversionModes,
+  type ApiToSchemaMapping,
+  type ApiToSchemaMappingItem,
+} from '~/components/Api/base';
 import type { Schema, SchemaAttrType, SchemaItem } from '~/types';
-import { getAllowedTargets, getCoversionModes, type ApiToSchemaMapping } from '../Api/base';
 
 const props = defineProps<{
   schema: Schema | null;
   apiSchema: ApiSchema;
+  mapping: ApiToSchemaMapping;
 }>();
 
-const mapping = defineModel<ApiToSchemaMapping>('mapping', {
-  required: true,
-});
-
-watch([() => props.schema, () => props.apiSchema], () => {
-  // Reset on change of schema or api schema
-  mapping.value = {} as Record<keyof ApiSchema, { schemaName: string }>;
-});
+const emit = defineEmits<{
+  (e: 'setByKey', key: string, mapping: ApiToSchemaMappingItem): void;
+  (e: 'deleteByKey', key: string): void;
+  (e: 'updateModeByKey', key: string, mode: string): void;
+}>();
 
 const schemaItemsByName = computed(() => {
   if (!props.schema) return {} as Record<string, SchemaItem>;
@@ -160,7 +162,7 @@ const getTypeForSchemaItemBySchemaItemName = (name: string) => {
 };
 
 const getAssignedSchemaItemByApiName = (name: keyof ApiSchema) => {
-  return mapping.value[name as string]?.schemaName ?? null;
+  return props.mapping[name as string]?.schemaName ?? null;
 };
 
 const getTypeForSchemaItemByApiName = (name: keyof ApiSchema) => {

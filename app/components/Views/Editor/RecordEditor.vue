@@ -71,7 +71,11 @@
             </DropdownMenuItem>
 
             <DropdownMenuItem
-              @click="viewSettingsUpdater('labelsHidden', !viewSettingsQ.data.value?.labelsHidden)"
+              @click="
+                viewSettingsUpdaterPartial({
+                  labelsHidden: !viewSettingsQ.data.value?.labelsHidden,
+                })
+              "
             >
               <EyeIcon /> {{ viewSettingsQ.data.value?.labelsHidden ? 'Show' : 'Hide' }} Labels
             </DropdownMenuItem>
@@ -79,10 +83,9 @@
             <DropdownMenuItem
               v-if="viewSettingsQ.data.value?.layoutWarningsHidden"
               @click="
-                viewSettingsUpdater(
-                  'layoutWarningsHidden',
-                  !viewSettingsQ.data.value?.layoutWarningsHidden,
-                )
+                viewSettingsUpdaterPartial({
+                  layoutWarningsHidden: !viewSettingsQ.data.value?.layoutWarningsHidden,
+                })
               "
             >
               <EyeIcon /> {{ viewSettingsQ.data.value?.layoutWarningsHidden ? 'Show' : 'Hide' }}
@@ -92,29 +95,22 @@
         </DropdownMenu>
       </BreadcrumbList>
 
-      <Dialog v-if="hasApi" v-model:open="fillFromApiDialog">
-        <DialogContent @open-auto-focus="focusInputOnDialogOpen">
-          <DialogHeader>
-            <DialogTitle>Fill from API</DialogTitle>
-          </DialogHeader>
-
-          <ApiSearchRouter
-            v-if="apiConnection.q.data.value && schema"
-            :connection="apiConnection.q.data.value"
-            :schema="schema.schema"
-            @select="
-              (_, attrs) => {
-                if (!editableProxy) return;
-                editableProxy.record.attrs = {
-                  ...editableProxy.record.attrs,
-                  ...attrs,
-                };
-                fillFromApiDialog = false;
-              }
-            "
-          />
-        </DialogContent>
-      </Dialog>
+      <AddAndSearch
+        v-if="schema"
+        v-model:opened="fillFromApiDialog"
+        :selected-schema="schema.schema"
+        :selected-schema-path="schema.owner_folder"
+        @handle-add-from-api="
+          (_, attrs) => {
+            if (!editableProxy) return;
+            editableProxy.record.attrs = {
+              ...editableProxy.record.attrs,
+              ...attrs,
+            };
+            fillFromApiDialog = false;
+          }
+        "
+      />
 
       <Dialog v-model:open="renameDialog">
         <DialogContent>
@@ -157,7 +153,7 @@
         <span class="cursor-pointer underline ml-4" @click="openEditMode">Edit Layout</span>
         <span
           class="cursor-pointer underline ml-4"
-          @click="viewSettingsUpdater('layoutWarningsHidden', true)"
+          @click="viewSettingsUpdaterPartial({ layoutWarningsHidden: true })"
           >Hide
         </span>
       </div>
@@ -196,7 +192,6 @@ import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
 import { c_delete_to_trash } from '~/api/tauriActions';
-import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
@@ -204,6 +199,7 @@ import {
   type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../../Modules/DynamicView/helpers';
+import AddAndSearch from '../Add/AddAndSearch.vue';
 import MetaEditor from './MetaEditor.vue';
 
 const separator = tauriPath.sep();
@@ -255,16 +251,8 @@ const startRename = () => {
   newName.value = path.basename(props.opened._path, path.extname(props.opened._path));
 };
 
-const {
-  fileQ,
-  editableProxy,
-  performUpdate,
-  viewSettingsQ,
-  viewSettingsUpdater,
-  viewLayoutQ,
-  updateViewLayout,
-  onRename,
-} = useFileEditorV2(props.opened, editorWrapper);
+const { fileQ, editableProxy, viewSettingsQ, viewLayoutQ, onRename, viewSettingsUpdaterPartial } =
+  useFileEditorV2(props.opened, editorWrapper);
 
 const schema = computed(() => fileQ.data.value?.schema);
 

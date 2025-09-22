@@ -7,8 +7,7 @@ import { defineStore } from 'pinia';
 import ShortUniqueId from 'short-unique-id';
 import type { ShallowRef } from 'vue';
 import { z } from 'zod';
-
-import { ConfigStoredInRootFolder } from '~/utils/configStoredInRootFolder';
+import { useRootPath, useUsableSchemas } from '~/composables/data/queries';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -72,6 +71,7 @@ const zCore = z.object({
     'settings/schema',
     'settings/layout',
     'settings/api',
+    'settings/apiCredentials',
   ]),
   _path: z.string(),
 });

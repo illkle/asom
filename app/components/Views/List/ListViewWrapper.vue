@@ -1,10 +1,11 @@
 <template>
   <ListView
-    v-if="schema.data.value && viewSettings.status.value === 'ready'"
+    v-if="schema.data.value && viewSettings.q.data.value"
     v-bind="$attrs"
     :opened="opened"
-    :view-settings="viewSettings.data"
+    :view-settings="viewSettings.q.data.value"
     :schema="schema.data"
+    @update:viewSettings:p="(v) => viewSettings.partialUpdater(v)"
   />
   <div v-else class="h-full w-full bg-background"></div>
 </template>
@@ -25,5 +26,5 @@ const schema = useSchemaByPath(schemaPath);
 
 const schemaOwnerFolder = computed(() => schema.data.value?.owner_folder ?? '');
 
-const viewSettings = useViewSettingsProxy(schemaOwnerFolder);
+const viewSettings = useViewSettings(schemaOwnerFolder);
 </script>

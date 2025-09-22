@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'flex h-10 items-center justify-between border-transparent py-1 transition-all',
+      'flex h-10 items-center justify-between border-transparent py-1 ',
       widthAwailable > 100 ? 'px-2 text-sm' : 'px-1 text-xs',
       isActive ? 'rounded-tl-md rounded-tr-md bg-background' : 'hover:bg-accent',
     ]"

@@ -1,14 +1,15 @@
 <template>
-  <PageTemplate :data-pending="!viewLayoutEditableData || viewSettingsQ.isPending.value">
+  <PageTemplate :data-pending="!viewLayoutData.q.data.value || viewSettingsQ.isPending.value">
     <template #title> Layout editor </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />
     </template>
 
-    <div v-if="editableProxy && schema.data.value && viewLayoutEditableData">
+    <div v-if="editableProxy && schema.data.value && viewLayoutData.q.data.value">
       <DynamicConfiguration
         v-if="schema"
-        :layout="viewLayoutEditableData"
+        :layout="viewLayoutData.q.data.value"
+        @update:layout="(v) => viewLayoutData.m.mutate(v)"
         :schema="schema.data.value.schema"
       >
         <template #item="{ item }">
@@ -55,7 +56,7 @@ const schema = useSchemaByPath(computed(() => props.opened._path));
 
 const ownerFolder = computed(() => schema.data.value?.owner_folder ?? '');
 
-const viewLayoutEditableData = useViewLayoutEditable(ownerFolder);
+const viewLayoutData = useViewLayout(ownerFolder);
 
 const { q: viewSettingsQ } = useViewSettings(ownerFolder);
 

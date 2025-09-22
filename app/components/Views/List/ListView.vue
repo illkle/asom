@@ -20,14 +20,14 @@ import ListViewContextMenu from '~/components/Views/List/ListViewContextMenu.vue
 import ListViewTopControls from '~/components/Views/List/ListViewTopControls.vue';
 
 import { rankItem } from '@tanstack/match-sorter-utils';
-import { debounce } from 'lodash-es';
+import { cloneDeep, debounce } from 'lodash-es';
+import type { IViewSettings } from '~/composables/data/useViewSettings';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
   type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
-import type { IViewSettings } from '~/composables/useViewSettings';
 import { baseSizeByType, getSortFunction } from './helpers';
 import ListItemDisplay from './ListItemDisplay.vue';
 
@@ -37,7 +37,7 @@ const props = defineProps({
     required: true,
   },
   viewSettings: {
-    type: Object as PropType<Ref<IViewSettings | undefined>>,
+    type: Object as PropType<IViewSettings | undefined>,
     required: true,
   },
   schema: {
@@ -45,6 +45,10 @@ const props = defineProps({
     required: true,
   },
 });
+
+const emits = defineEmits<{
+  (e: 'update:viewSettings:p', value: Partial<IViewSettings>): void;
+}>();
 
 /**
  * Schema is included in files query below, however since files query depends on searchQuery
@@ -106,9 +110,12 @@ const viewSettingsUpdater = <T extends keyof IViewSettings>(
   key: T,
   newValue: Updater<IViewSettings[T]>,
 ) => {
-  if (!props.viewSettings.value) return;
-  props.viewSettings.value[key] =
-    typeof newValue === 'function' ? newValue(props.viewSettings.value[key]) : newValue;
+  const src = props.viewSettings?.[key];
+  if (!src) return;
+
+  emits('update:viewSettings:p', {
+    [key]: typeof newValue === 'function' ? newValue(cloneDeep(src)) : newValue,
+  });
 };
 
 const rowSelection = ref({});
@@ -159,19 +166,19 @@ const table = useVueTable({
     },
 
     get columnSizing() {
-      return props.viewSettings.value?.columnSizing;
+      return props.viewSettings?.columnSizing;
     },
 
     get sorting() {
-      return props.viewSettings.value?.sorting;
+      return props.viewSettings?.sorting;
     },
 
     get columnVisibility() {
-      return props.viewSettings.value?.columnVisibility;
+      return props.viewSettings?.columnVisibility;
     },
 
     get columnOrder() {
-      return props.viewSettings.value?.columnOrder;
+      return props.viewSettings?.columnOrder;
     },
     get rowSelection() {
       return rowSelection.value;
@@ -416,7 +423,7 @@ const deleteSelected = async () => {
             <tr
               v-for="vRow in virtualRows"
               :key="rows[vRow.index]?.id"
-              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors flex absolute w-full"
+              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b flex absolute w-full"
               :class="{
                 'bg-muted hover:bg-muted/80': rows[vRow.index]?.getIsSelected(),
               }"
