@@ -7,6 +7,7 @@
   ],
   "permissions": [
     "core:default",
+    "process:default",
     "dialog:default",
     "fs:allow-home-read-recursive",
     "fs:allow-home-meta",

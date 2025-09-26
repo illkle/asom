@@ -18,8 +18,8 @@
 
     <TriangleAlert v-if="updateQ.error.value" />
     <CircleX v-else-if="updateM.error.value" />
-    <div v-else-if="updateM.isLoading.value" class="animate-spin">
-      <LoaderCircle :size="16" />
+    <div v-else-if="updateM.isLoading.value" class="">
+      <LoaderCircle :size="16" class="animate-spin" />
     </div>
   </Button>
 </template>
