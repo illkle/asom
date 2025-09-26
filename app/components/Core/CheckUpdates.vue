@@ -77,7 +77,6 @@ const updateM = useMutation({
       return;
     }
 
-    // alternatively we could also call update.download() and update.install() separately
     await m.downloadAndInstall((event) => {
       switch (event.event) {
         case 'Started':

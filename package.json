@@ -1,5 +1,5 @@
 {
-  "version": "0.2.4",
+  "version": "0.2.5",
   "name": "asom",
   "author": "Kirill Kleimenov",
   "private": true,
@@ -15,7 +15,8 @@
     "generate:types": "cd src-tauri && cargo test export_bindings && cd bindings && npx prettier --write \"*.ts\"",
     "test": "vitest",
     "test:rust": "cd src-tauri && make test",
-    "icon": "npm run tauri icon ./tools/build/icon.png"
+    "icon": "npm run tauri icon ./tools/build/icon.png",
+    "build": "dotenv -- npx tauri build -v"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^3.19.2",
