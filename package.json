@@ -16,7 +16,7 @@
     "test": "vitest",
     "test:rust": "cd src-tauri && make test",
     "icon": "npm run tauri icon ./tools/build/icon.png",
-    "build": "dotenv -- npx tauri build -v"
+    "build": "op run --env-file='.env' --  npx tauri build -v"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^3.19.2",
