@@ -14,6 +14,7 @@ use tokio::sync::{RwLock, RwLockReadGuard};
 use ts_rs::TS;
 
 use super::types::{Schema, SCHEMA_VERSION};
+use crate::core::core_state::AppContext;
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Debug)]
@@ -33,23 +34,25 @@ pub struct SchemaResult {
 const INTERNAL_FOLDER_NAME: &str = ".asom";
 const SCHEMA_FILE_NAME: &str = "schema.yaml";
 
-fn locate_schema_and_folder(path: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
-    let is_dir_safe_for_deleted = match path.exists() {
-        true => path.is_dir(),
-        false => path.extension().is_none(),
+fn locate_schema_and_folder(path_absolute: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
+    let is_dir_safe_for_deleted = match path_absolute.exists() {
+        true => path_absolute.is_dir(),
+        false => path_absolute.extension().is_none(),
     };
 
-    let schema_file_path = match (is_dir_safe_for_deleted, path.file_name()) {
+    let schema_file_path = match (is_dir_safe_for_deleted, path_absolute.file_name()) {
         (true, Some(name)) if name == OsStr::new(INTERNAL_FOLDER_NAME) => {
-            path.join(SCHEMA_FILE_NAME)
+            path_absolute.join(SCHEMA_FILE_NAME)
         }
-        (false, Some(name)) if name == OsStr::new(SCHEMA_FILE_NAME) => path.to_path_buf(),
-        (true, _) => path.join(INTERNAL_FOLDER_NAME).join(SCHEMA_FILE_NAME),
+        (false, Some(name)) if name == OsStr::new(SCHEMA_FILE_NAME) => path_absolute.to_path_buf(),
+        (true, _) => path_absolute
+            .join(INTERNAL_FOLDER_NAME)
+            .join(SCHEMA_FILE_NAME),
         (_, None) => {
             return Err(Box::new(ErrFR::new("Unable to get basename from schema path")
                 .info(&format!(
                     "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
-                    &path.to_string_lossy()
+                    &path_absolute.to_string_lossy()
                 ))));
         }
         (_, _) => {
@@ -90,20 +93,20 @@ impl SchemasInMemoryCache {
     fn get_schema_internal(
         &self,
         map: &RwLockReadGuard<'_, BTreeMap<PathBuf, Schema>>,
-        path: &Path,
+        path_relative: &Path,
     ) -> Option<SchemaResult> {
-        if let Some(value) = map.get(path) {
+        if let Some(value) = map.get(path_relative) {
             return Some(SchemaResult {
-                file_path: path
+                file_path: path_relative
                     .to_path_buf()
                     .join(INTERNAL_FOLDER_NAME)
                     .join(SCHEMA_FILE_NAME),
-                owner_folder: path.to_path_buf(),
+                owner_folder: path_relative.to_path_buf(),
                 schema: value.clone(),
             });
         }
 
-        let mut current = path;
+        let mut current = path_relative;
         while let Some(parent) = current.parent() {
             if let Some(value) = map.get(parent) {
                 return Some(SchemaResult {
@@ -179,8 +182,12 @@ impl SchemasInMemoryCache {
             .collect()
     }
 
-    pub async fn cache_schema(&self, path: PathBuf) -> Result<Option<Schema>, Box<ErrFR>> {
-        let (schema_file_path, folder_path) = locate_schema_and_folder(&path)?;
+    pub async fn cache_schema_absolute_path(
+        &self,
+        ctx: &AppContext,
+        path_absolute: PathBuf,
+    ) -> Result<Option<Schema>, Box<ErrFR>> {
+        let (schema_file_path, folder_path) = locate_schema_and_folder(&path_absolute)?;
 
         if !schema_file_path.exists() {
             return Ok(None);
@@ -198,33 +205,50 @@ impl SchemasInMemoryCache {
                 .raw(e)
         })?;
 
-        self.insert(folder_path, sch.clone()).await;
+        let relative_folder_path = ctx.absolute_path_to_relative(&folder_path).await?;
+
+        self.insert(relative_folder_path, sch.clone()).await;
 
         Ok(Some(sch))
     }
 
-    pub async fn remove_schema(&self, path: PathBuf) -> Result<(), Box<ErrFR>> {
-        println!("remove_schema {:?}", path);
-        let (_, folder_path) = locate_schema_and_folder(&path)?;
+    pub async fn remove_schema(
+        &self,
+        ctx: &AppContext,
+        path_absolute: PathBuf,
+    ) -> Result<(), Box<ErrFR>> {
+        println!("remove_schema {:?}", path_absolute);
+        let (_, folder_path) = locate_schema_and_folder(&path_absolute)?;
 
         println!("remove_schema folder_path {:?}", folder_path);
 
-        self.map.write().await.remove(&folder_path);
+        let relative_folder_path = ctx.absolute_path_to_relative(&folder_path).await?;
+
+        self.map.write().await.remove(&relative_folder_path);
         Ok(())
     }
 
-    pub async fn remove_schemas_with_children(&self, path: PathBuf) -> Result<(), Box<ErrFR>> {
-        println!("remove_schemas_with_children {:?}", path);
+    pub async fn remove_schemas_with_children(
+        &self,
+        ctx: &AppContext,
+        path_absolute: PathBuf,
+    ) -> Result<(), Box<ErrFR>> {
+        println!("remove_schemas_with_children {:?}", path_absolute);
+
+        let path_relative = ctx.absolute_path_to_relative(&path_absolute).await?;
+
         let paths_to_remove: Vec<PathBuf> = self
             .iter()
             .await
             .into_iter()
-            .filter(|(p, _)| p.starts_with(&path))
+            .filter(|(p, _)| p.starts_with(&path_relative))
             .map(|(p, _)| p)
             .collect();
 
+        let mut w = self.map.write().await;
+
         for p in paths_to_remove {
-            self.remove_schema(p).await?;
+            w.remove(&p);
         }
 
         Ok(())

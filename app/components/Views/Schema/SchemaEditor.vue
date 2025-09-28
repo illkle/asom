@@ -42,7 +42,7 @@
           <TreeRoot
             v-if="!isPending"
             v-slot="{ flattenItems }"
-            :items="foldersAsTree?.[0]?.children || []"
+            :items="foldersAsTree ?? []"
             :default-expanded="allFolderIds"
             multiple
             :get-key="(opt) => opt.rawPath"

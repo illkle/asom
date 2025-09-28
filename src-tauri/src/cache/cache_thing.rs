@@ -1,23 +1,22 @@
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::cache::dbconn::DatabaseConnection;
-use crate::files::read_save::{read_file_by_path, FileReadMode};
-use crate::schema::schema_cache::SchemasInMemoryCache;
+use crate::core::core_state::AppContext;
+use crate::files::read_save::{read_file_by_path, FileReadMode, RecordReadResult};
 use crate::utils::errorhandling::ErrFR;
 
 use super::query::RecordFromDb;
 
 pub async fn insert_file_into_cache_db(
-    db: &DatabaseConnection,
-    file: &RecordFromDb,
+    ctx: &AppContext,
+    file: &RecordReadResult,
 ) -> Result<(), Box<ErrFR>> {
-    let path = match file.path.as_ref() {
+    let path = match file.record.path.as_ref() {
         Some(p) => p,
         None => return Ok(()),
     };
 
-    let attrs = serde_json::to_string(&file.attrs).map_err(|e| {
+    let attrs = serde_json::to_string(&file.record.attrs).map_err(|e| {
         ErrFR::new("Error when serializing file attributes. This should never happen.").raw(e)
     })?;
 
@@ -25,9 +24,9 @@ pub async fn insert_file_into_cache_db(
         "INSERT INTO files (path, modified, attributes) VALUES (?1, ?2, ?3) ON CONFLICT(path) DO UPDATE SET modified=excluded.modified, attributes=excluded.attributes",
     )
     .bind(path.to_string())
-    .bind(file.modified.clone())
+    .bind(file.record.modified.clone())
     .bind(&attrs)
-    .execute(&db.get_conn().await)
+    .execute(&ctx.database_conn.get_conn().await)
     .await
     .map_err(|e| ErrFR::new("Error when inserting file").raw(e))?;
 
@@ -35,34 +34,43 @@ pub async fn insert_file_into_cache_db(
 }
 
 pub async fn cache_file(
-    schemas_cache: &SchemasInMemoryCache,
-    db: &DatabaseConnection,
-    path: &Path,
+    ctx: &AppContext,
+    path_absolute: &Path,
 ) -> Result<RecordFromDb, Box<ErrFR>> {
-    println!("cache_file {:?}", path);
+    println!("cache_file {:?}", path_absolute);
+
+    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+
+    println!("cache_file relative {:?}", path_relative);
+
     match read_file_by_path(
-        schemas_cache,
-        &path.to_string_lossy(),
+        ctx,
+        &path_relative.to_string_lossy(),
         FileReadMode::OnlyMeta,
     )
     .await
     {
         Ok(file) => {
-            println!("insert_file_into_cache_db {:?}", path);
-            insert_file_into_cache_db(db, &file.record).await?;
+            println!("insert_file_into_cache_db {:?}", path_absolute);
+            insert_file_into_cache_db(ctx, &file).await?;
             Ok(file.record)
         }
-        Err(e) => Err(e),
+        Err(e) => {
+            println!("cache_file error {:?}", e);
+            Err(e)
+        }
     }
 }
 
 pub async fn remove_file_from_cache(
-    db: &DatabaseConnection,
-    path: &Path,
+    ctx: &AppContext,
+    path_absolute: &Path,
 ) -> Result<(), Box<ErrFR>> {
+    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+
     sqlx::query("DELETE FROM files WHERE path=?1")
-        .bind(path.to_string_lossy().to_string())
-        .execute(&db.get_conn().await)
+        .bind(path_relative.to_string_lossy().to_string())
+        .execute(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when removing file from cache").raw(e))?;
 
@@ -70,17 +78,19 @@ pub async fn remove_file_from_cache(
 }
 
 pub async fn cache_files_folders_schemas(
-    schemas_cache: &SchemasInMemoryCache,
-    db: &DatabaseConnection,
-    dir: &Path,
+    ctx: &AppContext,
+    path_absolute: &Path,
 ) -> Result<(), Box<ErrFR>> {
     let mut err = ErrFR::new("Error when caching files and folders");
 
-    for entry in WalkDir::new(dir).into_iter().filter_map(Result::ok) {
+    for entry in WalkDir::new(path_absolute)
+        .into_iter()
+        .filter_map(Result::ok)
+    {
         if entry.file_type().is_file() {
             if let Some(extension) = entry.path().extension() {
                 if extension == "md" {
-                    match cache_file(schemas_cache, db, entry.path()).await {
+                    match cache_file(ctx, entry.path()).await {
                         Ok(_) => (),
                         Err(e) => {
                             err = err.sub(e.info(&entry.file_name().to_string_lossy()));
@@ -94,9 +104,12 @@ pub async fn cache_files_folders_schemas(
             // We have to cache schema, because it's required to properly cache files
             // (when walking through dir it goes folder > content inside)
             {
-                let _ = schemas_cache.cache_schema(entry.path().into()).await;
+                let _ = ctx
+                    .schemas_cache
+                    .cache_schema_absolute_path(ctx, entry.path().into())
+                    .await;
             }
-            match cache_folder(db, entry.path()).await {
+            match cache_folder(ctx, entry.path()).await {
                 Ok(_) => (),
                 Err(e) => {
                     err = err.sub(*e);
@@ -108,8 +121,8 @@ pub async fn cache_files_folders_schemas(
     Ok(())
 }
 
-pub async fn cache_folder(dbm: &DatabaseConnection, path: &Path) -> Result<(), Box<ErrFR>> {
-    let folder_name = match path.file_name() {
+pub async fn cache_folder(ctx: &AppContext, path_absolute: &Path) -> Result<(), Box<ErrFR>> {
+    let folder_name = match path_absolute.file_name() {
         Some(s) => s.to_string_lossy().to_string(),
         // None is root path(technically it's also "some/folder/" but I assume this will never happen)
         None => "/".to_string(),
@@ -119,10 +132,12 @@ pub async fn cache_folder(dbm: &DatabaseConnection, path: &Path) -> Result<(), B
         return Ok(());
     }
 
-    let conn = dbm.get_conn().await;
+    let conn = ctx.database_conn.get_conn().await;
+
+    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
 
     sqlx::query("INSERT INTO folders (path, name) VALUES (?1, ?2) ON CONFLICT(path) DO UPDATE SET name=excluded.name")
-    .bind(path.to_string_lossy().to_string())
+    .bind(path_relative.to_string_lossy().to_string())
     .bind(folder_name)
     .execute(&conn)
     .await
@@ -134,12 +149,14 @@ pub async fn cache_folder(dbm: &DatabaseConnection, path: &Path) -> Result<(), B
 }
 
 pub async fn remove_folder_from_cache(
-    db: &DatabaseConnection,
-    path: &Path,
+    ctx: &AppContext,
+    path_absolute: &Path,
 ) -> Result<(), Box<ErrFR>> {
+    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+
     sqlx::query("DELETE FROM folders WHERE path LIKE concat(?1, '%')")
-        .bind(path.to_string_lossy().to_string())
-        .execute(&db.get_conn().await)
+        .bind(path_relative.to_string_lossy().to_string())
+        .execute(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 
@@ -147,12 +164,14 @@ pub async fn remove_folder_from_cache(
 }
 
 pub async fn remove_files_in_folder_from_cache(
-    db: &DatabaseConnection,
-    path: &Path,
+    ctx: &AppContext,
+    path_absolute: &Path,
 ) -> Result<(), Box<ErrFR>> {
+    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+
     sqlx::query("DELETE FROM files WHERE path LIKE concat(?1, '%')")
-        .bind(path.to_string_lossy().to_string())
-        .execute(&db.get_conn().await)
+        .bind(path_relative.to_string_lossy().to_string())
+        .execute(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
 

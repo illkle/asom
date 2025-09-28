@@ -10,6 +10,7 @@ impl DatabaseConnection {
         Self { conn: None }
     }
 
+    #[allow(dead_code)]
     pub async fn init_in_memory(&mut self) {
         let conn = SqlitePoolOptions::new()
             .max_connections(20)

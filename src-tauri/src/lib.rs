@@ -9,6 +9,7 @@ mod utils;
 mod watcher;
 
 use core::core_state::CoreStateManager;
+use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use cache::query::{
@@ -69,7 +70,7 @@ async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
     let core = app.state::<CoreStateManager>();
     core.init(&app).await?;
     core.init_cache_on_root(&app).await?;
-    Ok(core.cached_root_path().await)
+    Ok(core.context.cached_root_path().await)
 }
 
 #[tauri::command]
@@ -81,16 +82,18 @@ async fn c_get_root_path<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetRootPath
 #[tauri::command]
 async fn c_get_files_by_path<T: tauri::Runtime>(
     app: AppHandle<T>,
-    path: String,
+    path_relative: String,
 ) -> IPCGetFilesPath {
     let core = app.state::<CoreStateManager>();
-    get_files_by_path(&core.database_conn, &core.schemas_cache, path).await
+
+    println!("c_get_files_by_path {:?}", path_relative);
+    get_files_by_path(&core.context, Path::new(&path_relative)).await
 }
 
 #[tauri::command]
 async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
     let core = app.state::<CoreStateManager>();
-    get_all_tags(&core.database_conn)
+    get_all_tags(&core.context)
         .await
         .map_err(|e| Box::new(ErrFR::new("Error when getting all tags").raw(e)))
 }
@@ -98,12 +101,7 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
 #[tauri::command]
 async fn c_get_all_folders<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllFolders {
     let core = app.state::<CoreStateManager>();
-    get_all_folders(
-        core.root_path_safe().await?,
-        &core.database_conn,
-        &core.schemas_cache,
-    )
-    .await
+    get_all_folders(&core.context).await
 }
 
 #[tauri::command]
@@ -112,13 +110,7 @@ async fn c_get_all_folders_by_schema<T: tauri::Runtime>(
     schema_path: String,
 ) -> IPCGetAllFoldersBySchema {
     let core = app.state::<CoreStateManager>();
-    get_all_folders_by_schema(
-        core.root_path_safe().await?,
-        &core.database_conn,
-        &core.schemas_cache,
-        schema_path,
-    )
-    .await
+    get_all_folders_by_schema(&core.context, schema_path).await
 }
 
 #[tauri::command]
@@ -127,13 +119,17 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     path: String,
 ) -> IPCReadFileByPath {
     let core = app.state::<CoreStateManager>();
-    read_file_by_path(&core.schemas_cache, &path, FileReadMode::FullFile).await
+    read_file_by_path(&core.context, &path, FileReadMode::FullFile).await
 }
 
 #[tauri::command]
 async fn c_get_schemas_all<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
     let core = app.state::<CoreStateManager>();
-    let schemas = core.schemas_cache.get_schemas_list_with_empty().await;
+    let schemas = core
+        .context
+        .schemas_cache
+        .get_schemas_list_with_empty()
+        .await;
     Ok(schemas)
 }
 
@@ -141,14 +137,24 @@ async fn c_get_schemas_all<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchema
 #[tauri::command]
 async fn c_get_schemas_usable<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
     let core = app.state::<CoreStateManager>();
-    let schemas = core.schemas_cache.get_schemas_list().await;
+    let schemas = core.context.schemas_cache.get_schemas_list().await;
     Ok(schemas)
 }
 
 #[tauri::command]
 async fn c_load_schema<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCLoadSchema {
     let core = app.state::<CoreStateManager>();
-    match core.schemas_cache.cache_schema(PathBuf::from(&path)).await {
+    let ctx = &core.context;
+    // TODO?: This reads schema from disk, not sure if this needed really
+    match core
+        .context
+        .schemas_cache
+        .cache_schema_absolute_path(
+            ctx,
+            ctx.relative_path_to_absolute(&PathBuf::from(&path)).await?,
+        )
+        .await
+    {
         Ok(Some(v)) => Ok(v),
         Ok(None) => Err(Box::new(ErrFR::new("Schema not found").info(&path))),
         Err(e) => Err(e),
@@ -162,18 +168,20 @@ async fn c_save_schema<T: tauri::Runtime>(
     schema: Schema,
 ) -> IPCSaveSchema {
     let core = app.state::<CoreStateManager>();
-    core.schemas_cache
+    core.context
+        .schemas_cache
         .save_schema(&PathBuf::from(path), schema)
         .await
 }
 
 #[tauri::command]
-fn c_save_file<T: tauri::Runtime>(
-    _: AppHandle<T>,
+async fn c_save_file<T: tauri::Runtime>(
+    app: AppHandle<T>,
     record: RecordFromDb,
     forced: bool,
 ) -> IPCSaveFile {
-    save_file(record, forced)
+    let core = app.state::<CoreStateManager>();
+    save_file(&core.context, record, forced).await
 }
 
 #[tauri::command]
@@ -182,7 +190,11 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
     path: String,
 ) -> IPCResolveSchemaPath {
     let core = app.state::<CoreStateManager>();
-    Ok(core.schemas_cache.get_schema(&PathBuf::from(path)).await)
+    Ok(core
+        .context
+        .schemas_cache
+        .get_schema(&PathBuf::from(path))
+        .await)
 }
 
 #[tauri::command]
@@ -224,7 +236,7 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             let mut state = CoreStateManager::new();
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
-                state.database_conn.init_in_memory().await;
+                state.context.database_conn.init_in_folder().await;
             });
 
             app.manage(state);

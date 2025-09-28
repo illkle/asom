@@ -25,7 +25,7 @@ use tokio::sync::{Mutex, RwLock};
 
 use std::{
     num::NonZeroU32,
-    path::Path,
+    path::{Path, PathBuf},
     sync::Arc,
     time::{Duration, SystemTime},
 };
@@ -33,12 +33,18 @@ use std::{
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
 #[derive(Debug)]
-pub struct CoreStateManager {
-    init_done: Mutex<bool>,
-    root_path: RwLock<Option<String>>,
-    cached_root_path: RwLock<Option<String>>,
-    watcher: Mutex<GlobalWatcher>,
+pub struct AppContext {
+    pub init_done: RwLock<bool>,
+    pub root_path: RwLock<Option<String>>,
+    pub root_path_cached: RwLock<Option<String>>,
+    pub schemas_cache: SchemasInMemoryCache,
+    pub database_conn: DatabaseConnection,
+}
 
+#[derive(Debug)]
+pub struct CoreStateManager {
+    pub context: AppContext,
+    watcher: Mutex<GlobalWatcher>,
     /*
     This is a rate limiter for emitting file\folder events to frontend. Rust has no issue with 1k+ events in but, but IPC is a bottleneck and can completely lock frontend.
     Threfore if we get ratelimited, we just send a single "revalidate everything" event.
@@ -46,20 +52,56 @@ pub struct CoreStateManager {
     pub emit_rate_limit:
         Arc<RateLimiter<NotKeyed, InMemoryState, QuantaClock, NoOpMiddleware<QuantaInstant>>>,
     pub last_rate_overflow: Mutex<SystemTime>,
-    pub schemas_cache: SchemasInMemoryCache,
+}
 
-    pub database_conn: DatabaseConnection,
+impl AppContext {
+    pub async fn root_path_safe(&self) -> Result<String, Box<ErrFR>> {
+        self.root_path
+            .read()
+            .await
+            .clone()
+            .ok_or(Box::new(ErrFR::new("Root path is not set")))
+    }
+
+    pub async fn cached_root_path(&self) -> Option<String> {
+        self.root_path_cached
+            .read()
+            .await
+            .as_ref()
+            .map(|path| path.clone())
+    }
+    pub async fn root_path_as_buf(&self) -> Result<PathBuf, Box<ErrFR>> {
+        let root = self.root_path_safe().await?;
+        Ok(PathBuf::from(root))
+    }
+
+    pub async fn relative_path_to_absolute(&self, path: &Path) -> Result<PathBuf, Box<ErrFR>> {
+        let root = self.root_path_as_buf().await?;
+        Ok(root.join(path))
+    }
+    pub async fn absolute_path_to_relative(&self, path: &Path) -> Result<PathBuf, Box<ErrFR>> {
+        let root = self.root_path_as_buf().await?;
+        pathdiff::diff_paths(path, &root).ok_or(Box::new(
+            ErrFR::new("Unable to get relative path").info(&format!(
+                "Path: {}, Root: {}",
+                path.to_string_lossy(),
+                root.to_string_lossy()
+            )),
+        ))
+    }
 }
 
 impl CoreStateManager {
     pub fn new() -> Self {
         Self {
-            init_done: Mutex::new(false),
-            root_path: RwLock::new(None),
-            cached_root_path: RwLock::new(None),
+            context: AppContext {
+                init_done: RwLock::new(false),
+                root_path: RwLock::new(None),
+                root_path_cached: RwLock::new(None),
+                schemas_cache: SchemasInMemoryCache::new(),
+                database_conn: DatabaseConnection::new(),
+            },
             watcher: Mutex::new(GlobalWatcher::new().unwrap()),
-            schemas_cache: SchemasInMemoryCache::new(),
-            database_conn: DatabaseConnection::new(),
             emit_rate_limit: Arc::new(RateLimiter::direct(Quota::per_second(
                 NonZeroU32::new(30).unwrap(),
             ))),
@@ -69,7 +111,7 @@ impl CoreStateManager {
 
     #[cfg(test)]
     pub async fn test_only_set_root_path(&self, path: String) {
-        let mut root_path = self.root_path.write().await;
+        let mut root_path = self.context.root_path.write().await;
         *root_path = Some(path);
     }
 
@@ -91,7 +133,7 @@ impl CoreStateManager {
                 if !Path::new(&path).exists() {
                     return Ok(None);
                 }
-                let _ = self.root_path.write().await.insert(path.clone());
+                let _ = self.context.root_path.write().await.insert(path.clone());
 
                 Ok(Some(path))
             }
@@ -99,24 +141,8 @@ impl CoreStateManager {
         }
     }
 
-    pub async fn root_path_safe(&self) -> Result<String, Box<ErrFR>> {
-        self.root_path
-            .read()
-            .await
-            .clone()
-            .ok_or(Box::new(ErrFR::new("Root path is not set")))
-    }
-
-    pub async fn cached_root_path(&self) -> Option<String> {
-        self.cached_root_path
-            .read()
-            .await
-            .as_ref()
-            .map(|path| path.clone())
-    }
-
     pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), Box<ErrFR>> {
-        let mut init_done = self.init_done.lock().await;
+        let mut init_done = self.context.init_done.write().await;
         if *init_done {
             return Ok(());
         }
@@ -157,7 +183,7 @@ impl CoreStateManager {
             return Ok(());
         }
 
-        let mut cur_cached_root_path = self.cached_root_path.write().await;
+        let mut cur_cached_root_path = self.context.root_path_cached.write().await;
 
         if let Some(rp_path) = &rp {
             if let Some(cached_root_path) = &*cur_cached_root_path {
@@ -179,19 +205,18 @@ impl CoreStateManager {
         &self,
         app: &AppHandle<T>,
     ) -> Result<(), Box<ErrFR>> {
-        let rp = self.root_path_safe().await?;
+        let rp = self.context.root_path_safe().await?;
 
-        self.schemas_cache.clear_cache().await;
-        create_db_tables(&self.database_conn).await.map_err(|e| {
-            ErrFR::new("Error when creating tables in cache db")
-                .info("This should not happen. Try restarting the app, else report as bug.")
-                .raw(e)
-        })?;
+        self.context.schemas_cache.clear_cache().await;
+        create_db_tables(&self.context.database_conn)
+            .await
+            .map_err(|e| {
+                ErrFR::new("Error when creating tables in cache db")
+                    .info("This should not happen. Try restarting the app, else report as bug.")
+                    .raw(e)
+            })?;
 
-        if let Err(e) =
-            cache_files_folders_schemas(&self.schemas_cache, &self.database_conn, Path::new(&rp))
-                .await
-        {
+        if let Err(e) = cache_files_folders_schemas(&self.context, Path::new(&rp)).await {
             // We don't return error here because user can have a few problematic files, which is ok
             send_err_to_frontend(app, &Box::new(e));
         }
@@ -200,7 +225,7 @@ impl CoreStateManager {
     }
 
     pub async fn watch_path(&self) -> Result<(), Box<ErrFR>> {
-        let rp = self.root_path_safe().await?;
+        let rp = self.context.root_path_safe().await?;
 
         println!("Watching path: {}", rp);
 

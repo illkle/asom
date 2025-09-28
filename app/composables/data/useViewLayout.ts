@@ -1,3 +1,4 @@
+import { c_get_root_path } from '~/api/tauriActions';
 import {
   zDynamicViewGroup,
   type IDynamicViewGroup,
@@ -21,5 +22,9 @@ const VIEW_LAYOUT_KEY = (root: string | null | undefined, folderPath: string) =>
 export const useViewLayout = makeUseConfigHook(disk, VIEW_LAYOUT_KEY);
 
 export const saveViewLayout = async (schemaOwnerFolder: string, viewLayout: IDynamicViewGroup) => {
-  await disk.set(viewLayout, schemaOwnerFolder);
+  const root = await c_get_root_path();
+  if (!root) {
+    throw new Error('Root path is not set');
+  }
+  await disk.set(root, viewLayout, schemaOwnerFolder);
 };

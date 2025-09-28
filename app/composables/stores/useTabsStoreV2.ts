@@ -7,6 +7,7 @@ import { defineStore } from 'pinia';
 import ShortUniqueId from 'short-unique-id';
 import type { ShallowRef } from 'vue';
 import { z } from 'zod';
+import { c_get_root_path } from '~/api/tauriActions';
 import { useUsableSchemas } from '~/composables/data/queries';
 
 const uid = new ShortUniqueId({ length: 10 });
@@ -208,11 +209,19 @@ export const useTabsStoreV2 = defineStore('tabs', {
       });
       console.log('saving tabs', tabs);
 
-      await openedTabsFile.set(tabs);
+      const root = await c_get_root_path();
+      if (!root) {
+        throw new Error('Root path is not set');
+      }
+      await openedTabsFile.set(root, tabs);
     },
     async _fetchOpened() {
       try {
-        const res = await openedTabsFile.get();
+        const root = await c_get_root_path();
+        if (!root) {
+          throw new Error('Root path is not set');
+        }
+        const res = await openedTabsFile.get(root);
         this.openedTabs = res.openedTabs;
         this.focusHistory = res.focusHistory;
         this.focusHistoryPointer = res.focusHistoryPointer;

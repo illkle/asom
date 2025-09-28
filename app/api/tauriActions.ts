@@ -36,8 +36,10 @@ export const c_save_file = async (record: RecordFromDb, forced = false) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const c_get_files_by_path = async (path: string) => {
-  return invoke('c_get_files_by_path', { path }).then((v) => {
+export const c_get_files_by_path = async (pathRelative: string) => {
+  console.log(' c_get_files_by_path', pathRelative);
+  return invoke('c_get_files_by_path', { pathRelative }).then((v) => {
+    console.log('c_get_files_by_path', v);
     return v as ExtractIpcResponcesType<'c_get_files_by_path'>;
   });
 };

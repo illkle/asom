@@ -17,7 +17,7 @@ pub async fn app_creator() -> AppHandle<MockRuntime> {
     let app = create_mock_app();
 
     let mut state = CoreStateManager::new();
-    state.database_conn.init_in_memory().await;
+    state.context.database_conn.init_in_memory().await;
 
     app.manage(state);
     app.handle().to_owned()

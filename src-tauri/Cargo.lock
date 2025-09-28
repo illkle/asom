@@ -136,6 +136,7 @@ dependencies = [
  "log",
  "notify",
  "once_cell",
+ "pathdiff",
  "pretty_assertions",
  "serde",
  "serde_json",

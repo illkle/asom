@@ -11,7 +11,7 @@ import { selectAndSetRootPath } from '~/api/rootPath';
 import { useMainStore } from '~/composables/stores/useMainStore';
 
 const props = defineProps<{
-  query: ReturnType<typeof useRootPath>;
+  query: ReturnType<typeof useRootPathFromQuery>;
 }>();
 
 const store = useMainStore();

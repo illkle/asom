@@ -20,7 +20,7 @@ export function filePathsToTree(paths: FolderListGetResult) {
   const separator = path.sep();
 
   const folders = paths.folders.reduce((currentResults, currentFolder) => {
-    const pathParts = currentFolder.path_relative.split(separator);
+    const pathParts = currentFolder.path.split(separator);
     const byPath: Record<string, FolderNode> = {};
 
     pathParts.reduce((nodes, name, index, arr) => {

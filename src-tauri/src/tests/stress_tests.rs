@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
 use tauri::Manager;
 
 use crate::{
-    cache::query::{get_files_abstact, RecordFromDb},
+    cache::query::{get_files_abstract, RecordFromDb},
     core::core_state::CoreStateManager,
     files::read_save::save_file,
     tests::test_utils::{
@@ -32,7 +32,7 @@ async fn test_quick_file_creation() {
     assert!(watch_path_result.is_ok());
 
     {
-        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();
@@ -41,13 +41,15 @@ async fn test_quick_file_creation() {
     }
 
     let sub_folder = test_dir.join("books").join("stress_test");
+
+    let sub_folder_rel = Path::new("books").join("stress_test");
     std::fs::create_dir_all(sub_folder.clone()).unwrap();
 
     let mut initial_file_count = 2;
     for i in 0..500 {
         let record = RecordFromDb {
             path: Some(
-                sub_folder
+                sub_folder_rel
                     .clone()
                     .join(format!("test_{}.md", i))
                     .to_string_lossy()
@@ -58,13 +60,18 @@ async fn test_quick_file_creation() {
             attrs: HashMap::new(),
         };
 
-        let save_result = save_file(record, true);
-        assert!(save_result.is_ok());
+        let save_result = save_file(&core.context, record, true).await;
+
+        assert!(
+            save_result.is_ok(),
+            "Error saving file {:?}",
+            save_result.err().unwrap()
+        );
         initial_file_count += 1;
     }
 
     let final_state_check = || async {
-        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();

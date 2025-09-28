@@ -1,3 +1,156 @@
+<template>
+  <div
+    class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2"
+    :class="$attrs.class"
+  >
+    <Input v-model="searchQuery" />
+
+    <ListViewTopControls
+      :columns="table.getAllColumns()"
+      @update-order="viewSettingsUpdater('columnOrder', $event)"
+    />
+  </div>
+  <div
+    ref="scrollElementRef"
+    class="w-full overflow-auto bg-background overscroll-none h-full scrollbarMod gutter-stable"
+  >
+    <div
+      v-if="selectionMode"
+      class="absolute bottom-6 bg-foreground text-primary-foreground shadow-xl rounded-md overflow-hidden min-w-sm left-1/2 -translate-x-1/2 z-10 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-2">
+        <Button
+          class="rounded-none border-r hover:bg-muted/10"
+          @click="
+            () => {
+              table.resetRowSelection();
+              selectionMode = false;
+            }
+          "
+        >
+          <XIcon class="text-primary-foreground" />
+        </Button>
+        <span class="text-sm block"
+          >Selected: {{ table.getFilteredSelectedRowModel().rows.length }}</span
+        >
+      </div>
+
+      <Button class="rounded-none border-l hover:bg-muted/10" @click="deleteSelected">
+        <TrashIcon class="text-primary-foreground" />
+      </Button>
+    </div>
+    <table class="text-sm grid">
+      <!-- Table Header -->
+      <thead class="grid sticky top-0 z-1">
+        <tr
+          v-for="headerGroup in table.getHeaderGroups()"
+          :key="headerGroup.id"
+          class="group pb-2 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)] flex w-full"
+        >
+          <TableHeader
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            :colspan="header.colSpan"
+            class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2"
+            :class="{
+              'cursor-pointer select-none': header.column.getCanSort(),
+            }"
+            :style="{
+              width: `${table.getColumn(header.column.id)?.getSize()}px`,
+            }"
+            @mousedown="() => header.column.toggleSorting()"
+          >
+            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" />
+            <ArrowUp :size="16" v-else-if="header.column.getIsSorted() === 'asc'" />
+
+            <div
+              v-if="!header.isPlaceholder"
+              class="overflow-hidden text-ellipsis flex gap-2 items-center"
+            >
+              <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
+            </div>
+
+            <span
+              @click.stop
+              @mousedown.stop="
+                (e) => {
+                  header.getResizeHandler()(e);
+                }
+              "
+              class="bg-accent w-1 rounded-xl h-3/4 opacity-20 group-hover:opacity-100 transition-all absolute right-0 cursor-col-resize z-10"
+            >
+            </span>
+          </TableHeader>
+        </tr>
+      </thead>
+      <ContextMenu v-model:open="dropdownOpened">
+        <ContextMenuTrigger>
+          <!-- Table Body -->
+          <tbody
+            data-slot="table-body"
+            class="[&_tr:last-child]:border-0 flex relative"
+            :style="{
+              height: `${totalSize}px`,
+            }"
+          >
+            <tr
+              v-for="vRow in virtualRows"
+              :key="rows[vRow.index]?.id"
+              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b flex absolute w-full"
+              :class="{
+                'bg-muted hover:bg-muted/80': rows[vRow.index]?.getIsSelected(),
+              }"
+              :style="{
+                transform: `translateY(${vRow.start}px)`,
+              }"
+            >
+              <td
+                data-slot="table-cell"
+                v-for="cell in rows[vRow.index]?.getVisibleCells()"
+                :key="cell.id"
+                class="h-9 px-2 whitespace-nowrap flex shrink-0"
+                :style="{ width: `${cell.column.getSize()}px` }"
+                @pointerdown="handlePointerDownOnRow(vRow.index, $event)"
+              >
+                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+              </td>
+            </tr>
+          </tbody>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <!-- Right Click Menu-->
+          <ListViewContextMenu
+            :selection-mode="selectionMode"
+            @open-in-new-tab="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
+                ts.openNewThingFast(
+                  { _type: 'file', _path: rows[dropdownRowLock]?.original.path ?? '' },
+                  'lastUnfocused',
+                );
+              }
+            "
+            @select="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
+                selectionMode = true;
+                lastSelectedIndex = dropdownRowLock;
+                rows[dropdownRowLock]?.toggleSelected();
+              }
+            "
+            @delete="
+              () => {
+                if (typeof dropdownRowLock !== 'number') return;
+                c_delete_to_trash(rows[dropdownRowLock]?.original.path ?? '');
+              }
+            "
+          />
+        </ContextMenuContent>
+      </ContextMenu>
+    </table>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { Input } from '#components';
 import {
@@ -324,156 +477,3 @@ const deleteSelected = async () => {
   table.resetRowSelection();
 };
 </script>
-
-<template>
-  <div
-    class="flex items-center py-2 gap-2 px-2 w-full pr-4 bg-background h-12 z-2"
-    :class="$attrs.class"
-  >
-    <Input v-model="searchQuery" />
-
-    <ListViewTopControls
-      :columns="table.getAllColumns()"
-      @update-order="viewSettingsUpdater('columnOrder', $event)"
-    />
-  </div>
-  <div
-    ref="scrollElementRef"
-    class="w-full overflow-auto bg-background overscroll-none h-full scrollbarMod gutter-stable"
-  >
-    <div
-      v-if="selectionMode"
-      class="absolute bottom-6 bg-foreground text-primary-foreground shadow-xl rounded-md overflow-hidden min-w-sm left-1/2 -translate-x-1/2 z-10 flex items-center justify-between"
-    >
-      <div class="flex items-center gap-2">
-        <Button
-          class="rounded-none border-r hover:bg-muted/10"
-          @click="
-            () => {
-              table.resetRowSelection();
-              selectionMode = false;
-            }
-          "
-        >
-          <XIcon class="text-primary-foreground" />
-        </Button>
-        <span class="text-sm block"
-          >Selected: {{ table.getFilteredSelectedRowModel().rows.length }}</span
-        >
-      </div>
-
-      <Button class="rounded-none border-l hover:bg-muted/10" @click="deleteSelected">
-        <TrashIcon class="text-primary-foreground" />
-      </Button>
-    </div>
-    <table class="text-sm grid">
-      <!-- Table Header -->
-      <thead class="grid sticky top-0 z-1">
-        <tr
-          v-for="headerGroup in table.getHeaderGroups()"
-          :key="headerGroup.id"
-          class="group pb-2 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)] flex w-full"
-        >
-          <TableHeader
-            v-for="header in headerGroup.headers"
-            :key="header.id"
-            :colspan="header.colSpan"
-            class="flex items-center gap-1 justify-start relative px-2 hover:bg-muted/10 py-2"
-            :class="{
-              'cursor-pointer select-none': header.column.getCanSort(),
-            }"
-            :style="{
-              width: `${table.getColumn(header.column.id)?.getSize()}px`,
-            }"
-            @mousedown="() => header.column.toggleSorting()"
-          >
-            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" />
-            <ArrowUp :size="16" v-else-if="header.column.getIsSorted() === 'asc'" />
-
-            <div
-              v-if="!header.isPlaceholder"
-              class="overflow-hidden text-ellipsis flex gap-2 items-center"
-            >
-              <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
-            </div>
-
-            <span
-              @click.stop
-              @mousedown.stop="
-                (e) => {
-                  header.getResizeHandler()(e);
-                }
-              "
-              class="bg-accent w-1 rounded-xl h-3/4 opacity-20 group-hover:opacity-100 transition-all absolute right-0 cursor-col-resize z-10"
-            >
-            </span>
-          </TableHeader>
-        </tr>
-      </thead>
-      <ContextMenu v-model:open="dropdownOpened">
-        <ContextMenuTrigger>
-          <!-- Table Body -->
-          <tbody
-            data-slot="table-body"
-            class="[&_tr:last-child]:border-0 flex relative"
-            :style="{
-              height: `${totalSize}px`,
-            }"
-          >
-            <tr
-              v-for="vRow in virtualRows"
-              :key="rows[vRow.index]?.id"
-              class="hover:bg-muted/50 data-[state=selected]:bg-muted border-b flex absolute w-full"
-              :class="{
-                'bg-muted hover:bg-muted/80': rows[vRow.index]?.getIsSelected(),
-              }"
-              :style="{
-                transform: `translateY(${vRow.start}px)`,
-              }"
-            >
-              <td
-                data-slot="table-cell"
-                v-for="cell in rows[vRow.index]?.getVisibleCells()"
-                :key="cell.id"
-                class="h-9 px-2 whitespace-nowrap flex shrink-0"
-                :style="{ width: `${cell.column.getSize()}px` }"
-                @pointerdown="handlePointerDownOnRow(vRow.index, $event)"
-              >
-                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-              </td>
-            </tr>
-          </tbody>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <!-- Right Click Menu-->
-          <ListViewContextMenu
-            :selection-mode="selectionMode"
-            @open-in-new-tab="
-              () => {
-                if (typeof dropdownRowLock !== 'number') return;
-                ts.openNewThingFast(
-                  { _type: 'file', _path: rows[dropdownRowLock]?.original.path ?? '' },
-                  'lastUnfocused',
-                );
-              }
-            "
-            @select="
-              () => {
-                if (typeof dropdownRowLock !== 'number') return;
-                selectionMode = true;
-                lastSelectedIndex = dropdownRowLock;
-                rows[dropdownRowLock]?.toggleSelected();
-              }
-            "
-            @delete="
-              () => {
-                if (typeof dropdownRowLock !== 'number') return;
-                c_delete_to_trash(rows[dropdownRowLock]?.original.path ?? '');
-              }
-            "
-          />
-        </ContextMenuContent>
-      </ContextMenu>
-    </table>
-  </div>
-</template>
