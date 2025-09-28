@@ -2,47 +2,46 @@ name: movies
 version: '1.0'
 icon: Star
 items:
-- name: title
-  value:
-    type: Text
-    settings:
-      settingsType: Text
-      size: L
-      font: Serif
-      theme: Hidden
-      isMultiline: true
-- name: director
-  value:
-    type: Text
-    settings:
-      settingsType: Text
-      size: M
-      weight: Bold
-      theme: Hidden
-- name: premiere
-  value:
-    type: Date
-    settings: {}
-- name: myRating
-  value:
-    type: Number
-    settings:
-      settingsType: Num
-      min: 0.0
-      max: 5.0
-      style: Slider
-- name: watched
-  value:
-    type: DateCollection
-    settings: {}
-- name: tags
-  value:
-    type: TextCollection
-    settings:
-      settingsType: TextCollection
-- name: poster
-  value:
-    type: Image
-    settings: {}
-internal_path: /Users/zekel/projects/bkz-test-data/movies
+  - name: title
+    value:
+      type: Text
+      settings:
+        settingsType: Text
+        size: L
+        font: Serif
+        theme: Hidden
+        isMultiline: true
+  - name: director
+    value:
+      type: Text
+      settings:
+        settingsType: Text
+        size: M
+        weight: Bold
+        theme: Hidden
+  - name: premiere
+    value:
+      type: Date
+      settings: {}
+  - name: myRating
+    value:
+      type: Number
+      settings:
+        settingsType: Num
+        min: 0.0
+        max: 5.0
+        style: Slider
+  - name: watched
+    value:
+      type: DateCollection
+      settings: {}
+  - name: tags
+    value:
+      type: TextCollection
+      settings:
+        settingsType: TextCollection
+  - name: poster
+    value:
+      type: Image
+      settings: {}
 internal_name: movies

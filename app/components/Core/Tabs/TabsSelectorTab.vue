@@ -20,6 +20,7 @@
 import { XIcon } from 'lucide-vue-next';
 
 import { computed, type PropType } from 'vue';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useMainStore } from '~/composables/stores/useMainStore';
 import type { ITabEntry } from '~/composables/stores/useTabsStoreV2';
 
@@ -46,22 +47,22 @@ const emit = defineEmits<{
 }>();
 
 const store = useMainStore();
-const rootPath = useRootPath();
+const rootPath = useRootPathInjectSafe();
 
 const capitalize = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
 const text = computed(() => {
-  if (!rootPath.data.value || !props.item) return '';
+  if (!props.item) return '';
 
   const opened = props.item.history[props.item.historyPointer]!;
 
   if (opened._type === 'folder') {
-    if (opened._path === rootPath.data.value || !opened._path.length) {
+    if (opened._path === rootPath.value || !opened._path.length) {
       return 'All Books';
     }
-    return opened._path.replace(rootPath.data.value, '').replace(/[\\/]/, '');
+    return opened._path.replace(rootPath.value, '').replace(/[\\/]/, '');
   }
 
   if (opened._type === 'file') {

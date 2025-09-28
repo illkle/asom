@@ -8,7 +8,7 @@
       >
         <div class="font-mono text-xs opacity-30">Root path:</div>
         <div class="font-mono text-xs">
-          {{ rootPath.data.value }}
+          {{ rootPath }}
         </div>
       </div>
       <Button
@@ -30,7 +30,7 @@
             class="bg-transparent w-full mb-2"
             @click="
               () => {
-                folderCreationPath = rootPath.data.value ?? '';
+                folderCreationPath = rootPath ?? '';
                 isNewFolderDialogOpen = true;
               }
             "
@@ -96,10 +96,11 @@ import { FolderIcon, PlusIcon } from 'lucide-vue-next';
 import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import PageTemplate from './common/PageTemplate.vue';
 
-const rootPath = useRootPath();
+const rootPath = useRootPathInjectSafe();
 const tabsStore = useTabsStoreV2();
 
 const changeRootPathHandler = async () => {

@@ -45,6 +45,7 @@ import { openPath } from '@tauri-apps/plugin-opener';
 import { computedAsync } from '@vueuse/core';
 import path from 'path-browserify';
 import type { CSSProperties } from 'vue';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import type { ImageSettings } from '~/types';
 import CommonLabel from './CommonLabel.vue';
 
@@ -62,11 +63,11 @@ const ar = computed(() => {
   } as CSSProperties;
 });
 
-const rootPath = useRootPath();
+const rootPath = useRootPathInjectSafe();
 
 const filePath = computed(() => {
-  if (!imageName.value || !rootPath.data.value) return null;
-  return path.join(rootPath.data.value, '.assets', imageName.value);
+  if (!imageName.value || !rootPath.value) return null;
+  return path.join(rootPath.value, '.assets', imageName.value);
 });
 
 const pathFolder = computed(() => {
@@ -83,7 +84,7 @@ const imagePath = computedAsync(async () => {
 
 const changeImageHandler = async () => {
   if (props.disabled) return;
-  if (!rootPath.data.value) return;
+  if (!rootPath.value) return;
 
   const result = await open({
     multiple: false,
@@ -94,7 +95,7 @@ const changeImageHandler = async () => {
 
   const basename = generateUniqId() + path.extname(result);
 
-  const folder = path.join(rootPath.data.value, '.assets');
+  const folder = path.join(rootPath.value, '.assets');
 
   const folderExists = await exists(folder);
   if (!folderExists) {

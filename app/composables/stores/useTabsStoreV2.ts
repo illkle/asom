@@ -7,7 +7,7 @@ import { defineStore } from 'pinia';
 import ShortUniqueId from 'short-unique-id';
 import type { ShallowRef } from 'vue';
 import { z } from 'zod';
-import { useRootPath, useUsableSchemas } from '~/composables/data/queries';
+import { useUsableSchemas } from '~/composables/data/queries';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -462,7 +462,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
 
 const useTabsPreservation = () => {
   const store = useTabsStoreV2();
-  const rootPath = useRootPath();
+  const rootPath = useRootPathFromQuery();
 
   watch(
     rootPath.data,

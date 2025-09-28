@@ -1,20 +1,15 @@
 <template>
   <PageTemplate>
-    <Button @click="handleClick"> texterror </Button>
+    <Input v-model="input" />
+    <TestPageSub />
   </PageTemplate>
 </template>
 
 <script setup lang="ts">
 const input = ref('Test');
+import Input from '../ui/input/Input.vue';
 import PageTemplate from '../Views/Schema/common/PageTemplate.vue';
+import TestPageSub from './TestPageSub.vue';
 
-const handleClick = () => {
-  useRustErrorNotification({
-    title: 'Test error',
-    info: 'Test error',
-    isError: true,
-    subErrors: [],
-  });
-  throw new Error('Test error');
-};
+provide('hello', input);
 </script>

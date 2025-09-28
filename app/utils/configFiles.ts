@@ -4,6 +4,7 @@ import { z } from 'zod';
 import * as fs from '@tauri-apps/plugin-fs';
 import { cloneDeep } from 'lodash-es';
 import { c_get_root_path } from '~/api/tauriActions';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 
 type PathGetter<Specifier extends string | undefined> = (
   fileName: string,
@@ -119,10 +120,10 @@ export const makeUseConfigHook = <T extends z.ZodSchema, A extends string | unde
   keyFn: (root: string | null | undefined, target: A extends undefined ? undefined : A) => string[],
 ) => {
   return (target?: A extends undefined ? undefined : Ref<A>) => {
-    const root = useRootPath();
+    const root = useRootPathInjectSafe();
 
     const q = useQuery({
-      key: () => keyFn(root.data.value, target?.value as A extends undefined ? undefined : A),
+      key: () => keyFn(root.value, target?.value as A extends undefined ? undefined : A),
       query: () => disk.get(target?.value as A extends undefined ? undefined : A),
     });
 
@@ -134,14 +135,14 @@ export const makeUseConfigHook = <T extends z.ZodSchema, A extends string | unde
       },
       onMutate: (newData) =>
         qc.setQueryData(
-          keyFn(root.data.value, target?.value as A extends undefined ? undefined : A),
+          keyFn(root.value, target?.value as A extends undefined ? undefined : A),
           newData,
         ),
     });
 
     const mutateUpdater = async (u: (v: z.infer<T>) => z.infer<T> | z.infer<T>) => {
       const current = qc.getQueryData<z.infer<T>>(
-        keyFn(root.data.value, target?.value as A extends undefined ? undefined : A),
+        keyFn(root.value, target?.value as A extends undefined ? undefined : A),
       );
       if (!current) {
         return;
@@ -152,7 +153,7 @@ export const makeUseConfigHook = <T extends z.ZodSchema, A extends string | unde
 
     const partialUpdater = async (part: Partial<z.infer<T>>) => {
       const current = qc.getQueryData<z.infer<T>>(
-        keyFn(root.data.value, target?.value as A extends undefined ? undefined : A),
+        keyFn(root.value, target?.value as A extends undefined ? undefined : A),
       );
       if (!current) {
         return;

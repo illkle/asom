@@ -65,12 +65,13 @@ import { isOurError, useRustErrorNotification } from '~/composables/useRustError
 
 import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
 
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { ErrFR, Schema } from '~/types';
 import PageTemplate from './common/PageTemplate.vue';
 import SchemaItem from './SchemaItem.vue';
 
-const root = useRootPath();
+const root = useRootPathInjectSafe();
 
 const tabsStore = useTabsStoreV2();
 
@@ -82,7 +83,7 @@ const props = defineProps({
 });
 
 const shortPath = computed(() => {
-  return props.opened._path.replace(root.data.value ?? '', '');
+  return props.opened._path.replace(root.value ?? '', '');
 });
 
 const emit = defineEmits<{

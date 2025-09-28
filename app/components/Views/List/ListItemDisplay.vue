@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="props.value"
-    class="text-ellipsis max-w-full h-full flex items-center overflow-hidden whitespace-nowrap gap-0.5"
+    class="text-ellipsis max-w-full h-full flex items-center overflow-hidden whitespace-nowrap gap-0.5 cursor-default"
   >
     <template
       v-if="props.type.type === 'DatesPairCollection' && props.value.type === 'DatePairVec'"
