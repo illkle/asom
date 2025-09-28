@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { makeFileAttrsFromApi } from '~/components/Api/makeFileFromApi';
 
 vi.mock('~/components/Api/saveImage', () => ({
-  saveImage: vi.fn().mockResolvedValue('cover.jpg'),
+  saveImageFromUrl: vi.fn().mockResolvedValue('cover.jpg'),
 }));
 
 describe('makeFileAttrsFromApi', () => {

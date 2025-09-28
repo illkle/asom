@@ -1,7 +1,7 @@
+import { path } from '@tauri-apps/api';
 import { platform } from '@tauri-apps/plugin-os';
 import { useEventListener, useThrottleFn } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
-import path from 'path-browserify';
 import { defineStore } from 'pinia';
 
 import ShortUniqueId from 'short-unique-id';
@@ -166,15 +166,6 @@ export const useTabsStoreV2 = defineStore('tabs', {
     openedItem(): IOpened | undefined {
       if (!this.openedTab) return;
       return this.openedTab.history[this.openedTab.historyPointer];
-    },
-
-    pathFromOpenedTab(): string | undefined {
-      if (!this.openedItem || !this.openedItem._path) return;
-
-      if (this.openedItem._type === 'file') return path.dirname(this.openedItem._path);
-      if (this.openedItem._type === 'folder') return this.openedItem._path;
-
-      return undefined;
     },
 
     canGoBack() {
@@ -606,13 +597,13 @@ export const setupTabsHotkeys = () => {
 
   const { query: usableSchemas } = useUsableSchemas();
 
-  const hotkeyHandler = (e: KeyboardEvent) => {
+  const hotkeyHandler = async (e: KeyboardEvent) => {
     if (e.code === 'KeyT' && e[actionKey]) {
       e.preventDefault();
 
       const _path = store.openedItem
         ? store.openedItem._type === 'file'
-          ? path.dirname(store.openedItem._path)
+          ? await path.dirname(store.openedItem._path)
           : store.openedItem._path
         : Object.keys(usableSchemas.data.value ?? {})[0];
 
@@ -670,5 +661,6 @@ export const setupTabsHotkeys = () => {
 
   onUnmounted(() => {
     window.removeEventListener('keydown', hotkeyHandler);
+    window.removeEventListener('mousedown', mouseHandler);
   });
 };

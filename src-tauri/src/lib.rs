@@ -44,6 +44,7 @@ type IPCSaveSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveFile = Result<RecordSaveResult, Box<ErrFR>>;
 type IPCResolveSchemaPath = Result<Option<SchemaResult>, Box<ErrFR>>;
 type IPCDeleteFile = Result<(), Box<ErrFR>>;
+type IPCIsEventRelevant = Result<bool, Box<ErrFR>>;
 #[derive(TS)]
 #[ts(export)]
 #[allow(dead_code)]
@@ -63,6 +64,7 @@ struct IPCResponces {
     c_save_file: IPCSaveFile,
     c_resolve_schema_path: IPCResolveSchemaPath,
     c_delete_to_trash: IPCDeleteFile,
+    c_is_event_relevant: IPCIsEventRelevant,
 }
 
 #[tauri::command]
@@ -202,6 +204,41 @@ async fn c_delete_to_trash<T: tauri::Runtime>(_: AppHandle<T>, path: String) -> 
     trash::delete(&path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
 }
 
+/* Temporary(I hope) solution to determine whether event is relevant to opened path */
+#[tauri::command]
+async fn c_is_event_relevant<T: tauri::Runtime>(
+    app: AppHandle<T>,
+    opened_path: String,
+    event_path: String,
+) -> IPCIsEventRelevant {
+    let core = app.state::<CoreStateManager>();
+
+    let opened_as_path = PathBuf::from(opened_path);
+    let event_as_path = PathBuf::from(event_path);
+
+    match (&opened_as_path.is_dir(), &event_as_path.is_dir()) {
+        // Opened Path is a file, event path is a folder => not relevant, deletion should be emitted for file too
+        (false, true) => Ok(false),
+        // Both are files or folders => check if they are the same
+        (false, false) => Ok(opened_as_path.eq(&event_as_path)),
+        // Opened Path is a folder, event path is whatever => check if event is in opened folder and schema is the same
+        (true, _) => {
+            let is_inside =
+                utils::utils::is_inside(&opened_as_path, &event_as_path).unwrap_or(false);
+            if !is_inside {
+                return Ok(false);
+            }
+
+            let schema_opened = core.context.schemas_cache.get_schema(&opened_as_path).await;
+            let schema_event = core.context.schemas_cache.get_schema(&event_as_path).await;
+
+            Ok(schema_opened
+                .map(|v| v.file_path)
+                .eq(&schema_event.map(|v| v.file_path)))
+        }
+    }
+}
+
 pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T> {
     builder
         .plugin(tauri_plugin_sql::Builder::new().build())
@@ -223,6 +260,7 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_get_schemas_all,
             c_resolve_schema_path,
             c_delete_to_trash,
+            c_is_event_relevant
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

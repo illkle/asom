@@ -187,7 +187,6 @@ import {
   Trash2Icon,
 } from 'lucide-vue-next';
 
-import path from 'path-browserify';
 import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
@@ -211,19 +210,23 @@ const props = defineProps({
   },
 });
 
+const roughBasename = (p: string) => {
+  const splitted = p.split(separator);
+  return splitted[splitted.length - 1];
+};
 const breadcrumbItems = computed(() => {
   const rootFolder = fileQ.data.value?.schema.owner_folder ?? '';
 
   const realPath = props.opened._path.replace(rootFolder, '');
 
-  const all = [{ label: path.basename(rootFolder), path: rootFolder }];
+  const all = [{ label: roughBasename(rootFolder), path: rootFolder }];
 
   for (const item of realPath.split(separator)) {
     const last = all[all.length - 1];
     if (!last) continue;
     all.push({
       label: item,
-      path: path.join(last.path, item),
+      path: last.path + separator + item,
     });
   }
 
@@ -246,9 +249,12 @@ const deleteDialog = ref(false);
 const renameDialog = ref(false);
 const newName = ref('');
 
-const startRename = () => {
+const startRename = async () => {
   renameDialog.value = true;
-  newName.value = path.basename(props.opened._path, path.extname(props.opened._path));
+  newName.value = await tauriPath.basename(
+    props.opened._path,
+    await tauriPath.extname(props.opened._path),
+  );
 };
 
 const { fileQ, editableProxy, viewSettingsQ, viewLayoutQ, onRename, viewSettingsUpdaterPartial } =
@@ -267,7 +273,7 @@ const ts = useTabsStoreV2();
 
 const onRemove = async () => {
   await c_delete_to_trash(props.opened._path);
-  ts.openNewThingFast({ _type: 'folder', _path: path.dirname(props.opened._path) });
+  ts.openNewThingFast({ _type: 'folder', _path: await tauriPath.dirname(props.opened._path) });
 };
 
 const markKey = (item: IDynamicItem, toSave: Record<string, boolean>) => {

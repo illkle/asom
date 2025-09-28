@@ -119,10 +119,10 @@
 </template>
 
 <script setup lang="ts">
+import { path } from '@tauri-apps/api';
 import { mkdir } from '@tauri-apps/plugin-fs';
 import { format } from 'date-fns';
 import { Check, ChevronDown } from 'lucide-vue-next';
-import path from 'path-browserify';
 import { c_save_file } from '~/api/tauriActions';
 import {
   extractDataFromGoodreadsHTML,
@@ -193,7 +193,7 @@ const importBooks = async () => {
 
   const dirName = 'goodreads-' + format(new Date(), 'yyyy-MM-dd-HH-mm-ss');
 
-  const pathToSave = path.join(sp, dirName);
+  const pathToSave = await path.join(sp, dirName);
 
   await mkdir(pathToSave, { recursive: true });
 
@@ -243,7 +243,7 @@ const importBooks = async () => {
     }
 
     const bookFile: RecordFromDb = {
-      path: path.join(pathToSave, `${book.title}.md`),
+      path: await path.join(pathToSave, `${book.title}.md`),
       modified: null,
       markdown: '',
       attrs,

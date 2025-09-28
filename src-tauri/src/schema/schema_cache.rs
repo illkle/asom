@@ -138,8 +138,7 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn get_read_lock(&self) -> RwLockReadGuard<'_, BTreeMap<PathBuf, Schema>> {
-        let map = self.map.read().await;
-        map
+        self.map.read().await
     }
 
     async fn iter(&self) -> Vec<(PathBuf, Schema)> {

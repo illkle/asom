@@ -91,9 +91,10 @@ import { useQueryCache } from '@pinia/colada';
 import { TreeRoot } from 'reka-ui';
 import { c_save_schema } from '~/api/tauriActions';
 
+import { path } from '@tauri-apps/api';
 import { mkdir } from '@tauri-apps/plugin-fs';
+import { computedAsync } from '@vueuse/core';
 import { FolderIcon, PlusIcon } from 'lucide-vue-next';
-import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
@@ -111,12 +112,12 @@ const isNewFolderDialogOpen = ref(false);
 const newFolderName = ref('');
 const folderCreationPath = ref('');
 
-const folderWhereToCreateName = computed(() => {
-  return path.basename(folderCreationPath.value);
+const folderWhereToCreateName = computedAsync(async () => {
+  return await path.basename(folderCreationPath.value);
 });
 
 const createNewFolder = async () => {
-  await mkdir(path.join(folderCreationPath.value, newFolderName.value));
+  await mkdir(await path.join(folderCreationPath.value, newFolderName.value));
   isNewFolderDialogOpen.value = false;
 };
 

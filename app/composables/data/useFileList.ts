@@ -1,5 +1,4 @@
-import path from 'path-browserify';
-import { c_get_files_by_path } from '~/api/tauriActions';
+import { c_get_files_by_path, c_is_event_relevant } from '~/api/tauriActions';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
@@ -124,18 +123,11 @@ export const useFlesListV2 = ({
 
 /**
  * Returns true if the event is relevant to the target path.
- * Event is relevat if it's path is inside of target path.
+ * Event is relevant if it's path is inside of target path.
  * NOTE: This is made for current logic where opening folder means getting files inside it recursively.
  */
-const isChangeRelevant = (targetPath: string, eventPath: string) => {
-  console.log('isChangeRelevant', targetPath, eventPath);
-  const normalizedCurrent = path.normalize(targetPath);
-  const normalizedEvent = path.normalize(eventPath);
-
-  if (normalizedCurrent === normalizedEvent) return true;
-
-  const relative = path.relative(normalizedCurrent, normalizedEvent);
-  return !relative.startsWith('..') && relative !== '';
+const isChangeRelevant = async (targetPath: string, eventPath: string) => {
+  return await c_is_event_relevant(targetPath, eventPath);
 };
 
 type FileListEvent =

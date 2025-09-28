@@ -21,8 +21,8 @@
 </template>
 
 <script lang="ts" setup>
-import { useMagicKeys } from '@vueuse/core';
-import path from 'path-browserify';
+import { path } from '@tauri-apps/api';
+import { computedAsync, useMagicKeys } from '@vueuse/core';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import type { RecordFromDb } from '~/types';
 import AddAndSearch from './AddAndSearch.vue';
@@ -45,10 +45,10 @@ useNavigationBlock(modalOpened);
 
 const tabsStore = useTabsStoreV2();
 
-const pathFromTab = computed(() => {
+const pathFromTab = computedAsync(async () => {
   if (!tabsStore.openedItem || !tabsStore.openedItem._path) return '';
-  if (tabsStore.openedItem._type === 'file') return path.dirname(tabsStore.openedItem._path);
-  if (tabsStore.openedItem._type === 'folder') return tabsStore.openedItem._path;
+  if (tabsStore.openedItem._type === 'file') return await path.dirname(tabsStore.openedItem._path);
+  if (tabsStore.openedItem._type === 'folder') return await tabsStore.openedItem._path;
   return '';
 });
 

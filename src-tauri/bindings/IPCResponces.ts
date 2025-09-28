@@ -22,4 +22,5 @@ export type IPCResponces = {
   c_save_file: { Ok: RecordSaveResult } | { Err: ErrFR };
   c_resolve_schema_path: { Ok: SchemaResult | null } | { Err: ErrFR };
   c_delete_to_trash: { Ok: null } | { Err: ErrFR };
+  c_is_event_relevant: { Ok: boolean } | { Err: ErrFR };
 };

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { saveImage } from '~/components/Api/saveImage';
+import { saveImageFromUrl } from '~/components/Api/saveImage';
 import type { AttrValue, DatePair, SchemaAttrType } from '~/types';
 
 export type ExApiValueFor = {
@@ -127,7 +127,11 @@ export const apiValueConverters: ApiValueConverters = {
   },
   Image: {
     default: async ({ apiValue, context }) => {
-      const imageName = await saveImage(apiValue as string, context.rootPath, context.recordName);
+      const imageName = await saveImageFromUrl(
+        apiValue as string,
+        context.rootPath,
+        context.recordName,
+      );
 
       return { type: 'String', value: imageName };
     },

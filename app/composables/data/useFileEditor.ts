@@ -1,7 +1,7 @@
+import { path } from '@tauri-apps/api';
 import { rename } from '@tauri-apps/plugin-fs';
 import { watchPausable } from '@vueuse/core';
 import { cloneDeep, throttle } from 'lodash-es';
-import path from 'path-browserify';
 import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file } from '~/api/tauriActions';
@@ -157,7 +157,7 @@ export const useFileEditorV2 = (
   const ts = useTabsStoreV2();
 
   const onRename = async (newName: string) => {
-    const np = path.join(path.dirname(opened._path), newName + '.md');
+    const np = await path.join(await path.dirname(opened._path), newName + '.md');
 
     ts._markPathAsIgnoredForDeletion(opened._path);
 

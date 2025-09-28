@@ -1,6 +1,6 @@
-import path from 'path-browserify';
 import { z } from 'zod';
 
+import { path } from '@tauri-apps/api';
 import * as fs from '@tauri-apps/plugin-fs';
 import { cloneDeep } from 'lodash-es';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
@@ -86,8 +86,8 @@ const pathGetterForSchemaConfig = async (
     throw new Error('Schema owner folder is not set');
   }
 
-  const folder = path.join(root, schemaOwnerFolder, '/.asom/');
-  const file = path.join(folder, fileName);
+  const folder = await path.join(root, schemaOwnerFolder, '/.asom/');
+  const file = await path.join(folder, fileName);
   return { folder, file };
 };
 
@@ -103,8 +103,8 @@ export class ConfigTiedToSchema<FileSchema extends z.ZodSchema> extends ConfigGe
 /** Root Folder Config */
 
 const pathGetterForRootFolder = async (root: string, fileName: string) => {
-  const folder = path.join(root, '/.asom_internal/');
-  const file = path.join(folder, fileName);
+  const folder = await path.join(root, '/.asom_internal/');
+  const file = await path.join(folder, fileName);
   return { folder, file };
 };
 

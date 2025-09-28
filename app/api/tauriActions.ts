@@ -123,3 +123,9 @@ export const c_delete_to_trash = async (path: string) => {
     (v) => v as ExtractIpcResponcesType<'c_delete_to_trash'>,
   );
 };
+
+export const c_is_event_relevant = async (openedPath: string, eventPath: string) => {
+  return invoke('c_is_event_relevant', { openedPath, eventPath }).then(
+    (v) => v as ExtractIpcResponcesType<'c_is_event_relevant'>,
+  );
+};
