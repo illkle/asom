@@ -5,8 +5,7 @@ use std::path::Path;
 use ts_rs::TS;
 
 use crate::cache::query::RecordFromDb;
-use crate::core::core_state::SchemasCacheMutex;
-use crate::schema::schema_cache::SchemaResult;
+use crate::schema::schema_cache::{SchemaResult, SchemasInMemoryCache};
 use crate::schema::types::{AttrValue, AttrValueOnDisk};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
 
@@ -27,7 +26,7 @@ pub struct RecordReadResult {
 }
 
 pub async fn read_file_by_path(
-    scm: &SchemasCacheMutex,
+    scm: &SchemasInMemoryCache,
     path_str: &str,
     read_mode: FileReadMode,
 ) -> Result<RecordReadResult, Box<ErrFR>> {
@@ -37,12 +36,10 @@ pub async fn read_file_by_path(
             .action_c(ErrFRActionCode::FileReadRetry, "Retry")
     })?;
 
-    let schemas_cache = scm.lock().await;
-    let files_schema = match schemas_cache.get_schema(Path::new(path_str)) {
+    let files_schema = match scm.get_schema(Path::new(path_str)).await {
         Some(v) => v,
         None => return Err(Box::new(ErrFR::new("Schema not found").raw(path_str))),
     };
-    drop(schemas_cache);
 
     let p = path_str.to_string();
     let content = get_file_content(path_str, &read_mode);

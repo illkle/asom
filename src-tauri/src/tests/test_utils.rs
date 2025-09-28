@@ -15,7 +15,11 @@ use fs_extra::dir::{self, CopyOptions};
 
 pub async fn app_creator() -> AppHandle<MockRuntime> {
     let app = create_mock_app();
-    app.manage(CoreStateManager::new());
+
+    let mut state = CoreStateManager::new();
+    state.database_conn.init_in_memory().await;
+
+    app.manage(state);
     app.handle().to_owned()
 }
 
@@ -75,8 +79,6 @@ pub async fn prepare_test_case(
     app: &AppHandle<MockRuntime>,
     test_case_name: TestCaseName,
 ) -> (PathBuf, Uuid) {
-    let core = app.state::<CoreStateManager>();
-
     let current_dir = current_dir().unwrap();
 
     let test_case_source = Path::new(&current_dir)
@@ -98,6 +100,7 @@ pub async fn prepare_test_case(
     )
     .unwrap();
 
+    let core = app.state::<CoreStateManager>();
     let init_result = core.init(app).await;
     assert!(init_result.is_ok());
 
@@ -106,8 +109,6 @@ pub async fn prepare_test_case(
 
     core.test_only_set_root_path(test_dir.to_string_lossy().to_string())
         .await;
-
-    core.database_conn.lock().await.test_only_init().await;
 
     let prepare_cache_result = core.prepare_cache(app).await;
     assert!(prepare_cache_result.is_ok());

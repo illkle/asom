@@ -32,10 +32,7 @@ async fn test_quick_file_creation() {
     assert!(watch_path_result.is_ok());
 
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();
@@ -67,10 +64,7 @@ async fn test_quick_file_creation() {
     }
 
     let final_state_check = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();

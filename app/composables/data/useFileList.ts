@@ -1,5 +1,5 @@
 import path from 'path-browserify';
-import { c_get_files_path } from '~/api/tauriActions';
+import { c_get_files_by_path } from '~/api/tauriActions';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
@@ -26,7 +26,7 @@ export const useFlesListV2 = ({
 }) => {
   const files = useQuery({
     key: () => FILES_LIST_KEY(opened, searchQuery.value, sort.value),
-    query: () => c_get_files_path(opened._path, searchQuery.value, sort.value),
+    query: () => c_get_files_by_path(opened._path),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });

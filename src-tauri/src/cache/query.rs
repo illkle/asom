@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Row, SqliteConnection};
+use sqlx::Row;
 use std::collections::HashMap;
 use std::path::Path;
 use ts_rs::TS;
 
-use crate::core::core_state::{DatabaseConnectionMutex, SchemasCacheMutex};
+use crate::cache::dbconn::DatabaseConnection;
 use crate::schema::schema_cache::SchemasInMemoryCache;
-use crate::schema::types::{AttrValue, Schema, SchemaAttrType};
+use crate::schema::types::{AttrValue, Schema};
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS, Default)]
@@ -20,7 +20,7 @@ pub struct RecordFromDb {
 }
 
 pub async fn get_files_abstact(
-    db: &mut SqliteConnection,
+    db: &DatabaseConnection,
     where_clause: String,
 ) -> Result<Vec<RecordFromDb>, Box<ErrFR>> {
     let q = format!(
@@ -29,7 +29,7 @@ pub async fn get_files_abstact(
     );
 
     let res = sqlx::query(&q)
-        .fetch_all(&mut *db)
+        .fetch_all(&db.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q)))?;
 
@@ -57,44 +57,20 @@ pub struct RecordListGetResult {
     pub records: Vec<RecordFromDb>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, TS)]
-#[ts(export)]
-pub struct SortOrder {
-    pub key: String,
-    pub descending: bool,
-}
-
 pub async fn get_files_by_path(
-    conn: &mut SqliteConnection,
-    schemas_cache: &mut SchemasInMemoryCache,
+    db: &DatabaseConnection,
+    schemas_cache: &SchemasInMemoryCache,
     path: String,
-    search_query: String,
-    sort: SortOrder,
 ) -> Result<RecordListGetResult, Box<ErrFR>> {
-    let schema = schemas_cache.get_schema_safe(Path::new(&path))?;
+    let schema = schemas_cache.get_schema_safe(Path::new(&path)).await?;
 
-    let sort_item = schema.schema.items.iter().find(|i| i.name == sort.key);
-
-    let sort_target = match sort_item {
-        Some(item) => match item.value {
-            SchemaAttrType::DatesPairCollection(_) => {
-                format!("files.attributes->'$.{}.value[0].finished'", sort.key)
-            }
-            SchemaAttrType::DateCollection(_) => {
-                format!("files.attributes->'$.{}.value[0]'", sort.key)
-            }
-            SchemaAttrType::Number(_) => {
-                format!("CAST(files.attributes->'$.{}.value' AS REAL)", sort.key)
-            }
-            _ => format!("files.attributes->'$.{}.value'", sort.key),
-        },
-        _ => "path".to_string(),
-    };
-
-    let  files = get_files_abstact(conn, format!(
-        "WHERE files.path LIKE concat('%', '{}', '%') AND files.search_index LIKE concat('%', '{}', '%') ORDER BY {} {}, path",
-        path, search_query.to_lowercase(), sort_target, if sort.descending { "DESC" } else { "ASC" }
-    ))
+    let files = get_files_abstact(
+        db,
+        format!(
+            "WHERE files.path LIKE concat('%', '{}', '%') ORDER BY path",
+            path
+        ),
+    )
     .await?;
 
     Ok(RecordListGetResult {
@@ -103,9 +79,9 @@ pub async fn get_files_by_path(
     })
 }
 
-pub async fn get_all_tags(conn: &mut SqliteConnection) -> Result<Vec<String>, sqlx::Error> {
+pub async fn get_all_tags(db: &DatabaseConnection) -> Result<Vec<String>, sqlx::Error> {
     let res = sqlx::query("SELECT DISTINCT value FROM tags")
-        .fetch_all(conn)
+        .fetch_all(&db.get_conn().await)
         .await?;
 
     let result: Vec<String> = res.iter().map(|r| r.get("value")).collect();
@@ -132,25 +108,21 @@ pub struct FolderOnDisk {
 
 pub async fn get_all_folders(
     root_path: String,
-    dcm: &DatabaseConnectionMutex,
-    scm: &SchemasCacheMutex,
+    db: &DatabaseConnection,
+    scm: &SchemasInMemoryCache,
 ) -> Result<FolderListGetResult, Box<ErrFR>> {
-    let mut db = dcm.lock().await;
-    let conn = db.get_conn().await;
-
     let res = sqlx::query("SELECT * FROM folders")
-        .fetch_all(conn)
+        .fetch_all(&db.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
 
-    drop(db);
+    let lock = scm.get_read_lock().await;
 
-    let scm = scm.lock().await;
     let result: Vec<FolderOnDisk> = res
         .iter()
         .map(|r| {
             let pstring: String = r.get("path");
-            let sch = scm.get_schema(Path::new(&pstring));
+            let sch = scm.get_schema_by_lock(&lock, Path::new(&pstring));
             FolderOnDisk {
                 path: pstring.clone(),
                 path_relative: pstring.clone().replace(&root_path, ""),
@@ -171,8 +143,8 @@ pub async fn get_all_folders(
 
 pub async fn get_all_folders_by_schema(
     root_path: String,
-    dcm: &DatabaseConnectionMutex,
-    scm: &SchemasCacheMutex,
+    db: &DatabaseConnection,
+    scm: &SchemasInMemoryCache,
     schema_path: String,
 ) -> Result<FolderListGetResult, Box<ErrFR>> {
     let schema_p = Path::new(&schema_path);
@@ -182,23 +154,21 @@ pub async fn get_all_folders_by_schema(
         false => schema_p,
     };
 
-    let mut db = dcm.lock().await;
-    let conn = db.get_conn().await;
-
     let res = sqlx::query(&format!(
         "SELECT * FROM folders WHERE path LIKE concat('{}', '%')",
         schema_folder.to_string_lossy()
     ))
-    .fetch_all(conn)
+    .fetch_all(&db.get_conn().await)
     .await
     .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
 
-    let schemas_cache = scm.lock().await;
+    let lock = scm.get_read_lock().await;
+
     let result: Vec<FolderOnDisk> = res
         .iter()
         .filter_map(|r| {
             let pstring: String = r.get("path");
-            let sch = schemas_cache.get_schema(Path::new(&pstring));
+            let sch = scm.get_schema_by_lock(&lock, Path::new(&pstring));
 
             sch.as_ref()?;
 

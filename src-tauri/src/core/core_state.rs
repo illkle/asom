@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 
 use std::{
     num::NonZeroU32,
@@ -32,14 +32,11 @@ use std::{
 
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
-pub type DatabaseConnectionMutex = Mutex<DatabaseConnection>;
-pub type SchemasCacheMutex = Mutex<SchemasInMemoryCache>;
-
 #[derive(Debug)]
 pub struct CoreStateManager {
     init_done: Mutex<bool>,
-    root_path: Mutex<Option<String>>,
-    cached_root_path: Mutex<Option<String>>,
+    root_path: RwLock<Option<String>>,
+    cached_root_path: RwLock<Option<String>>,
     watcher: Mutex<GlobalWatcher>,
 
     /*
@@ -49,20 +46,20 @@ pub struct CoreStateManager {
     pub emit_rate_limit:
         Arc<RateLimiter<NotKeyed, InMemoryState, QuantaClock, NoOpMiddleware<QuantaInstant>>>,
     pub last_rate_overflow: Mutex<SystemTime>,
-    pub schemas_cache: SchemasCacheMutex,
+    pub schemas_cache: SchemasInMemoryCache,
 
-    pub database_conn: DatabaseConnectionMutex,
+    pub database_conn: DatabaseConnection,
 }
 
 impl CoreStateManager {
     pub fn new() -> Self {
         Self {
             init_done: Mutex::new(false),
-            root_path: Mutex::new(None),
-            cached_root_path: Mutex::new(None),
+            root_path: RwLock::new(None),
+            cached_root_path: RwLock::new(None),
             watcher: Mutex::new(GlobalWatcher::new().unwrap()),
-            schemas_cache: Mutex::new(SchemasInMemoryCache::new()),
-            database_conn: Mutex::new(DatabaseConnection::new()),
+            schemas_cache: SchemasInMemoryCache::new(),
+            database_conn: DatabaseConnection::new(),
             emit_rate_limit: Arc::new(RateLimiter::direct(Quota::per_second(
                 NonZeroU32::new(30).unwrap(),
             ))),
@@ -72,7 +69,7 @@ impl CoreStateManager {
 
     #[cfg(test)]
     pub async fn test_only_set_root_path(&self, path: String) {
-        let mut root_path = self.root_path.lock().await;
+        let mut root_path = self.root_path.write().await;
         *root_path = Some(path);
     }
 
@@ -94,7 +91,7 @@ impl CoreStateManager {
                 if !Path::new(&path).exists() {
                     return Ok(None);
                 }
-                let _ = self.root_path.lock().await.insert(path.clone());
+                let _ = self.root_path.write().await.insert(path.clone());
 
                 Ok(Some(path))
             }
@@ -104,7 +101,7 @@ impl CoreStateManager {
 
     pub async fn root_path_safe(&self) -> Result<String, Box<ErrFR>> {
         self.root_path
-            .lock()
+            .read()
             .await
             .clone()
             .ok_or(Box::new(ErrFR::new("Root path is not set")))
@@ -112,7 +109,7 @@ impl CoreStateManager {
 
     pub async fn cached_root_path(&self) -> Option<String> {
         self.cached_root_path
-            .lock()
+            .read()
             .await
             .as_ref()
             .map(|path| path.clone())
@@ -160,7 +157,7 @@ impl CoreStateManager {
             return Ok(());
         }
 
-        let mut cur_cached_root_path = self.cached_root_path.lock().await;
+        let mut cur_cached_root_path = self.cached_root_path.write().await;
 
         if let Some(rp_path) = &rp {
             if let Some(cached_root_path) = &*cur_cached_root_path {
@@ -184,7 +181,7 @@ impl CoreStateManager {
     ) -> Result<(), Box<ErrFR>> {
         let rp = self.root_path_safe().await?;
 
-        self.schemas_cache.lock().await.clear_cache();
+        self.schemas_cache.clear_cache().await;
         create_db_tables(&self.database_conn).await.map_err(|e| {
             ErrFR::new("Error when creating tables in cache db")
                 .info("This should not happen. Try restarting the app, else report as bug.")

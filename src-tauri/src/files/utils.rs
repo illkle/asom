@@ -25,8 +25,8 @@ pub struct FileContent {
     pub content: String,
 }
 
-pub fn get_file_content(file_path: &str, read_mode: &FileReadMode) -> io::Result<FileContent> {
-    let file = File::open(file_path)?;
+pub fn get_file_content(path_absolute: &str, read_mode: &FileReadMode) -> io::Result<FileContent> {
+    let file = File::open(path_absolute)?;
     let reader = BufReader::new(file);
 
     let mut front_matter = String::new();

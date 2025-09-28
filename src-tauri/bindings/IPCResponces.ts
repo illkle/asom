@@ -10,7 +10,7 @@ import type { SchemaResult } from './SchemaResult';
 export type IPCResponces = {
   c_init: { Ok: string | null } | { Err: ErrFR };
   c_get_root_path: { Ok: string | null } | { Err: ErrFR };
-  c_get_files_path: { Ok: RecordListGetResult } | { Err: ErrFR };
+  c_get_files_by_path: { Ok: RecordListGetResult } | { Err: ErrFR };
   c_get_all_tags: { Ok: Array<string> } | { Err: ErrFR };
   c_get_all_folders: { Ok: FolderListGetResult } | { Err: ErrFR };
   c_get_all_folders_by_schema: { Ok: FolderListGetResult } | { Err: ErrFR };

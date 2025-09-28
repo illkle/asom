@@ -36,10 +36,7 @@ async fn test_init_with_folder() {
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
 
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
         assert!(files.is_ok());
 
         assert!(
@@ -68,10 +65,7 @@ async fn test_basic_file_ops() {
     assert!(watch_path_result.is_ok());
 
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();
@@ -103,10 +97,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_delete_check = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -134,10 +125,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_move_back = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -175,10 +163,7 @@ async fn test_basic_file_ops() {
         .to_string();
 
     let after_rename = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -209,10 +194,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_update = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -240,10 +222,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_create = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -413,9 +392,7 @@ async fn test_schema_ops() {
 
     // Check initial schemas state
     {
-        let schemas_cache = core.schemas_cache.lock().await;
-
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.schemas_cache.get_schemas_list().await;
         assert!(schemas.len() == 1, "Initial schemas count is not correct");
 
         println!("schemas: {:?}", schemas);
@@ -426,21 +403,23 @@ async fn test_schema_ops() {
         );
 
         assert!(
-            schemas_cache
+            core.schemas_cache
                 .get_schema(&test_dir.clone().join("books"))
+                .await
                 .is_some(),
             "Initial schema for owner folder was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
+            core.schemas_cache
                 .get_schema(&test_dir.clone().join("books").join("favorites"))
+                .await
                 .is_some(),
             "Initial schema for sub folder was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
+            core.schemas_cache
                 .get_schema(
                     &test_dir
                         .clone()
@@ -448,13 +427,15 @@ async fn test_schema_ops() {
                         .join("favorites")
                         .join("How to Read a Book.md")
                 )
+                .await
                 .is_some(),
             "Schema for existing file was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
+            core.schemas_cache
                 .get_schema(&test_dir.clone().join("lol").join("nonexisting"))
+                .await
                 .is_none(),
             "Schema for non existing folder was returned by get_schema_cached"
         );
@@ -479,8 +460,7 @@ async fn test_schema_ops() {
     .unwrap();
 
     let after_rename = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.schemas_cache.get_schemas_list().await;
         schemas.is_empty()
     };
 
@@ -506,11 +486,12 @@ async fn test_schema_ops() {
     .unwrap();
 
     let after_rename_back = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.schemas_cache.get_schemas_list().await;
 
-        let schema_for_favs =
-            schemas_cache.get_schema(&test_dir.clone().join("books").join("favorites"));
+        let schema_for_favs = core
+            .schemas_cache
+            .get_schema(&test_dir.clone().join("books").join("favorites"))
+            .await;
 
         schemas.len() == 1 && schema_for_favs.is_some()
     };
@@ -530,36 +511,38 @@ async fn test_nested_ops() {
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
 
     let initial_state_check = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.schemas_cache.get_schemas_list().await;
 
         let books_schema =
             schemas.get(&test_dir.clone().join("books").to_string_lossy().to_string());
 
-        let movies_schema = schemas_cache.get_schema(&test_dir.clone().join("movies"));
+        let movies_schema = core
+            .schemas_cache
+            .get_schema(&test_dir.clone().join("movies"))
+            .await;
 
-        let schema_for_audiobook = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books")
-                .join("audiobooks")
-                .join("Sample Audiobook.md"),
-        );
+        let schema_for_audiobook = core
+            .schemas_cache
+            .get_schema(
+                &test_dir
+                    .clone()
+                    .join("books")
+                    .join("audiobooks")
+                    .join("Sample Audiobook.md"),
+            )
+            .await;
 
-        let schema_for_book = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books")
-                .join("How to Take Smart Notes.md"),
-        );
+        let schema_for_book = core
+            .schemas_cache
+            .get_schema(
+                &test_dir
+                    .clone()
+                    .join("books")
+                    .join("How to Take Smart Notes.md"),
+            )
+            .await;
 
-        drop(schemas_cache);
-
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
-        drop(db);
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         let folders = get_all_folders(
             core.root_path_safe().await.unwrap(),
@@ -610,31 +593,41 @@ async fn test_nested_ops() {
     .unwrap();
 
     let after_rename_schemas = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
+        let books_schema = core
+            .schemas_cache
+            .get_schema(&test_dir.clone().join("books_renamed"))
+            .await;
 
-        let books_schema = schemas_cache.get_schema(&test_dir.clone().join("books_renamed"));
+        let audiobooks_schema = core
+            .schemas_cache
+            .get_schema(
+                &test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .join("audiobooks_renamed"),
+            )
+            .await;
 
-        let audiobooks_schema = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("audiobooks_renamed"),
-        );
+        let schema_for_audiobook = core
+            .schemas_cache
+            .get_schema(
+                &test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .join("audiobooks_renamed")
+                    .join("Sample Audiobook.md"),
+            )
+            .await;
 
-        let schema_for_audiobook = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("audiobooks_renamed")
-                .join("Sample Audiobook.md"),
-        );
-
-        let schema_for_book = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("How to Read a Book.md"),
-        );
+        let schema_for_book = core
+            .schemas_cache
+            .get_schema(
+                &test_dir
+                    .clone()
+                    .join("books_renamed")
+                    .join("How to Read a Book.md"),
+            )
+            .await;
 
         books_schema.is_some()
             && audiobooks_schema.is_some()
@@ -650,16 +643,9 @@ async fn test_nested_ops() {
     );
 
     let afrer_rename_counts = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
+        let schemas = core.schemas_cache.get_schemas_list().await;
 
-        let schemas = schemas_cache.get_schemas_list().await;
-        drop(schemas_cache);
-
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
-        drop(db);
+        let files = get_files_abstact(&core.database_conn, "".to_string()).await;
 
         let folders = get_all_folders(
             core.root_path_safe().await.unwrap(),
