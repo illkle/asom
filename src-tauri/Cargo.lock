@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "asom"
-version = "0.2.2"
+version = "0.2.8"
 dependencies = [
  "chrono",
  "fs_extra",
