@@ -291,10 +291,11 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
                     // We ignore for non existing files to prevent trying to update renamed file by it's old path
                     _ => Ok(vec![]),
                 },
-                // Windows always sends "Any" as kind
+                // Windows sends "Any" for folder where a file was created\removed.
                 ModifyKind::Any => match (path_absolute.extension(), path_absolute.is_dir()) {
                     (Some(ext), false) => handle_file_update(ctx, path_absolute, ext).await,
-                    (None, true) => handle_folder_add(ctx, path_absolute).await,
+                    // EXPERIMENTAL: I am 95% sure we don't care about this event for folders, though it's worth more tests
+                    // (None, true) => handle_folder_add(ctx, path_absolute).await,
                     _ => Ok(vec![]),
                 },
                 _ => Ok(vec![]),
@@ -314,6 +315,10 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
         } else if let Err(e) = res {
             errors.push(*e);
         }
+    }
+
+    if !events.is_empty() {
+        println!("processed event: {:?} {:?}", event.kind, event.paths);
     }
 
     HandleEventResult { events, errors }

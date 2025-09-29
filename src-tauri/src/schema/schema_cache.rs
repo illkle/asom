@@ -236,7 +236,7 @@ impl SchemasInMemoryCache {
             .iter()
             .await
             .into_iter()
-            .filter(|(p, _)| p.starts_with(&path_relative))
+            .filter(|(p, _)| p.starts_with(path_relative))
             .map(|(p, _)| p)
             .collect();
 
