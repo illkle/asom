@@ -183,6 +183,7 @@ import {
 } from '~/composables/stores/useTabsStoreV2';
 import { baseSizeByType, getSortFunction } from './helpers';
 import ListItemDisplay from './ListItemDisplay.vue';
+import { useFilesListV2 } from './useFileList';
 
 const props = defineProps({
   opened: {
@@ -217,13 +218,8 @@ watch(
   }, 100),
 );
 
-const { files: q, filesMemo } = useFlesListV2({
+const { files: q } = useFilesListV2({
   opened: props.opened,
-  searchQuery: toRef(''),
-  sort: computed(() => ({
-    key: 'title',
-    descending: false,
-  })),
 });
 
 const visibleSchemaItems = computed(

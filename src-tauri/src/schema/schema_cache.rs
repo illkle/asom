@@ -15,6 +15,7 @@ use ts_rs::TS;
 
 use super::types::{Schema, SCHEMA_VERSION};
 use crate::core::core_state::AppContext;
+use crate::schema::types::SchemaLocation;
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Debug)]
@@ -26,9 +27,8 @@ pub struct SchemasInMemoryCache {
 #[derive(Debug, Clone, TS, Serialize, Deserialize)]
 #[ts(export)]
 pub struct SchemaResult {
-    pub file_path: PathBuf,
-    pub owner_folder: PathBuf,
     pub schema: Schema,
+    pub location: SchemaLocation,
 }
 
 const INTERNAL_FOLDER_NAME: &str = ".asom";
@@ -97,11 +97,13 @@ impl SchemasInMemoryCache {
     ) -> Option<SchemaResult> {
         if let Some(value) = map.get(path_relative) {
             return Some(SchemaResult {
-                file_path: path_relative
-                    .to_path_buf()
-                    .join(INTERNAL_FOLDER_NAME)
-                    .join(SCHEMA_FILE_NAME),
-                owner_folder: path_relative.to_path_buf(),
+                location: SchemaLocation {
+                    schema_path: path_relative
+                        .to_path_buf()
+                        .join(INTERNAL_FOLDER_NAME)
+                        .join(SCHEMA_FILE_NAME),
+                    schema_owner_folder: path_relative.to_path_buf(),
+                },
                 schema: value.clone(),
             });
         }
@@ -110,11 +112,13 @@ impl SchemasInMemoryCache {
         while let Some(parent) = current.parent() {
             if let Some(value) = map.get(parent) {
                 return Some(SchemaResult {
-                    file_path: parent
-                        .to_path_buf()
-                        .join(INTERNAL_FOLDER_NAME)
-                        .join(SCHEMA_FILE_NAME),
-                    owner_folder: parent.to_path_buf(),
+                    location: SchemaLocation {
+                        schema_path: parent
+                            .to_path_buf()
+                            .join(INTERNAL_FOLDER_NAME)
+                            .join(SCHEMA_FILE_NAME),
+                        schema_owner_folder: parent.to_path_buf(),
+                    },
                     schema: value.clone(),
                 });
             }
@@ -124,9 +128,9 @@ impl SchemasInMemoryCache {
         None
     }
 
-    pub async fn get_schema(&self, path: &Path) -> Option<SchemaResult> {
+    pub async fn get_schema(&self, path_relative: &Path) -> Option<SchemaResult> {
         let map = self.map.read().await;
-        self.get_schema_internal(&map, path)
+        self.get_schema_internal(&map, path_relative)
     }
 
     pub fn get_schema_by_lock(
@@ -216,10 +220,7 @@ impl SchemasInMemoryCache {
         ctx: &AppContext,
         path_absolute: PathBuf,
     ) -> Result<(), Box<ErrFR>> {
-        println!("remove_schema {:?}", path_absolute);
         let (_, folder_path) = locate_schema_and_folder(&path_absolute)?;
-
-        println!("remove_schema folder_path {:?}", folder_path);
 
         let relative_folder_path = ctx.absolute_path_to_relative(&folder_path).await?;
 
@@ -229,13 +230,8 @@ impl SchemasInMemoryCache {
 
     pub async fn remove_schemas_with_children(
         &self,
-        ctx: &AppContext,
-        path_absolute: PathBuf,
+        path_relative: &Path,
     ) -> Result<(), Box<ErrFR>> {
-        println!("remove_schemas_with_children {:?}", path_absolute);
-
-        let path_relative = ctx.absolute_path_to_relative(&path_absolute).await?;
-
         let paths_to_remove: Vec<PathBuf> = self
             .iter()
             .await

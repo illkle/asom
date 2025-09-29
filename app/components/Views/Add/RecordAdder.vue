@@ -58,7 +58,7 @@ const schemaFromActiveTab = useSchemaByPath(pathFromTab);
 
 const schemaFromActiveTabIndex = computed(() => {
   const index = schemasArray.value.findIndex(
-    ([p]) => p === schemaFromActiveTab.data.value?.owner_folder,
+    ([p]) => p === schemaFromActiveTab.data.value?.location.schema_owner_folder,
   );
   return index < 0 ? null : index;
 });

@@ -37,11 +37,7 @@ pub async fn cache_file(
     ctx: &AppContext,
     path_absolute: &Path,
 ) -> Result<RecordFromDb, Box<ErrFR>> {
-    println!("cache_file {:?}", path_absolute);
-
     let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
-
-    println!("cache_file relative {:?}", path_relative);
 
     match read_file_by_path(
         ctx,
@@ -51,14 +47,10 @@ pub async fn cache_file(
     .await
     {
         Ok(file) => {
-            println!("insert_file_into_cache_db {:?}", path_absolute);
             insert_file_into_cache_db(ctx, &file).await?;
             Ok(file.record)
         }
-        Err(e) => {
-            println!("cache_file error {:?}", e);
-            Err(e)
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -165,10 +157,8 @@ pub async fn remove_folder_from_cache(
 
 pub async fn remove_files_in_folder_from_cache(
     ctx: &AppContext,
-    path_absolute: &Path,
+    path_relative: &Path,
 ) -> Result<(), Box<ErrFR>> {
-    let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
-
     sqlx::query("DELETE FROM files WHERE path LIKE concat(?1, '%')")
         .bind(path_relative.to_string_lossy().to_string())
         .execute(&ctx.database_conn.get_conn().await)

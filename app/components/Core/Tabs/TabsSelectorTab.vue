@@ -6,8 +6,13 @@
       isActive ? 'rounded-tl-md rounded-tr-md bg-background' : 'hover:bg-accent',
     ]"
   >
-    <div class="truncate" :class="isNewAndAnimating && 'animate-new'">
-      {{ text }}
+    <div class="flex items-center gap-1 truncate text-xs">
+      <div>
+        <FolderIcon v-if="display.type === 'folder'" :size="12" />
+        <FileIcon v-if="display.type === 'file'" :size="12" />
+      </div>
+
+      {{ display.label }}
     </div>
 
     <Button variant="ghost" size="icon" class="w-6 h-6" @mousedown.stop @click.stop="emit('close')">
@@ -17,7 +22,7 @@
 </template>
 
 <script lang="ts" setup>
-import { XIcon } from 'lucide-vue-next';
+import { FileIcon, FolderIcon, XIcon } from 'lucide-vue-next';
 
 import { computed, type PropType } from 'vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
@@ -53,23 +58,20 @@ const capitalize = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
-const text = computed(() => {
-  if (!props.item) return '';
+const display = computed(() => {
+  if (!props.item) return { label: '', type: '' };
 
   const opened = props.item.history[props.item.historyPointer]!;
 
   if (opened._type === 'folder') {
-    if (opened._path === rootPath.value || !opened._path.length) {
-      return 'All Books';
-    }
-    return opened._path.replace(rootPath.value, '').replace(/[\\/]/, '');
+    return { label: opened._path.split(/[\\/]/).pop(), type: 'folder' };
   }
 
   if (opened._type === 'file') {
-    return opened._path.split(/[\\/]/).pop();
+    return { label: opened._path.split(/[\\/]/).pop(), type: 'file' };
   }
 
-  return opened._type;
+  return { label: opened._type, type: opened._type };
 });
 </script>
 

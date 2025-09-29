@@ -491,8 +491,8 @@ const useTabsPreservation = () => {
 
 const useCloseInvalidTabsOnDeletions = () => {
   const store = useTabsStoreV2();
-  useListenToEvent('FileRemove', ({ c: path }) => {
-    store._handlePathDeletion(path, false);
+  useListenToEvent('FileRemove', ({ c }) => {
+    store._handlePathDeletion(c.path, false);
   });
 
   useListenToEvent('FolderRemove', ({ c: event }) => {

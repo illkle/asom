@@ -54,7 +54,7 @@ const props = defineProps({
 
 const schema = useSchemaByPath(computed(() => props.opened._path));
 
-const ownerFolder = computed(() => schema.data.value?.owner_folder ?? '');
+const ownerFolder = computed(() => schema.data.value?.location.schema_owner_folder ?? '');
 
 const viewLayoutData = useViewLayout(ownerFolder);
 

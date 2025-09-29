@@ -5,7 +5,8 @@ use std::path::Path;
 use ts_rs::TS;
 
 use crate::core::core_state::AppContext;
-use crate::schema::types::{AttrValue, Schema};
+use crate::schema::schema_cache::SchemaResult;
+use crate::schema::types::AttrValue;
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS, Default)]
@@ -23,7 +24,6 @@ pub async fn get_files_abstract(
     ctx: &AppContext,
     where_clause: String,
 ) -> Result<Vec<RecordFromDb>, Box<ErrFR>> {
-    println!("get_files_abstract {:?}", where_clause);
     let q = format!(
         "SELECT path, modified, attributes FROM files {}",
         where_clause
@@ -33,8 +33,6 @@ pub async fn get_files_abstract(
         .fetch_all(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q)))?;
-
-    println!("get_files_abstract res {:?}", res.len());
 
     let result_iter = res.iter().filter_map(|r| {
         let attrs_raw = r.get("attributes");
@@ -60,7 +58,7 @@ pub async fn get_files_abstract(
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
 pub struct RecordListGetResult {
-    pub schema: Schema,
+    pub schema: SchemaResult,
     pub records: Vec<RecordFromDb>,
 }
 
@@ -68,22 +66,16 @@ pub async fn get_files_by_path(
     ctx: &AppContext,
     path: &Path,
 ) -> Result<RecordListGetResult, Box<ErrFR>> {
-    println!("get_files_by_path {:?}", path);
     let schema = ctx.schemas_cache.get_schema_safe(path).await?;
-    println!("get_files_by_path schema {:?}", schema);
-    let files = get_files_abstract(
+    let records = get_files_abstract(
         ctx,
         format!(
-            "WHERE files.path LIKE concat('%', '{}', '%') ORDER BY path",
+            "WHERE files.path LIKE concat('{}', '%') ORDER BY path",
             path.to_string_lossy()
         ),
     )
     .await?;
-
-    Ok(RecordListGetResult {
-        schema: schema.schema,
-        records: files,
-    })
+    Ok(RecordListGetResult { schema, records })
 }
 
 pub async fn get_all_tags(ctx: &AppContext) -> Result<Vec<String>, sqlx::Error> {
@@ -135,9 +127,9 @@ pub async fn get_all_folders(ctx: &AppContext) -> Result<FolderListGetResult, Bo
                 has_schema: sch.is_some(),
                 own_schema: sch
                     .as_ref()
-                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .is_some_and(|s| s.location.schema_owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
-                    s.file_path.to_string_lossy().to_string()
+                    s.location.schema_path.to_string_lossy().to_string()
                 }),
             }
         })
@@ -177,7 +169,7 @@ pub async fn get_all_folders_by_schema(
 
             sch.as_ref()?;
 
-            if sch.as_ref().unwrap().owner_folder != schema_folder {
+            if sch.as_ref().unwrap().location.schema_owner_folder != schema_folder {
                 return None;
             }
 
@@ -187,9 +179,9 @@ pub async fn get_all_folders_by_schema(
                 has_schema: sch.is_some(),
                 own_schema: sch
                     .as_ref()
-                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .is_some_and(|s| s.location.schema_owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
-                    s.file_path.to_string_lossy().to_string()
+                    s.location.schema_path.to_string_lossy().to_string()
                 }),
             })
         })

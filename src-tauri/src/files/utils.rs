@@ -27,8 +27,6 @@ pub struct FileContent {
 }
 
 pub fn get_file_content(path_absolute: &Path, read_mode: &FileReadMode) -> io::Result<FileContent> {
-    println!("get_file_content {:?}", path_absolute);
-
     let file = File::open(path_absolute)?;
     let reader = BufReader::new(file);
 

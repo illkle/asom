@@ -1,10 +1,16 @@
 // Types are manually reexported to allow for making custom types when needed and void confusion in intellisense
+import type { FileEventDataExisting } from '~~/src-tauri/bindings/FileEventDataExisting';
+import type { FileEventDataRemoved } from '~~/src-tauri/bindings/FileEventDataRemoved';
+import type { FolderEventData } from '~~/src-tauri/bindings/FolderEventData';
+import type { FolderEventDataExisting } from '~~/src-tauri/bindings/FolderEventDataExisting';
+import type { SchemaLocation } from '~~/src-tauri/bindings/SchemaLocation';
 import type { AttrValue } from '../../src-tauri/bindings/AttrValue';
 import type { DatePair } from '../../src-tauri/bindings/DatePair';
 import type { DefaultSchema } from '../../src-tauri/bindings/DefaultSchema';
 import type { EmptySettings } from '../../src-tauri/bindings/EmptySettings';
 import type { ErrFR } from '../../src-tauri/bindings/ErrFR';
 import type { ErrFRActionCode } from '../../src-tauri/bindings/ErrFRActionCode';
+import type { FileBreadCrumbs } from '../../src-tauri/bindings/FileBreadCrumbs';
 import type { FolderListGetResult } from '../../src-tauri/bindings/FolderListGetResult';
 import type { ImageSettings } from '../../src-tauri/bindings/ImageSettings';
 import type { InputSize } from '../../src-tauri/bindings/InputSize';
@@ -61,6 +67,11 @@ export type {
   ErrFRActionCode,
   ExtractIPCEmitEventData,
   ExtractIpcResponcesType,
+  FileBreadCrumbs,
+  FileEventDataExisting,
+  FileEventDataRemoved,
+  FolderEventData,
+  FolderEventDataExisting,
   FolderListGetResult,
   ImageSettings,
   InputSize,
@@ -72,6 +83,7 @@ export type {
   Schema,
   SchemaAttrType,
   SchemaItem,
+  SchemaLocation,
   SchemaResult,
   SortOrder,
   TextCollectionSettings,

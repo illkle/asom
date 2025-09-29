@@ -1,24 +1,17 @@
 use notify::event::{CreateKind, ModifyKind, RemoveKind, RenameMode};
 use notify::Event;
 use notify::EventKind;
-use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::path::Path;
-use tauri::{AppHandle, Manager};
 
 use crate::cache::cache_thing::{
     cache_file, cache_files_folders_schemas, remove_file_from_cache,
     remove_files_in_folder_from_cache, remove_folder_from_cache,
 };
-use crate::core::core_state::{AppContext, CoreStateManager};
-use crate::emitter::{emit_event, IPCEmitEvent};
+use crate::core::core_state::AppContext;
+use crate::emitter::{FileEventDataExisting, FileEventDataRemoved, FolderEventData, IPCEmitEvent};
 
-use crate::utils::errorhandling::{send_err_to_frontend, ErrFR};
-use ts_rs::TS;
-
-async fn schema_exists(ctx: &AppContext, path_relative: &Path) -> bool {
-    ctx.schemas_cache.get_schema(path_relative).await.is_some()
-}
+use crate::utils::errorhandling::ErrFR;
 
 async fn handle_file_remove(
     ctx: &AppContext,
@@ -26,12 +19,23 @@ async fn handle_file_remove(
     ext: &OsStr,
 ) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     match ext.to_str() {
-        Some("md") => match remove_file_from_cache(ctx, path_absolute).await {
-            Ok(_) => Ok(vec![IPCEmitEvent::FileRemove(
-                path_absolute.to_string_lossy().to_string(),
-            )]),
-            Err(e) => Err(e),
-        },
+        Some("md") => {
+            let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+
+            let schema = ctx
+                .schemas_cache
+                .get_schema(&path_relative)
+                .await
+                .ok_or(Box::new(ErrFR::new("Schema not found for file remove")))?;
+
+            match remove_file_from_cache(ctx, path_absolute).await {
+                Ok(_) => Ok(vec![IPCEmitEvent::FileRemove(FileEventDataRemoved {
+                    path: path_relative.to_string_lossy().to_string(),
+                    schema: schema.location,
+                })]),
+                Err(e) => Err(e),
+            }
+        }
         Some("yaml") => {
             let path_parent = match path_absolute.parent() {
                 Some(v) => v,
@@ -60,17 +64,21 @@ async fn handle_file_add(
     path_absolute: &Path,
     ext: &OsStr,
 ) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
-    println!("handle_file_add {:?}", path_absolute);
     match ext.to_str() {
         Some("md") => {
             let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
 
-            if !schema_exists(ctx, &path_relative).await {
-                return Ok(vec![]);
-            }
+            let schema = match ctx.schemas_cache.get_schema(&path_relative).await {
+                Some(v) => v,
+                None => return Ok(vec![]),
+            };
 
             match cache_file(ctx, path_absolute).await {
-                Ok(v) => Ok(vec![IPCEmitEvent::FileAdd(v)]),
+                Ok(record) => Ok(vec![IPCEmitEvent::FileAdd(FileEventDataExisting {
+                    path: path_relative.to_string_lossy().to_string(),
+                    record,
+                    schema: schema.location,
+                })]),
                 Err(e) => Err(e),
             }
         }
@@ -105,12 +113,16 @@ async fn handle_file_update(
         Some("md") => {
             let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
 
-            if !schema_exists(ctx, &path_relative).await {
-                return Ok(vec![]);
-            }
-
+            let schema = match ctx.schemas_cache.get_schema(&path_relative).await {
+                Some(v) => v,
+                None => return Ok(vec![]),
+            };
             match cache_file(ctx, path_absolute).await {
-                Ok(v) => Ok(vec![IPCEmitEvent::FileUpdate(v)]),
+                Ok(record) => Ok(vec![IPCEmitEvent::FileUpdate(FileEventDataExisting {
+                    record,
+                    path: path_relative.to_string_lossy().to_string(),
+                    schema: schema.location,
+                })]),
                 Err(e) => Err(e),
             }
         }
@@ -131,14 +143,6 @@ async fn handle_file_update(
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, TS)]
-#[ts(export)]
-pub struct FolderEventEmit {
-    pub path: String,
-    #[serde(rename = "schemaPath")]
-    pub schema_path: Option<String>,
-}
-
 // Folder remove and folder add are called only for exact folder that was modified.
 // This means that renaming folder -> folder_renamed will cause events for sub folders and sub files
 // Therefore we need to remove\add all files in that directory
@@ -149,16 +153,22 @@ async fn handle_folder_remove(
     match remove_folder_from_cache(ctx, path_absolute).await {
         Err(e) => Err(e),
         Ok(_) => {
-            remove_files_in_folder_from_cache(ctx, path_absolute).await?;
+            let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+            let schema = ctx
+                .schemas_cache
+                .get_schema(&path_relative)
+                .await
+                .ok_or(Box::new(ErrFR::new("Schema not found for folder remove")))?;
 
+            remove_files_in_folder_from_cache(ctx, &path_relative).await?;
             ctx.schemas_cache
-                .remove_schemas_with_children(ctx, path_absolute.to_path_buf())
+                .remove_schemas_with_children(&path_relative)
                 .await?;
 
             Ok(vec![
-                IPCEmitEvent::FolderRemove(FolderEventEmit {
-                    path: path_absolute.to_string_lossy().to_string(),
-                    schema_path: None,
+                IPCEmitEvent::FolderRemove(FolderEventData {
+                    path: path_relative.to_string_lossy().to_string(),
+                    schema: schema.location,
                 }),
                 IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
             ])
@@ -172,18 +182,26 @@ async fn handle_folder_add(
 ) -> Result<Vec<IPCEmitEvent>, Box<ErrFR>> {
     match cache_files_folders_schemas(ctx, path_absolute).await {
         Err(e) => Err(e),
-        Ok(_) => Ok(vec![
-            IPCEmitEvent::FolderAdd(FolderEventEmit {
-                path: path_absolute.to_string_lossy().to_string(),
-                schema_path: ctx
-                    .schemas_cache
-                    .get_schema(path_absolute)
-                    .await
-                    .map(|v| v.file_path.to_string_lossy().to_string()),
-            }),
-            IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
-        ]),
+        Ok(_) => {
+            let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
+            let schema = match ctx.schemas_cache.get_schema(&path_relative).await {
+                Some(v) => v,
+                None => return Ok(vec![]),
+            };
+            Ok(vec![
+                IPCEmitEvent::FolderAdd(FolderEventData {
+                    path: path_relative.to_string_lossy().to_string(),
+                    schema: schema.location,
+                }),
+                IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
+            ])
+        }
     }
+}
+
+pub struct HandleEventResult {
+    pub events: Vec<IPCEmitEvent>,
+    pub errors: Vec<ErrFR>,
 }
 
 /**
@@ -192,11 +210,9 @@ async fn handle_folder_add(
  * - Windows send ModifyKind::Any for file changes, but ModifyKind::Name with correct From and To for renames
  * - Mac sends RenameMode::Any for both files on rename
  */
-pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
-    let core = app.state::<CoreStateManager>();
-    let ctx = &core.context;
-
-    println!("event: {:?}", event);
+pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
+    let mut events: Vec<IPCEmitEvent> = vec![];
+    let mut errors: Vec<ErrFR> = vec![];
 
     for (index, path_absolute) in event.paths.iter().enumerate() {
         let res = match event.kind {
@@ -293,16 +309,12 @@ pub async fn handle_event<T: tauri::Runtime>(event: Event, app: &AppHandle<T>) {
             _ => Ok(vec![]),
         };
 
-        match res {
-            Ok(events) => {
-                for event in events {
-                    emit_event(app, event).await;
-                }
-            }
-            Err(e) => {
-                println!("handle_event error: {:?}", e);
-                send_err_to_frontend(app, &e);
-            }
+        if let Ok(e) = res {
+            events.extend(e);
+        } else if let Err(e) = res {
+            errors.push(*e);
         }
     }
+
+    HandleEventResult { events, errors }
 }

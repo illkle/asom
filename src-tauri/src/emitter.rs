@@ -8,20 +8,41 @@ use tauri::{AppHandle, Emitter, Manager};
 use ts_rs::TS;
 
 use crate::{
-    cache::query::RecordFromDb, core::core_state::CoreStateManager, schema::types::Schema,
-    utils::errorhandling::ErrFR, watcher::event_handlers::FolderEventEmit,
+    cache::query::RecordFromDb,
+    core::core_state::CoreStateManager,
+    schema::types::{Schema, SchemaLocation},
+    utils::errorhandling::ErrFR,
 };
+
+#[derive(Serialize, TS, Clone, Debug)]
+pub struct FileEventDataRemoved {
+    pub path: String,
+    pub schema: SchemaLocation,
+}
+
+#[derive(Serialize, TS, Clone, Debug)]
+pub struct FileEventDataExisting {
+    pub path: String,
+    pub record: RecordFromDb,
+    pub schema: SchemaLocation,
+}
+
+#[derive(Serialize, TS, Clone, Debug)]
+pub struct FolderEventData {
+    pub path: String,
+    pub schema: SchemaLocation,
+}
 
 #[derive(Serialize, TS, Clone, Debug)]
 #[ts(export)]
 #[ts(tag = "type", content = "data")]
 #[serde(tag = "t", content = "c")]
 pub enum IPCEmitEvent {
-    FileRemove(String),
-    FileAdd(RecordFromDb),
-    FileUpdate(RecordFromDb),
-    FolderRemove(FolderEventEmit),
-    FolderAdd(FolderEventEmit),
+    FileRemove(FileEventDataRemoved),
+    FileAdd(FileEventDataExisting),
+    FileUpdate(FileEventDataExisting),
+    FolderRemove(FolderEventData),
+    FolderAdd(FolderEventData),
     ErrorHappened(ErrFR),
     SchemasUpdated(HashMap<String, Schema>),
     EventOverflow(u32),
@@ -37,6 +58,23 @@ pub fn get_event_name(event: &IPCEmitEvent) -> String {
         IPCEmitEvent::ErrorHappened(_) => "ErrorHappened".to_string(),
         IPCEmitEvent::SchemasUpdated(_) => "SchemasUpdated".to_string(),
         IPCEmitEvent::EventOverflow(_) => "EventOverflow".to_string(),
+    }
+}
+
+impl IPCEmitEvent {
+    pub fn print_event(&self) -> String {
+        match self {
+            IPCEmitEvent::FileRemove(data) => format!("FileRemove: {}", data.path),
+            IPCEmitEvent::FileAdd(data) => format!("FileAdd: {}", data.path),
+            IPCEmitEvent::FileUpdate(data) => format!("FileUpdate: {}", data.path),
+            IPCEmitEvent::FolderRemove(data) => format!("FolderRemove: {}", data.path),
+            IPCEmitEvent::FolderAdd(data) => format!("FolderAdd: {}", data.path),
+            IPCEmitEvent::ErrorHappened(data) => format!("ErrorHappened: {}", data.title),
+            IPCEmitEvent::SchemasUpdated(data) => {
+                format!("SchemasUpdated: new count {}", data.len())
+            }
+            IPCEmitEvent::EventOverflow(data) => format!("EventOverflow: {}", data),
+        }
     }
 }
 

@@ -89,12 +89,14 @@ export const useFileEditorV2 = (
   });
 
   watch(fileQ.data, (v) => {
-    if (v?.parsing_error) {
-      useRustErrorNotification(v.parsing_error);
+    if (v?.record.parsing_error) {
+      useRustErrorNotification(v.record.parsing_error);
     }
   });
 
-  const schemaPath = computed(() => fileQ.data.value?.schema.owner_folder ?? '');
+  const schemaPath = computed(
+    () => fileQ.data.value?.record.schema.location.schema_owner_folder ?? '',
+  );
 
   const {
     q: viewSettingsQ,
@@ -114,9 +116,9 @@ export const useFileEditorV2 = (
     useSyncedValue({
       changesTracker,
       remoteValue: fileQ.data,
-      getTimestamp: (v) => new Date(v?.record.modified ?? 0),
+      getTimestamp: (v) => new Date(v?.record.record.modified ?? 0),
       onExternalUpdate: (v) => {
-        createOrUpdateEditor(v?.record.markdown ?? '');
+        createOrUpdateEditor(v?.record.record.markdown ?? '');
       },
       skipFirstUpdate: true,
       updater: async (v) => {
@@ -124,8 +126,8 @@ export const useFileEditorV2 = (
         if (!v) throw new Error('No value to save');
 
         const data = v.record;
-        data.markdown = getEditorState();
-        const res = await c_save_file(data, true);
+        data.record.markdown = getEditorState();
+        const res = await c_save_file(data.record, true);
         return new Date(res.modified);
       },
     });
@@ -138,7 +140,7 @@ export const useFileEditorV2 = (
   });
 
   onMounted(() => {
-    createOrUpdateEditor(fileQ.data.value?.record.markdown || '');
+    createOrUpdateEditor(fileQ.data.value?.record.record.markdown || '');
   });
 
   const throrottledUpdate = throttle(performUpdate, 2000);

@@ -36,7 +36,8 @@ pub async fn read_file_by_path(
         .await?;
 
     let file_modified = get_file_modified_time(&absolute_path).map_err(|e| {
-        ErrFR::new("Error reading file")
+        ErrFR::new("Error reading get file modified time")
+            .info(absolute_path.to_string_lossy().as_ref())
             .raw(e)
             .action_c(ErrFRActionCode::FileReadRetry, "Retry")
     })?;
@@ -50,7 +51,6 @@ pub async fn read_file_by_path(
 
     match content {
         Ok(c) => {
-            println!("read_file_by_path content");
             let parsed_meta = parse_metadata(&c.front_matter, &files_schema.schema);
 
             Ok(RecordReadResult {
@@ -68,7 +68,7 @@ pub async fn read_file_by_path(
             })
         }
         Err(e) => Err(Box::new(
-            ErrFR::new("Error reading file")
+            ErrFR::new("Error reading get file modified time")
                 .raw(e)
                 .action_c(ErrFRActionCode::FileReadRetry, "Retry"),
         )),

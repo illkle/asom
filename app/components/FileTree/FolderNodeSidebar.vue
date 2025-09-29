@@ -27,7 +27,7 @@
               v-if="hasChildren"
               :variant="isSelected ? 'default' : 'ghost'"
               size="sm"
-              class="w-6.5 rounded-r-none"
+              class="w-6.5 rounded-r-none duration-0"
               @click="handleToggle"
             >
               <ChevronDown :size="12" :class="[!isExpanded && '-rotate-90']" />
