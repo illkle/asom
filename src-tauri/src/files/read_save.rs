@@ -28,12 +28,10 @@ pub struct RecordReadResult {
 
 pub async fn read_file_by_path(
     ctx: &AppContext,
-    path_relative: &str,
+    path_relative: &Path,
     read_mode: FileReadMode,
 ) -> Result<RecordReadResult, Box<ErrFR>> {
-    let absolute_path = ctx
-        .relative_path_to_absolute(Path::new(path_relative))
-        .await?;
+    let absolute_path = ctx.relative_path_to_absolute(path_relative).await?;
 
     let file_modified = get_file_modified_time(&absolute_path).map_err(|e| {
         ErrFR::new("Error reading get file modified time")
@@ -42,9 +40,13 @@ pub async fn read_file_by_path(
             .action_c(ErrFRActionCode::FileReadRetry, "Retry")
     })?;
 
-    let files_schema = match ctx.schemas_cache.get_schema(Path::new(path_relative)).await {
+    let files_schema = match ctx.schemas_cache.get_schema(path_relative).await {
         Some(v) => v,
-        None => return Err(Box::new(ErrFR::new("Schema not found").raw(path_relative))),
+        None => {
+            return Err(Box::new(
+                ErrFR::new("Schema not found").raw(path_relative.to_string_lossy()),
+            ))
+        }
     };
 
     let content = get_file_content(&absolute_path, &read_mode);
@@ -55,7 +57,7 @@ pub async fn read_file_by_path(
 
             Ok(RecordReadResult {
                 record: RecordFromDb {
-                    path: Some(path_relative.to_string()),
+                    path: Some(path_relative.to_string_lossy().to_string()),
                     markdown: match read_mode {
                         FileReadMode::OnlyMeta => None,
                         FileReadMode::FullFile => Some(c.content),

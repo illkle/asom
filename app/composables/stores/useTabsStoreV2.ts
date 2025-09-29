@@ -221,7 +221,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
       }
     },
 
-    /** Preservation on disk */
+    /** Internal helpers */
     _clearForwardHistoryItem(target: ITabEntry) {
       if (target.historyPointer !== target.history.length - 1) {
         /** If we are not at the end of history, we need to remove all history items after the current one */

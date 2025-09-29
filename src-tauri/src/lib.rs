@@ -9,7 +9,6 @@ mod utils;
 mod watcher;
 
 use core::core_state::CoreStateManager;
-use std::path::Path;
 use std::{collections::HashMap, path::PathBuf};
 
 use cache::query::{
@@ -28,7 +27,7 @@ use tokio::runtime::Runtime;
 use ts_rs::TS;
 use utils::errorhandling::ErrFR;
 
-use crate::utils::helpers::{get_breadcrumb_items, FileBreadCrumbs};
+use crate::utils::helpers::{get_breadcrumb_items, normalize_path_to_os, FileBreadCrumbs};
 
 /*
   Define types and pack them into IPCResponces, which gets exported to TS types
@@ -95,7 +94,8 @@ async fn c_get_files_by_path<T: tauri::Runtime>(
     path_relative: String,
 ) -> IPCGetFilesPath {
     let core = app.state::<CoreStateManager>();
-    get_files_by_path(&core.context, Path::new(&path_relative)).await
+    let normalized_path = normalize_path_to_os(&path_relative);
+    get_files_by_path(&core.context, &normalized_path).await
 }
 
 #[tauri::command]
@@ -118,7 +118,8 @@ async fn c_get_all_folders_by_schema<T: tauri::Runtime>(
     schema_path: String,
 ) -> IPCGetAllFoldersBySchema {
     let core = app.state::<CoreStateManager>();
-    get_all_folders_by_schema(&core.context, schema_path).await
+    let normalized_path = normalize_path_to_os(&schema_path);
+    get_all_folders_by_schema(&core.context, &normalized_path).await
 }
 
 #[tauri::command]
@@ -127,7 +128,8 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     path: String,
 ) -> IPCReadFileByPath {
     let core = app.state::<CoreStateManager>();
-    let file = read_file_by_path(&core.context, &path, FileReadMode::FullFile).await?;
+    let normalized_path = normalize_path_to_os(&path);
+    let file = read_file_by_path(&core.context, &normalized_path, FileReadMode::FullFile).await?;
     let breadcrumb_items = get_breadcrumb_items(&file);
     Ok(IPCReadFileByPathResult {
         record: file,
@@ -158,14 +160,14 @@ async fn c_get_schemas_usable<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSch
 async fn c_load_schema<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCLoadSchema {
     let core = app.state::<CoreStateManager>();
     let ctx = &core.context;
+
+    let normalized_path = normalize_path_to_os(&path);
+
     // TODO?: This reads schema from disk, not sure if this needed really
     match core
         .context
         .schemas_cache
-        .cache_schema_absolute_path(
-            ctx,
-            ctx.relative_path_to_absolute(&PathBuf::from(&path)).await?,
-        )
+        .cache_schema_absolute_path(ctx, ctx.relative_path_to_absolute(&normalized_path).await?)
         .await
     {
         Ok(Some(v)) => Ok(v),

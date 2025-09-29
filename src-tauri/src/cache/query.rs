@@ -140,13 +140,11 @@ pub async fn get_all_folders(ctx: &AppContext) -> Result<FolderListGetResult, Bo
 
 pub async fn get_all_folders_by_schema(
     ctx: &AppContext,
-    schema_path: String,
+    schema_path_relative: &Path,
 ) -> Result<FolderListGetResult, Box<ErrFR>> {
-    let schema_p = Path::new(&schema_path);
-
-    let schema_folder = match schema_p.is_file() {
-        true => schema_p.parent().unwrap(),
-        false => schema_p,
+    let schema_folder = match schema_path_relative.is_file() {
+        true => schema_path_relative.parent().unwrap(),
+        false => schema_path_relative,
     };
 
     let res = sqlx::query(&format!(

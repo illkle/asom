@@ -39,13 +39,7 @@ pub async fn cache_file(
 ) -> Result<RecordFromDb, Box<ErrFR>> {
     let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
 
-    match read_file_by_path(
-        ctx,
-        &path_relative.to_string_lossy(),
-        FileReadMode::OnlyMeta,
-    )
-    .await
-    {
+    match read_file_by_path(ctx, &path_relative, FileReadMode::OnlyMeta).await {
         Ok(file) => {
             insert_file_into_cache_db(ctx, &file).await?;
             Ok(file.record)

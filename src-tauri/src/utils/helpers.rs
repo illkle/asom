@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
+use std::path::MAIN_SEPARATOR;
 use ts_rs::TS;
 
 use crate::files::read_save::RecordReadResult;
@@ -47,4 +48,15 @@ pub fn get_breadcrumb_items(record_read_result: &RecordReadResult) -> FileBreadC
         middle: vec![],
         end: vec![],
     }
+}
+
+/// Normalize a path string to the native OS format
+pub fn normalize_path_to_os(path: &str) -> PathBuf {
+    let normalized = if MAIN_SEPARATOR == '/' {
+        path.replace('\\', "/")
+    } else {
+        path.replace('/', "\\")
+    };
+
+    PathBuf::from(&normalized)
 }
