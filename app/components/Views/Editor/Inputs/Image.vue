@@ -37,14 +37,16 @@
 </template>
 
 <script setup lang="ts">
-import { open } from '@tauri-apps/plugin-dialog';
-import { copyFile, exists, mkdir } from '@tauri-apps/plugin-fs';
+import { exists } from '@tauri-apps/plugin-fs';
 
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { computedAsync } from '@vueuse/core';
-import path from 'path-browserify';
+
+import { path } from '@tauri-apps/api';
 import type { CSSProperties } from 'vue';
+import { saveImageFromSelection } from '~/components/Api/saveImage';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import type { ImageSettings } from '~/types';
 import CommonLabel from './CommonLabel.vue';
 
@@ -62,16 +64,16 @@ const ar = computed(() => {
   } as CSSProperties;
 });
 
-const rootPath = useRootPath();
+const rootPath = useRootPathInjectSafe();
 
-const filePath = computed(() => {
-  if (!imageName.value || !rootPath.data.value) return null;
-  return path.join(rootPath.data.value, '.assets', imageName.value);
+const filePath = computedAsync(async () => {
+  if (!imageName.value || !rootPath.value) return null;
+  return await path.join(rootPath.value, '.assets', imageName.value);
 });
 
-const pathFolder = computed(() => {
+const pathFolder = computedAsync(async () => {
   if (!filePath.value) return null;
-  return path.dirname(filePath.value);
+  return await path.dirname(filePath.value);
 });
 
 const imagePath = computedAsync(async () => {
@@ -83,27 +85,13 @@ const imagePath = computedAsync(async () => {
 
 const changeImageHandler = async () => {
   if (props.disabled) return;
-  if (!rootPath.data.value) return;
+  if (!rootPath.value) return;
 
-  const result = await open({
-    multiple: false,
-    directory: false,
-  });
+  const res = await saveImageFromSelection(rootPath.value, props.name);
 
-  if (!result) return;
+  if (!res) return;
 
-  const basename = generateUniqId() + path.extname(result);
-
-  const folder = path.join(rootPath.data.value, '.assets');
-
-  const folderExists = await exists(folder);
-  if (!folderExists) {
-    await mkdir(folder, { recursive: true });
-  }
-
-  await copyFile(result, path.join(folder, basename));
-
-  imageName.value = basename;
+  imageName.value = res;
 };
 
 const removeImageHandler = () => {

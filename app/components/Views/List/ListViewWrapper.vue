@@ -24,7 +24,7 @@ const props = defineProps({
 const schemaPath = computed(() => props.opened._path);
 const schema = useSchemaByPath(schemaPath);
 
-const schemaOwnerFolder = computed(() => schema.data.value?.owner_folder ?? '');
+const schemaOwnerFolder = computed(() => schema.data.value?.location.schema_owner_folder ?? '');
 
 const viewSettings = useViewSettings(schemaOwnerFolder);
 </script>

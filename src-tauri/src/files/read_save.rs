@@ -5,7 +5,7 @@ use std::path::Path;
 use ts_rs::TS;
 
 use crate::cache::query::RecordFromDb;
-use crate::core::core_state::SchemasCacheMutex;
+use crate::core::core_state::AppContext;
 use crate::schema::schema_cache::SchemaResult;
 use crate::schema::types::{AttrValue, AttrValueOnDisk};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
@@ -27,25 +27,29 @@ pub struct RecordReadResult {
 }
 
 pub async fn read_file_by_path(
-    scm: &SchemasCacheMutex,
-    path_str: &str,
+    ctx: &AppContext,
+    path_relative: &Path,
     read_mode: FileReadMode,
 ) -> Result<RecordReadResult, Box<ErrFR>> {
-    let file_modified = get_file_modified_time(path_str).map_err(|e| {
-        ErrFR::new("Error reading file")
+    let absolute_path = ctx.relative_path_to_absolute(path_relative).await?;
+
+    let file_modified = get_file_modified_time(&absolute_path).map_err(|e| {
+        ErrFR::new("Error reading get file modified time")
+            .info(absolute_path.to_string_lossy().as_ref())
             .raw(e)
             .action_c(ErrFRActionCode::FileReadRetry, "Retry")
     })?;
 
-    let schemas_cache = scm.lock().await;
-    let files_schema = match schemas_cache.get_schema(Path::new(path_str)) {
+    let files_schema = match ctx.schemas_cache.get_schema(path_relative).await {
         Some(v) => v,
-        None => return Err(Box::new(ErrFR::new("Schema not found").raw(path_str))),
+        None => {
+            return Err(Box::new(
+                ErrFR::new("Schema not found").raw(path_relative.to_string_lossy()),
+            ))
+        }
     };
-    drop(schemas_cache);
 
-    let p = path_str.to_string();
-    let content = get_file_content(path_str, &read_mode);
+    let content = get_file_content(&absolute_path, &read_mode);
 
     match content {
         Ok(c) => {
@@ -53,7 +57,7 @@ pub async fn read_file_by_path(
 
             Ok(RecordReadResult {
                 record: RecordFromDb {
-                    path: Some(p),
+                    path: Some(path_relative.to_string_lossy().to_string()),
                     markdown: match read_mode {
                         FileReadMode::OnlyMeta => None,
                         FileReadMode::FullFile => Some(c.content),
@@ -66,7 +70,7 @@ pub async fn read_file_by_path(
             })
         }
         Err(e) => Err(Box::new(
-            ErrFR::new("Error reading file")
+            ErrFR::new("Error reading get file modified time")
                 .raw(e)
                 .action_c(ErrFRActionCode::FileReadRetry, "Retry"),
         )),
@@ -80,7 +84,11 @@ pub struct RecordSaveResult {
     pub modified: String,
 }
 
-pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult, Box<ErrFR>> {
+pub async fn save_file(
+    ctx: &AppContext,
+    record: RecordFromDb,
+    forced: bool,
+) -> Result<RecordSaveResult, Box<ErrFR>> {
     let path = match record.path {
         Some(v) => v,
         None => {
@@ -90,9 +98,11 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
         }
     };
 
+    let path_absolute = ctx.relative_path_to_absolute(Path::new(&path)).await?;
+
     if !forced {
         if let Some(v) = record.modified {
-            let modified_before = match get_file_modified_time(path.clone().as_str()) {
+            let modified_before = match get_file_modified_time(&path_absolute) {
                 Ok(v) => v,
                 Err(e) => return Err(Box::new(
                     ErrFR::new("Unable to get modified date from file on disk")
@@ -124,14 +134,14 @@ pub fn save_file(record: RecordFromDb, forced: bool) -> Result<RecordSaveResult,
 
     let file = format!("---\n{yaml}---\n{markdown}");
 
-    fs::write(path.clone(), file).map_err(|e| {
+    fs::write(&path_absolute, file).map_err(|e| {
         ErrFR::new("Error writing to disk")
             .info("File was not saved")
             .raw(e)
             .action_c(ErrFRActionCode::FileSaveRetry, "Retry")
     })?;
 
-    match get_file_modified_time(path.clone().as_str()) {
+    match get_file_modified_time(&path_absolute) {
         Ok(v) => Ok(RecordSaveResult { path, modified: v }),
         Err(e) => Err(Box::new(
             ErrFR::new("Error getting update file modification date")

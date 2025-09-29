@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { isOurError } from '~/composables/useRustErrorNotifcation';
-import type { ErrFR, ExtractIpcResponcesType, RecordFromDb, Schema, SortOrder } from '~/types';
+import type { ErrFR, ExtractIpcResponcesType, RecordFromDb, Schema } from '~/types';
 
 export const returnErrorHandler = (e: unknown): ErrFR => {
   if (isOurError(e)) {
@@ -36,11 +36,12 @@ export const c_save_file = async (record: RecordFromDb, forced = false) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const c_get_files_path = async (path: string, searchQuery: string, sort: SortOrder) => {
-  console.log('c_get_files_path', path, searchQuery, sort);
-  return invoke('c_get_files_path', { path, searchQuery, sort }).then(
-    (v) => v as ExtractIpcResponcesType<'c_get_files_path'>,
-  );
+export const c_get_files_by_path = async (pathRelative: string) => {
+  console.log(' c_get_files_by_path', pathRelative);
+  return invoke('c_get_files_by_path', { pathRelative }).then((v) => {
+    console.log('c_get_files_by_path', v);
+    return v as ExtractIpcResponcesType<'c_get_files_by_path'>;
+  });
 };
 
 export const c_get_all_tags = async () => {

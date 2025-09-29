@@ -39,7 +39,7 @@ const FOLDERS_LIST_KEY = (root: string | null | undefined) => [
   'all',
 ];
 
-export const useRootPath = () => {
+export const useRootPathFromQuery = () => {
   return useQuery({
     key: ROOT_PATH_KEY,
     query: c_init,
@@ -50,7 +50,7 @@ export const useRootPath = () => {
 };
 
 export const useUsableSchemas = () => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const q = useQuery({
     key: () => USABLE_SCHEMAS_KEY(root.data.value),
@@ -69,7 +69,7 @@ export const useUsableSchemas = () => {
 };
 
 export const useExistingSchemas = () => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const q = useQuery({
     key: () => EXISTING_SCHEMAS_KEY(root.data.value),
@@ -88,7 +88,7 @@ export const useExistingSchemas = () => {
 };
 
 export const useIsAppUsable = () => {
-  const initQ = useRootPath();
+  const initQ = useRootPathFromQuery();
   const { query: usableSchemasQ } = useUsableSchemas();
 
   const appState = computed(() => {
@@ -130,7 +130,7 @@ export const useIsAppUsable = () => {
  * Passing string here is not reactive, but it's okay because component it's used in is keyed on schemaPath
  */
 export const useFoldersBySchema = (schemaPath: string) => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const q = useQuery({
     key: () => FOLDERS_BY_SCHEMA_KEY(root.data.value, schemaPath),
@@ -149,7 +149,7 @@ export const useFoldersBySchema = (schemaPath: string) => {
  * Gets data about all folders. Even ones without schema.
  */
 export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {}) => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const {
     data: foldersRaw,
@@ -172,7 +172,7 @@ export const useFoldersList = ({ throttleMs = 200 }: { throttleMs?: number } = {
 };
 
 export const useSchemaByPath = (path: Ref<string | undefined>) => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   return useQuery({
     key: () => [
@@ -188,7 +188,7 @@ export const useSchemaByPath = (path: Ref<string | undefined>) => {
 };
 
 export const useGlobalInvalidators = () => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const qc = useQueryCache();
 
@@ -213,7 +213,7 @@ export const useGlobalInvalidators = () => {
 };
 
 export const useFolderInvalidator = () => {
-  const root = useRootPath();
+  const root = useRootPathFromQuery();
 
   const qc = useQueryCache();
   const handler = () => {

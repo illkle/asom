@@ -1,14 +1,10 @@
 use pretty_assertions::assert_eq;
-use std::{
-    path::{PathBuf, MAIN_SEPARATOR},
-    thread::sleep,
-    time::Duration,
-};
+use std::{path::PathBuf, thread::sleep, time::Duration};
 
 use tauri::Manager;
 
 use crate::{
-    cache::query::{get_all_folders, get_files_abstact, FolderListGetResult, FolderOnDisk},
+    cache::query::{get_all_folders, get_files_abstract, FolderListGetResult, FolderOnDisk},
     core::core_state::CoreStateManager,
     schema::types::AttrValue,
     tests::test_utils::{
@@ -32,18 +28,15 @@ async fn test_init_basic() {
 async fn test_init_with_folder() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
-
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
 
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
         assert!(files.is_ok());
 
-        assert!(
-            files.unwrap().len() == 2,
+        assert_eq!(
+            files.unwrap().len(),
+            2,
             "Initial files count is not correct"
         );
     }
@@ -61,6 +54,8 @@ async fn test_basic_file_ops() {
 
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
 
+    let empty_path_buf = PathBuf::from("");
+
     let prepare_cache_result = core.prepare_cache(&app).await;
     assert!(prepare_cache_result.is_ok());
 
@@ -68,15 +63,12 @@ async fn test_basic_file_ops() {
     assert!(watch_path_result.is_ok());
 
     {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
         assert!(files.is_ok());
 
         let res = files.unwrap();
 
-        assert!(res.len() == 2, "Initial files count is not correct");
+        assert_eq!(res.len(), 2, "Initial files count is not correct");
 
         assert!(
             res.iter().any(|f| {
@@ -103,10 +95,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_delete_check = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -134,10 +123,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_move_back = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -167,7 +153,7 @@ async fn test_basic_file_ops() {
     )
     .unwrap();
 
-    let sp = test_dir
+    let sp = empty_path_buf
         .clone()
         .join("books")
         .join("How to Read a Book (renamed).md")
@@ -175,10 +161,7 @@ async fn test_basic_file_ops() {
         .to_string();
 
     let after_rename = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -209,10 +192,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_update = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -240,10 +220,7 @@ async fn test_basic_file_ops() {
     .unwrap();
 
     let after_create = || async {
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
         if files.is_err() {
             return false;
@@ -274,12 +251,7 @@ async fn test_basic_folder_ops() {
 
     // Check initial folders state
     {
-        let folders_result = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders_result = get_all_folders(&core.context).await;
         assert!(folders_result.is_ok());
 
         let folders = folders_result.unwrap();
@@ -298,12 +270,7 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir(&new_folder_path).unwrap();
 
     let after_create = || async {
-        let folders_result = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders_result = get_all_folders(&core.context).await;
         if folders_result.is_err() {
             return false;
         }
@@ -323,12 +290,7 @@ async fn test_basic_folder_ops() {
     std::fs::rename(&new_folder_path, &renamed_folder_path).unwrap();
 
     let after_rename = || async {
-        let folders_result = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders_result = get_all_folders(&core.context).await;
         if folders_result.is_err() {
             return false;
         }
@@ -350,12 +312,7 @@ async fn test_basic_folder_ops() {
     std::fs::remove_dir(&renamed_folder_path).unwrap();
 
     let after_delete = || async {
-        let folders_result = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders_result = get_all_folders(&core.context).await;
         if folders_result.is_err() {
             return false;
         }
@@ -379,12 +336,7 @@ async fn test_basic_folder_ops() {
     std::fs::create_dir_all(&nested_folder_path).unwrap();
 
     let after_nested_create = || async {
-        let folders_result = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders_result = get_all_folders(&core.context).await;
         if folders_result.is_err() {
             return false;
         }
@@ -410,51 +362,64 @@ async fn test_schema_ops() {
     let core = app.state::<CoreStateManager>();
 
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
+    let empty_path_buf = PathBuf::from("");
 
     // Check initial schemas state
     {
-        let schemas_cache = core.schemas_cache.lock().await;
-
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
         assert!(schemas.len() == 1, "Initial schemas count is not correct");
 
         println!("schemas: {:?}", schemas);
 
         assert!(
-            schemas.contains_key(&test_dir.clone().join("books").to_string_lossy().to_string()),
+            schemas.contains_key(
+                &empty_path_buf
+                    .clone()
+                    .join("books")
+                    .to_string_lossy()
+                    .to_string()
+            ),
             "Initial schema for owner was not returned by get_all_schemas_cached",
         );
 
         assert!(
-            schemas_cache
-                .get_schema(&test_dir.clone().join("books"))
+            core.context
+                .schemas_cache
+                .get_schema(&empty_path_buf.clone().join("books"))
+                .await
                 .is_some(),
             "Initial schema for owner folder was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
-                .get_schema(&test_dir.clone().join("books").join("favorites"))
+            core.context
+                .schemas_cache
+                .get_schema(&empty_path_buf.clone().join("books").join("favorites"))
+                .await
                 .is_some(),
             "Initial schema for sub folder was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
+            core.context
+                .schemas_cache
                 .get_schema(
-                    &test_dir
+                    &empty_path_buf
                         .clone()
                         .join("books")
                         .join("favorites")
                         .join("How to Read a Book.md")
                 )
+                .await
                 .is_some(),
             "Schema for existing file was not returned by get_schema_cached"
         );
 
         assert!(
-            schemas_cache
-                .get_schema(&test_dir.clone().join("lol").join("nonexisting"))
+            core.context
+                .schemas_cache
+                .get_schema(&empty_path_buf.clone().join("lol").join("nonexisting"))
+                .await
                 .is_none(),
             "Schema for non existing folder was returned by get_schema_cached"
         );
@@ -479,8 +444,7 @@ async fn test_schema_ops() {
     .unwrap();
 
     let after_rename = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
         schemas.is_empty()
     };
 
@@ -506,11 +470,13 @@ async fn test_schema_ops() {
     .unwrap();
 
     let after_rename_back = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
 
-        let schema_for_favs =
-            schemas_cache.get_schema(&test_dir.clone().join("books").join("favorites"));
+        let schema_for_favs = core
+            .context
+            .schemas_cache
+            .get_schema(&empty_path_buf.clone().join("books").join("favorites"))
+            .await;
 
         schemas.len() == 1 && schema_for_favs.is_some()
     };
@@ -528,45 +494,51 @@ async fn test_nested_ops() {
     let core = app.state::<CoreStateManager>();
 
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
+    let empty_path_buf = PathBuf::from("");
 
     let initial_state_check = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
-        let schemas = schemas_cache.get_schemas_list().await;
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
 
-        let books_schema =
-            schemas.get(&test_dir.clone().join("books").to_string_lossy().to_string());
-
-        let movies_schema = schemas_cache.get_schema(&test_dir.clone().join("movies"));
-
-        let schema_for_audiobook = schemas_cache.get_schema(
-            &test_dir
+        let books_schema = schemas.get(
+            &empty_path_buf
                 .clone()
                 .join("books")
-                .join("audiobooks")
-                .join("Sample Audiobook.md"),
+                .to_string_lossy()
+                .to_string(),
         );
 
-        let schema_for_book = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books")
-                .join("How to Take Smart Notes.md"),
-        );
+        let movies_schema = core
+            .context
+            .schemas_cache
+            .get_schema(&empty_path_buf.clone().join("movies"))
+            .await;
 
-        drop(schemas_cache);
+        let schema_for_audiobook = core
+            .context
+            .schemas_cache
+            .get_schema(
+                &empty_path_buf
+                    .clone()
+                    .join("books")
+                    .join("audiobooks")
+                    .join("Sample Audiobook.md"),
+            )
+            .await;
 
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
+        let schema_for_book = core
+            .context
+            .schemas_cache
+            .get_schema(
+                &empty_path_buf
+                    .clone()
+                    .join("books")
+                    .join("How to Take Smart Notes.md"),
+            )
+            .await;
 
-        let files = get_files_abstact(conn, "".to_string()).await;
-        drop(db);
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
-        let folders = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders = get_all_folders(&core.context).await;
 
         if files.is_err() || folders.is_err() {
             return false;
@@ -610,31 +582,45 @@ async fn test_nested_ops() {
     .unwrap();
 
     let after_rename_schemas = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
+        let books_schema = core
+            .context
+            .schemas_cache
+            .get_schema(&empty_path_buf.clone().join("books_renamed"))
+            .await;
 
-        let books_schema = schemas_cache.get_schema(&test_dir.clone().join("books_renamed"));
+        let audiobooks_schema = core
+            .context
+            .schemas_cache
+            .get_schema(
+                &empty_path_buf
+                    .clone()
+                    .join("books_renamed")
+                    .join("audiobooks_renamed"),
+            )
+            .await;
 
-        let audiobooks_schema = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("audiobooks_renamed"),
-        );
+        let schema_for_audiobook = core
+            .context
+            .schemas_cache
+            .get_schema(
+                &empty_path_buf
+                    .clone()
+                    .join("books_renamed")
+                    .join("audiobooks_renamed")
+                    .join("Sample Audiobook.md"),
+            )
+            .await;
 
-        let schema_for_audiobook = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("audiobooks_renamed")
-                .join("Sample Audiobook.md"),
-        );
-
-        let schema_for_book = schemas_cache.get_schema(
-            &test_dir
-                .clone()
-                .join("books_renamed")
-                .join("How to Read a Book.md"),
-        );
+        let schema_for_book = core
+            .context
+            .schemas_cache
+            .get_schema(
+                &empty_path_buf
+                    .clone()
+                    .join("books_renamed")
+                    .join("How to Read a Book.md"),
+            )
+            .await;
 
         books_schema.is_some()
             && audiobooks_schema.is_some()
@@ -650,23 +636,11 @@ async fn test_nested_ops() {
     );
 
     let afrer_rename_counts = || async {
-        let schemas_cache = core.schemas_cache.lock().await;
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
 
-        let schemas = schemas_cache.get_schemas_list().await;
-        drop(schemas_cache);
+        let files = get_files_abstract(&core.context, "".to_string()).await;
 
-        let mut db = core.database_conn.lock().await;
-        let conn = db.get_conn().await;
-
-        let files = get_files_abstact(conn, "".to_string()).await;
-        drop(db);
-
-        let folders = get_all_folders(
-            core.root_path_safe().await.unwrap(),
-            &core.database_conn,
-            &core.schemas_cache,
-        )
-        .await;
+        let folders = get_all_folders(&core.context).await;
 
         if files.is_err() || folders.is_err() {
             return false;
@@ -699,24 +673,20 @@ async fn test_folder_schema_status() {
 
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Nested).await;
 
-    let folders = get_all_folders(
-        core.root_path_safe().await.unwrap(),
-        &core.database_conn,
-        &core.schemas_cache,
-    )
-    .await;
+    let empty_path_buf = PathBuf::from("");
+    let folders = get_all_folders(&core.context).await;
     assert!(folders.is_ok());
 
     let mut folders = folders.unwrap();
 
-    let bks_s = test_dir
+    let bks_s = empty_path_buf
         .clone()
         .join("books")
         .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
-    let abks_s = test_dir
+    let abks_s = empty_path_buf
         .clone()
         .join("books")
         .join("audiobooks")
@@ -724,7 +694,7 @@ async fn test_folder_schema_status() {
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
-    let mvs_s = test_dir
+    let mvs_s = empty_path_buf
         .clone()
         .join("movies")
         .join(".asom")
@@ -741,49 +711,40 @@ async fn test_folder_schema_status() {
                     .unwrap()
                     .to_string_lossy()
                     .to_string(),
-                path: test_dir.clone().to_string_lossy().to_string(),
-                path_relative: PathBuf::from("").to_string_lossy().to_string(),
+                path: empty_path_buf.clone().to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
             },
             FolderOnDisk {
                 name: "books".to_string(),
-                path: test_dir.clone().join("books").to_string_lossy().to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
+                path: empty_path_buf
+                    .clone()
                     .join("books")
                     .to_string_lossy()
                     .to_string(),
+
                 has_schema: true,
                 own_schema: true,
                 schema_file_path: bks_s.clone(),
             },
             FolderOnDisk {
                 name: "favorites".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
                     .join("books")
                     .join("favorites")
                     .to_string_lossy()
                     .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
-                    .join("books")
-                    .join("favorites")
-                    .to_string_lossy()
-                    .to_string(),
+
                 has_schema: true,
                 own_schema: false,
                 schema_file_path: bks_s,
             },
             FolderOnDisk {
                 name: "audiobooks".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("books")
-                    .join("audiobooks")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("books")
                     .join("audiobooks")
                     .to_string_lossy()
@@ -794,12 +755,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "movies".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("movies")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
@@ -809,12 +766,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "noschema".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("noschema")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
@@ -824,13 +777,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "nestno".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("noschema")
-                    .join("nestno")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("noschema")
                     .join("nestno")
                     .to_string_lossy()
@@ -866,24 +814,19 @@ async fn test_folder_schema_status() {
     // Wait for watcher
     sleep(Duration::from_millis(300));
 
-    let folders = get_all_folders(
-        core.root_path_safe().await.unwrap(),
-        &core.database_conn,
-        &core.schemas_cache,
-    )
-    .await;
+    let folders = get_all_folders(&core.context).await;
     assert!(folders.is_ok());
 
     let mut folders = folders.unwrap();
 
-    let bks_s = test_dir
+    let bks_s = empty_path_buf
         .clone()
         .join("books_renamed")
         .join(".asom")
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
-    let abks_s = test_dir
+    let abks_s = empty_path_buf
         .clone()
         .join("books_renamed")
         .join("audiobooks_renamed")
@@ -891,7 +834,7 @@ async fn test_folder_schema_status() {
         .join("schema.yaml")
         .to_string_lossy()
         .to_string();
-    let mvs_s = test_dir
+    let mvs_s = empty_path_buf
         .clone()
         .join("movies")
         .join(".asom")
@@ -908,20 +851,15 @@ async fn test_folder_schema_status() {
                     .unwrap()
                     .to_string_lossy()
                     .to_string(),
-                path: test_dir.clone().to_string_lossy().to_string(),
-                path_relative: PathBuf::from("").to_string_lossy().to_string(),
+                path: empty_path_buf.clone().to_string_lossy().to_string(),
                 has_schema: false,
                 own_schema: false,
                 schema_file_path: "".to_string(),
             },
             FolderOnDisk {
                 name: "books_renamed".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("books_renamed")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("books_renamed")
                     .to_string_lossy()
                     .to_string(),
@@ -931,13 +869,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "favorites".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("books_renamed")
-                    .join("favorites")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("books_renamed")
                     .join("favorites")
                     .to_string_lossy()
@@ -948,13 +881,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "audiobooks_renamed".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("books_renamed")
-                    .join("audiobooks_renamed")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("books_renamed")
                     .join("audiobooks_renamed")
                     .to_string_lossy()
@@ -965,12 +893,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "movies".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("movies")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("movies")
                     .to_string_lossy()
                     .to_string(),
@@ -980,12 +904,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "noschema".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("noschema")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("noschema")
                     .to_string_lossy()
                     .to_string(),
@@ -995,13 +915,8 @@ async fn test_folder_schema_status() {
             },
             FolderOnDisk {
                 name: "nestno".to_string(),
-                path: test_dir
+                path: empty_path_buf
                     .clone()
-                    .join("noschema")
-                    .join("nestno")
-                    .to_string_lossy()
-                    .to_string(),
-                path_relative: PathBuf::from(MAIN_SEPARATOR.to_string())
                     .join("noschema")
                     .join("nestno")
                     .to_string_lossy()

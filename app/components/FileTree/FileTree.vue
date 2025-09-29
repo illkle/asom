@@ -3,7 +3,7 @@
     :model-value="openedItem"
     v-if="!query.isPending.value"
     v-slot="{ flattenItems }"
-    :items="foldersAsTree?.[0]?.children || []"
+    :items="foldersAsTree ?? []"
     :default-expanded="allFolderIds"
     :multiple="false"
     :get-key="(opt) => opt.rawPath"

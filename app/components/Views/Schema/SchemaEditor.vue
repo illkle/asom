@@ -8,7 +8,7 @@
       >
         <div class="font-mono text-xs opacity-30">Root path:</div>
         <div class="font-mono text-xs">
-          {{ rootPath.data.value }}
+          {{ rootPath }}
         </div>
       </div>
       <Button
@@ -30,7 +30,7 @@
             class="bg-transparent w-full mb-2"
             @click="
               () => {
-                folderCreationPath = rootPath.data.value ?? '';
+                folderCreationPath = rootPath ?? '';
                 isNewFolderDialogOpen = true;
               }
             "
@@ -42,7 +42,7 @@
           <TreeRoot
             v-if="!isPending"
             v-slot="{ flattenItems }"
-            :items="foldersAsTree?.[0]?.children || []"
+            :items="foldersAsTree ?? []"
             :default-expanded="allFolderIds"
             multiple
             :get-key="(opt) => opt.rawPath"
@@ -91,15 +91,17 @@ import { useQueryCache } from '@pinia/colada';
 import { TreeRoot } from 'reka-ui';
 import { c_save_schema } from '~/api/tauriActions';
 
+import { path } from '@tauri-apps/api';
 import { mkdir } from '@tauri-apps/plugin-fs';
+import { computedAsync } from '@vueuse/core';
 import { FolderIcon, PlusIcon } from 'lucide-vue-next';
-import path from 'path-browserify';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import PageTemplate from './common/PageTemplate.vue';
 
-const rootPath = useRootPath();
+const rootPath = useRootPathInjectSafe();
 const tabsStore = useTabsStoreV2();
 
 const changeRootPathHandler = async () => {
@@ -110,12 +112,12 @@ const isNewFolderDialogOpen = ref(false);
 const newFolderName = ref('');
 const folderCreationPath = ref('');
 
-const folderWhereToCreateName = computed(() => {
-  return path.basename(folderCreationPath.value);
+const folderWhereToCreateName = computedAsync(async () => {
+  return await path.basename(folderCreationPath.value);
 });
 
 const createNewFolder = async () => {
-  await mkdir(path.join(folderCreationPath.value, newFolderName.value));
+  await mkdir(await path.join(folderCreationPath.value, newFolderName.value));
   isNewFolderDialogOpen.value = false;
 };
 

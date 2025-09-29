@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use ts_rs::TS;
@@ -289,3 +291,9 @@ pub struct Schema {
 }
 
 pub const SCHEMA_VERSION: &str = "1.0";
+
+#[derive(Serialize, TS, Clone, Debug, Deserialize)]
+pub struct SchemaLocation {
+    pub schema_path: PathBuf,
+    pub schema_owner_folder: PathBuf,
+}

@@ -107,7 +107,7 @@
           v-if="item.value.ownSchema"
           @click="
             async () =>
-              await c_delete_to_trash(path.join(item.value.rawPath, '.asom', 'schema.yaml'))
+              await c_delete_to_trash(await path.join(item.value.rawPath, '.asom', 'schema.yaml'))
           "
         >
           Delete schema
@@ -128,8 +128,8 @@
 </template>
 
 <script setup lang="ts">
+import { path } from '@tauri-apps/api';
 import { ChevronDown, FileIcon, FolderIcon } from 'lucide-vue-next';
-import path from 'path-browserify';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
 import { c_delete_to_trash } from '~/api/tauriActions';

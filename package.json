@@ -1,5 +1,4 @@
 {
-  "version": "0.2.5",
   "name": "asom",
   "author": "Kirill Kleimenov",
   "private": true,
@@ -16,7 +15,7 @@
     "test": "vitest",
     "test:rust": "cd src-tauri && make test",
     "icon": "npm run tauri icon ./tools/build/icon.png",
-    "build": "dotenv -- npx tauri build -v"
+    "build": "op run --env-file='.env' --  npx tauri build -v"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^3.19.2",
@@ -26,7 +25,6 @@
     "@tauri-apps/cli": "^2.8.4",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^24.3.1",
-    "@types/path-browserify": "^1.0.3",
     "cross-env": "10.0.0",
     "happy-dom": "^18.0.1",
     "nuxt": "^4.1.1",
@@ -72,7 +70,6 @@
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^0.542.0",
     "motion-v": "^1.7.1",
-    "path-browserify": "^1.0.1",
     "pinia": "^3.0.3",
     "prettier-plugin-organize-imports": "^4.2.0",
     "reka-ui": "^2.5.0",

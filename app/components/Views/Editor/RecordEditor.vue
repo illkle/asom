@@ -4,58 +4,17 @@
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
     <div class="max-w-3xl mx-auto w-full">
-      <BreadcrumbList
-        class="flex gap-2 flex-nowrap shrink py-2 rounded-b-md z-10 sticky top-0 bg-background"
+      <div
+        class="grid grid-cols-[4fr_min-content] w-full gap-2 py-2 rounded-b-md z-10 sticky top-0 bg-background"
       >
-        <template v-if="!breadcrumbItems.all">
-          <BreadcrumbItem
-            v-if="breadcrumbItems.start[0]"
-            class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-            :class="'shrink cursor-pointer'"
-            @click="ts.openNewThingFast({ _type: 'folder', _path: breadcrumbItems.start[0].path })"
-          >
-            {{ breadcrumbItems.start[0].label }}
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem> ... </BreadcrumbItem>
-          <template v-for="(item, i) in breadcrumbItems.end">
-            <BreadcrumbSeparator />
+        <BreadCrumbsList
+          v-if="fileQ.data.value?.breadcrumb_items"
+          :breadcrumb-items="fileQ.data.value?.breadcrumb_items"
+        />
 
-            <BreadcrumbItem
-              v-if="item"
-              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden max-w-64"
-              :class="i === breadcrumbItems.end.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-              @click="
-                i !== breadcrumbItems.end.length - 1 &&
-                ts.openNewThingFast({ _type: 'folder', _path: item.path })
-              "
-            >
-              {{ item.label }}
-            </BreadcrumbItem>
-          </template>
-        </template>
-
-        <template v-if="breadcrumbItems.all">
-          <template v-for="(item, i) in breadcrumbItems.all">
-            <BreadcrumbSeparator v-if="i > 1" />
-
-            <BreadcrumbItem
-              class="w-fit block whitespace-nowrap overflow-ellipsis overflow-hidden"
-              :class="i === breadcrumbItems.all.length - 1 ? 'shrink' : 'shrink-3 cursor-pointer'"
-              @click="
-                i !== breadcrumbItems.all.length - 1 &&
-                ts.openNewThingFast({ _type: 'folder', _path: item.path })
-              "
-            >
-              {{ item.label }}
-            </BreadcrumbItem>
-          </template>
-        </template>
-
-        <div class="grow"></div>
-        <DropdownMenu class="ml-auto">
+        <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="sm">
               <EllipsisVerticalIcon :size="14" />
             </Button>
           </DropdownMenuTrigger>
@@ -93,18 +52,18 @@
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </BreadcrumbList>
+      </div>
 
       <AddAndSearch
         v-if="schema"
         v-model:opened="fillFromApiDialog"
         :selected-schema="schema.schema"
-        :selected-schema-path="schema.owner_folder"
+        :selected-schema-path="schema.location.schema_owner_folder"
         @handle-add-from-api="
           (_, attrs) => {
             if (!editableProxy) return;
-            editableProxy.record.attrs = {
-              ...editableProxy.record.attrs,
+            editableProxy.record.record.attrs = {
+              ...editableProxy.record.record.attrs,
               ...attrs,
             };
             fillFromApiDialog = false;
@@ -160,7 +119,7 @@
 
       <MetaEditor
         v-if="editableProxy && schema && viewLayoutQ.data.value"
-        v-model:opened-file="editableProxy.record"
+        v-model:opened-file="editableProxy.record.record"
         :view-layout="viewLayoutQ.data.value"
         :hide-labels="viewSettingsQ.data.value?.labelsHidden"
         :schema="schema.schema"
@@ -187,7 +146,6 @@ import {
   Trash2Icon,
 } from 'lucide-vue-next';
 
-import path from 'path-browserify';
 import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
@@ -200,6 +158,7 @@ import {
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../../Modules/DynamicView/helpers';
 import AddAndSearch from '../Add/AddAndSearch.vue';
+import BreadCrumbsList from './BreadCrumbsList.vue';
 import MetaEditor from './MetaEditor.vue';
 
 const separator = tauriPath.sep();
@@ -211,32 +170,10 @@ const props = defineProps({
   },
 });
 
-const breadcrumbItems = computed(() => {
-  const rootFolder = fileQ.data.value?.schema.owner_folder ?? '';
-
-  const realPath = props.opened._path.replace(rootFolder, '');
-
-  const all = [{ label: path.basename(rootFolder), path: rootFolder }];
-
-  for (const item of realPath.split(separator)) {
-    const last = all[all.length - 1];
-    if (!last) continue;
-    all.push({
-      label: item,
-      path: path.join(last.path, item),
-    });
-  }
-
-  if (all.length > 4) {
-    return {
-      start: [all[0]],
-      middle: all.slice(1, all.length - 3),
-      end: [all[all.length - 2], all[all.length - 1]],
-    };
-  }
-
-  return { all };
-});
+const roughBasename = (p: string) => {
+  const splitted = p.split(separator);
+  return splitted[splitted.length - 1];
+};
 
 const editorWrapper = useTemplateRef('editorWrapper');
 
@@ -246,15 +183,18 @@ const deleteDialog = ref(false);
 const renameDialog = ref(false);
 const newName = ref('');
 
-const startRename = () => {
+const startRename = async () => {
   renameDialog.value = true;
-  newName.value = path.basename(props.opened._path, path.extname(props.opened._path));
+  newName.value = await tauriPath.basename(
+    props.opened._path,
+    await tauriPath.extname(props.opened._path),
+  );
 };
 
 const { fileQ, editableProxy, viewSettingsQ, viewLayoutQ, onRename, viewSettingsUpdaterPartial } =
   useFileEditorV2(props.opened, editorWrapper);
 
-const schema = computed(() => fileQ.data.value?.schema);
+const schema = computed(() => fileQ.data.value?.record.schema);
 
 const scrollElement = useTemplateRef('scrollElement');
 useScrollWatcher(scrollElement);
@@ -267,7 +207,7 @@ const ts = useTabsStoreV2();
 
 const onRemove = async () => {
   await c_delete_to_trash(props.opened._path);
-  ts.openNewThingFast({ _type: 'folder', _path: path.dirname(props.opened._path) });
+  ts.openNewThingFast({ _type: 'folder', _path: await tauriPath.dirname(props.opened._path) });
 };
 
 const markKey = (item: IDynamicItem, toSave: Record<string, boolean>) => {
@@ -299,7 +239,9 @@ const showLayoutWarning = computed(() => {
   return !viewSettingsQ.data.value?.layoutWarningsHidden && inviSchemaItms.value.length;
 });
 
-const apiConnection = useApiConnection(computed(() => schema.value?.owner_folder ?? ''));
+const apiConnection = useApiConnection(
+  computed(() => schema.value?.location.schema_owner_folder ?? ''),
+);
 const hasApi = computed(() => {
   return apiConnection.q.data?.value && apiConnection.q.data.value.type !== 'none';
 });
@@ -307,8 +249,11 @@ const hasApi = computed(() => {
 const fillFromApiDialog = ref(false);
 
 const openEditMode = () => {
-  if (!schema.value?.owner_folder) return;
-  ts.openNewThingFast({ _type: 'settings/layout', _path: schema.value.owner_folder }, 'last');
+  if (!schema.value?.location.schema_owner_folder) return;
+  ts.openNewThingFast(
+    { _type: 'settings/layout', _path: schema.value.location.schema_owner_folder },
+    'last',
+  );
 };
 </script>
 

@@ -3,11 +3,12 @@ use chrono::DateTime;
 
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
+use std::path::Path;
 
 use super::read_save::FileReadMode;
 
-pub fn get_file_modified_time(path_str: &str) -> Result<String, String> {
-    match fs::metadata(path_str) {
+pub fn get_file_modified_time(path_absolute: &Path) -> Result<String, String> {
+    match fs::metadata(path_absolute) {
         Ok(meta) => match meta.modified() {
             Ok(tt) => {
                 let time = Into::<DateTime<Utc>>::into(tt);
@@ -25,8 +26,8 @@ pub struct FileContent {
     pub content: String,
 }
 
-pub fn get_file_content(file_path: &str, read_mode: &FileReadMode) -> io::Result<FileContent> {
-    let file = File::open(file_path)?;
+pub fn get_file_content(path_absolute: &Path, read_mode: &FileReadMode) -> io::Result<FileContent> {
+    let file = File::open(path_absolute)?;
     let reader = BufReader::new(file);
 
     let mut front_matter = String::new();

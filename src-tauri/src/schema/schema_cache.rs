@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 use std::{
     collections::HashMap,
     ffi::OsStr,
@@ -9,45 +10,49 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use tokio::sync::{RwLock, RwLockReadGuard};
 use ts_rs::TS;
 
 use super::types::{Schema, SCHEMA_VERSION};
+use crate::core::core_state::AppContext;
+use crate::schema::types::SchemaLocation;
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Debug)]
 pub struct SchemasInMemoryCache {
     // Path is the owner folder path. So file is key + schema.yaml
-    map: BTreeMap<PathBuf, Schema>,
+    map: Arc<RwLock<BTreeMap<PathBuf, Schema>>>,
 }
 
 #[derive(Debug, Clone, TS, Serialize, Deserialize)]
 #[ts(export)]
 pub struct SchemaResult {
-    pub file_path: PathBuf,
-    pub owner_folder: PathBuf,
     pub schema: Schema,
+    pub location: SchemaLocation,
 }
 
 const INTERNAL_FOLDER_NAME: &str = ".asom";
 const SCHEMA_FILE_NAME: &str = "schema.yaml";
 
-fn locate_schema_and_folder(path: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
-    let is_dir_safe_for_deleted = match path.exists() {
-        true => path.is_dir(),
-        false => path.extension().is_none(),
+fn locate_schema_and_folder(path_absolute: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
+    let is_dir_safe_for_deleted = match path_absolute.exists() {
+        true => path_absolute.is_dir(),
+        false => path_absolute.extension().is_none(),
     };
 
-    let schema_file_path = match (is_dir_safe_for_deleted, path.file_name()) {
+    let schema_file_path = match (is_dir_safe_for_deleted, path_absolute.file_name()) {
         (true, Some(name)) if name == OsStr::new(INTERNAL_FOLDER_NAME) => {
-            path.join(SCHEMA_FILE_NAME)
+            path_absolute.join(SCHEMA_FILE_NAME)
         }
-        (false, Some(name)) if name == OsStr::new(SCHEMA_FILE_NAME) => path.to_path_buf(),
-        (true, _) => path.join(INTERNAL_FOLDER_NAME).join(SCHEMA_FILE_NAME),
+        (false, Some(name)) if name == OsStr::new(SCHEMA_FILE_NAME) => path_absolute.to_path_buf(),
+        (true, _) => path_absolute
+            .join(INTERNAL_FOLDER_NAME)
+            .join(SCHEMA_FILE_NAME),
         (_, None) => {
             return Err(Box::new(ErrFR::new("Unable to get basename from schema path")
                 .info(&format!(
                     "This is super unexpected, maybe you are using symlinks? Please report bug.\n{}",
-                    &path.to_string_lossy()
+                    &path_absolute.to_string_lossy()
                 ))));
         }
         (_, _) => {
@@ -73,39 +78,47 @@ fn locate_schema_and_folder(path: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR
 impl SchemasInMemoryCache {
     pub fn new() -> Self {
         Self {
-            map: BTreeMap::new(),
+            map: Arc::new(RwLock::new(BTreeMap::new())),
         }
     }
 
-    pub fn clear_cache(&mut self) {
-        self.map.clear();
+    pub async fn clear_cache(&self) {
+        self.map.write().await.clear();
     }
 
-    fn insert(&mut self, path: PathBuf, value: Schema) {
-        self.map.insert(path, value);
+    async fn insert(&self, path: PathBuf, value: Schema) {
+        self.map.write().await.insert(path, value);
     }
 
-    pub fn get_schema(&self, path: &Path) -> Option<SchemaResult> {
-        if let Some(value) = self.map.get(path) {
+    fn get_schema_internal(
+        &self,
+        map: &RwLockReadGuard<'_, BTreeMap<PathBuf, Schema>>,
+        path_relative: &Path,
+    ) -> Option<SchemaResult> {
+        if let Some(value) = map.get(path_relative) {
             return Some(SchemaResult {
-                file_path: path
-                    .to_path_buf()
-                    .join(INTERNAL_FOLDER_NAME)
-                    .join(SCHEMA_FILE_NAME),
-                owner_folder: path.to_path_buf(),
+                location: SchemaLocation {
+                    schema_path: path_relative
+                        .to_path_buf()
+                        .join(INTERNAL_FOLDER_NAME)
+                        .join(SCHEMA_FILE_NAME),
+                    schema_owner_folder: path_relative.to_path_buf(),
+                },
                 schema: value.clone(),
             });
         }
 
-        let mut current = path;
+        let mut current = path_relative;
         while let Some(parent) = current.parent() {
-            if let Some(value) = self.map.get(parent) {
+            if let Some(value) = map.get(parent) {
                 return Some(SchemaResult {
-                    file_path: parent
-                        .to_path_buf()
-                        .join(INTERNAL_FOLDER_NAME)
-                        .join(SCHEMA_FILE_NAME),
-                    owner_folder: parent.to_path_buf(),
+                    location: SchemaLocation {
+                        schema_path: parent
+                            .to_path_buf()
+                            .join(INTERNAL_FOLDER_NAME)
+                            .join(SCHEMA_FILE_NAME),
+                        schema_owner_folder: parent.to_path_buf(),
+                    },
                     schema: value.clone(),
                 });
             }
@@ -115,12 +128,34 @@ impl SchemasInMemoryCache {
         None
     }
 
-    fn iter(&self) -> impl Iterator<Item = (&PathBuf, &Schema)> {
-        self.map.iter()
+    pub async fn get_schema(&self, path_relative: &Path) -> Option<SchemaResult> {
+        let map = self.map.read().await;
+        self.get_schema_internal(&map, path_relative)
     }
 
-    pub fn get_schema_safe(&self, path: &Path) -> Result<SchemaResult, Box<ErrFR>> {
-        let s = self.get_schema(path);
+    pub fn get_schema_by_lock(
+        &self,
+        map: &RwLockReadGuard<'_, BTreeMap<PathBuf, Schema>>,
+        path: &Path,
+    ) -> Option<SchemaResult> {
+        self.get_schema_internal(map, path)
+    }
+
+    pub async fn get_read_lock(&self) -> RwLockReadGuard<'_, BTreeMap<PathBuf, Schema>> {
+        self.map.read().await
+    }
+
+    async fn iter(&self) -> Vec<(PathBuf, Schema)> {
+        self.map
+            .read()
+            .await
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
+    }
+
+    pub async fn get_schema_safe(&self, path: &Path) -> Result<SchemaResult, Box<ErrFR>> {
+        let s = self.get_schema(path).await;
         match s {
             Some(s) => Ok(s),
             None => Err(Box::new(ErrFR::new("Unable to retrieve schema")
@@ -133,21 +168,29 @@ impl SchemasInMemoryCache {
 
     pub async fn get_schemas_list(&self) -> HashMap<String, Schema> {
         self.iter()
+            .await
+            .into_iter()
             .filter_map(|(path, v)| match v.items.is_empty() {
                 true => None,
-                false => Some((path.to_string_lossy().to_string(), v.clone())),
+                false => Some((path.to_string_lossy().to_string(), v)),
             })
             .collect()
     }
 
     pub async fn get_schemas_list_with_empty(&self) -> HashMap<String, Schema> {
         self.iter()
-            .map(|(path, v)| (path.to_string_lossy().to_string(), v.clone()))
+            .await
+            .into_iter()
+            .map(|(path, v)| (path.to_string_lossy().to_string(), v))
             .collect()
     }
 
-    pub async fn cache_schema(&mut self, path: PathBuf) -> Result<Option<Schema>, Box<ErrFR>> {
-        let (schema_file_path, folder_path) = locate_schema_and_folder(&path)?;
+    pub async fn cache_schema_absolute_path(
+        &self,
+        ctx: &AppContext,
+        path_absolute: PathBuf,
+    ) -> Result<Option<Schema>, Box<ErrFR>> {
+        let (schema_file_path, folder_path) = locate_schema_and_folder(&path_absolute)?;
 
         if !schema_file_path.exists() {
             return Ok(None);
@@ -165,38 +208,49 @@ impl SchemasInMemoryCache {
                 .raw(e)
         })?;
 
-        self.insert(folder_path, sch.clone());
+        let relative_folder_path = ctx.absolute_path_to_relative(&folder_path).await?;
+
+        self.insert(relative_folder_path, sch.clone()).await;
 
         Ok(Some(sch))
     }
 
-    pub async fn remove_schema(&mut self, path: PathBuf) -> Result<(), Box<ErrFR>> {
-        println!("remove_schema {:?}", path);
-        let (_, folder_path) = locate_schema_and_folder(&path)?;
+    pub async fn remove_schema(
+        &self,
+        ctx: &AppContext,
+        path_absolute: PathBuf,
+    ) -> Result<(), Box<ErrFR>> {
+        let (_, folder_path) = locate_schema_and_folder(&path_absolute)?;
 
-        println!("remove_schema folder_path {:?}", folder_path);
+        let relative_folder_path = ctx.absolute_path_to_relative(&folder_path).await?;
 
-        self.map.remove(&folder_path);
+        self.map.write().await.remove(&relative_folder_path);
         Ok(())
     }
 
-    pub async fn remove_schemas_with_children(&mut self, path: PathBuf) -> Result<(), Box<ErrFR>> {
-        println!("remove_schemas_with_children {:?}", path);
+    pub async fn remove_schemas_with_children(
+        &self,
+        path_relative: &Path,
+    ) -> Result<(), Box<ErrFR>> {
         let paths_to_remove: Vec<PathBuf> = self
             .iter()
-            .filter(|(p, _)| p.starts_with(&path))
-            .map(|(p, _)| p.clone())
+            .await
+            .into_iter()
+            .filter(|(p, _)| p.starts_with(path_relative))
+            .map(|(p, _)| p)
             .collect();
 
+        let mut w = self.map.write().await;
+
         for p in paths_to_remove {
-            self.remove_schema(p).await?;
+            w.remove(&p);
         }
 
         Ok(())
     }
 
     pub async fn save_schema(
-        &mut self,
+        &self,
         schema_or_folder_path: &Path,
         mut schema: Schema,
     ) -> Result<Schema, Box<ErrFR>> {
@@ -224,7 +278,7 @@ impl SchemasInMemoryCache {
                 .raw(e)
         })?;
 
-        self.insert(folder_path.clone(), schema.clone());
+        self.insert(folder_path.clone(), schema.clone()).await;
 
         Ok(schema)
     }

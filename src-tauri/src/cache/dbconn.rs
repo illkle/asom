@@ -1,8 +1,8 @@
-use sqlx::{sqlite::SqliteConnectOptions, Connection, SqliteConnection};
+use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 
 #[derive(Debug)]
 pub struct DatabaseConnection {
-    conn: Option<SqliteConnection>,
+    conn: Option<Pool<Sqlite>>,
 }
 
 impl DatabaseConnection {
@@ -10,34 +10,29 @@ impl DatabaseConnection {
         Self { conn: None }
     }
 
-    /* Prod build uses default value set in get_conn, this is explicit init with custom path for tests running in parralel */
-    #[cfg(test)]
-    pub async fn test_only_init(&mut self) {
-        let options = SqliteConnectOptions::new().in_memory(true);
-
-        let conn = SqliteConnection::connect_with(&options).await.unwrap();
+    #[allow(dead_code)]
+    pub async fn init_in_memory(&mut self) {
+        let conn = SqlitePoolOptions::new()
+            .max_connections(20)
+            .min_connections(1)
+            .connect("sqlite::memory:?cache=shared")
+            .await
+            .unwrap();
         self.conn = Some(conn);
     }
 
-    pub async fn get_conn(&mut self) -> &mut SqliteConnection {
-        match self.conn {
-            Some(ref mut conn) => conn,
-            None => {
-                /*
-                DEBUG MODE
-                    let options = SqliteConnectOptions::new()
-                        .filename("files.db")
-                        .create_if_missing(true);
-                    let conn = SqliteConnection::connect_with(&options).await.unwrap();
-                */
-                let conn =
-                    SqliteConnection::connect_with(&SqliteConnectOptions::new().in_memory(true))
-                        .await
-                        .unwrap();
-                self.conn = Some(conn);
+    #[allow(dead_code)]
+    pub async fn init_in_folder(&mut self) {
+        let conn = SqlitePoolOptions::new()
+            .max_connections(20)
+            .min_connections(1)
+            .connect("sqlite://files.db")
+            .await
+            .unwrap();
+        self.conn = Some(conn);
+    }
 
-                self.conn.as_mut().unwrap()
-            }
-        }
+    pub async fn get_conn(&self) -> Pool<Sqlite> {
+        self.conn.as_ref().unwrap().clone()
     }
 }

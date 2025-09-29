@@ -1,17 +1,18 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{Row, SqliteConnection};
+use sqlx::Row;
 use std::collections::HashMap;
 use std::path::Path;
 use ts_rs::TS;
 
-use crate::core::core_state::{DatabaseConnectionMutex, SchemasCacheMutex};
-use crate::schema::schema_cache::SchemasInMemoryCache;
-use crate::schema::types::{AttrValue, Schema, SchemaAttrType};
+use crate::core::core_state::AppContext;
+use crate::schema::schema_cache::SchemaResult;
+use crate::schema::types::AttrValue;
 use crate::utils::errorhandling::ErrFR;
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS, Default)]
 #[ts(export)]
 pub struct RecordFromDb {
+    /* Relative path to root path */
     pub path: Option<String>,
     pub modified: Option<String>,
     pub markdown: Option<String>,
@@ -19,8 +20,8 @@ pub struct RecordFromDb {
     pub attrs: HashMap<String, AttrValue>,
 }
 
-pub async fn get_files_abstact(
-    db: &mut SqliteConnection,
+pub async fn get_files_abstract(
+    ctx: &AppContext,
     where_clause: String,
 ) -> Result<Vec<RecordFromDb>, Box<ErrFR>> {
     let q = format!(
@@ -29,22 +30,26 @@ pub async fn get_files_abstact(
     );
 
     let res = sqlx::query(&q)
-        .fetch_all(&mut *db)
+        .fetch_all(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q)))?;
 
-    let result_iter = res.iter().map(|r| {
+    let result_iter = res.iter().filter_map(|r| {
         let attrs_raw = r.get("attributes");
 
         let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
             .map_err(|e| ErrFR::new("Error when parsing attributes").raw(e));
 
-        RecordFromDb {
-            path: r.get("path"),
+        let path: Option<String> = r.get("path");
+
+        path.as_ref()?;
+
+        Some(RecordFromDb {
+            path,
             modified: r.get("modified"),
             attrs: attrs.unwrap(),
             markdown: None,
-        }
+        })
     });
 
     Ok(result_iter.collect())
@@ -53,59 +58,29 @@ pub async fn get_files_abstact(
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
 #[ts(export)]
 pub struct RecordListGetResult {
-    pub schema: Schema,
+    pub schema: SchemaResult,
     pub records: Vec<RecordFromDb>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, TS)]
-#[ts(export)]
-pub struct SortOrder {
-    pub key: String,
-    pub descending: bool,
-}
-
 pub async fn get_files_by_path(
-    conn: &mut SqliteConnection,
-    schemas_cache: &mut SchemasInMemoryCache,
-    path: String,
-    search_query: String,
-    sort: SortOrder,
+    ctx: &AppContext,
+    path: &Path,
 ) -> Result<RecordListGetResult, Box<ErrFR>> {
-    let schema = schemas_cache.get_schema_safe(Path::new(&path))?;
-
-    let sort_item = schema.schema.items.iter().find(|i| i.name == sort.key);
-
-    let sort_target = match sort_item {
-        Some(item) => match item.value {
-            SchemaAttrType::DatesPairCollection(_) => {
-                format!("files.attributes->'$.{}.value[0].finished'", sort.key)
-            }
-            SchemaAttrType::DateCollection(_) => {
-                format!("files.attributes->'$.{}.value[0]'", sort.key)
-            }
-            SchemaAttrType::Number(_) => {
-                format!("CAST(files.attributes->'$.{}.value' AS REAL)", sort.key)
-            }
-            _ => format!("files.attributes->'$.{}.value'", sort.key),
-        },
-        _ => "path".to_string(),
-    };
-
-    let  files = get_files_abstact(conn, format!(
-        "WHERE files.path LIKE concat('%', '{}', '%') AND files.search_index LIKE concat('%', '{}', '%') ORDER BY {} {}, path",
-        path, search_query.to_lowercase(), sort_target, if sort.descending { "DESC" } else { "ASC" }
-    ))
+    let schema = ctx.schemas_cache.get_schema_safe(path).await?;
+    let records = get_files_abstract(
+        ctx,
+        format!(
+            "WHERE files.path LIKE concat('{}', '%') ORDER BY path",
+            path.to_string_lossy()
+        ),
+    )
     .await?;
-
-    Ok(RecordListGetResult {
-        schema: schema.schema,
-        records: files,
-    })
+    Ok(RecordListGetResult { schema, records })
 }
 
-pub async fn get_all_tags(conn: &mut SqliteConnection) -> Result<Vec<String>, sqlx::Error> {
+pub async fn get_all_tags(ctx: &AppContext) -> Result<Vec<String>, sqlx::Error> {
     let res = sqlx::query("SELECT DISTINCT value FROM tags")
-        .fetch_all(conn)
+        .fetch_all(&ctx.database_conn.get_conn().await)
         .await?;
 
     let result: Vec<String> = res.iter().map(|r| r.get("value")).collect();
@@ -122,45 +97,39 @@ pub struct FolderListGetResult {
 #[derive(Serialize, Deserialize, Clone, Debug, TS, PartialEq)]
 #[ts(export)]
 pub struct FolderOnDisk {
+    /* Relative path to root path */
     pub path: String,
-    pub path_relative: String,
     pub name: String,
     pub has_schema: bool,
     pub own_schema: bool,
     pub schema_file_path: String,
 }
 
-pub async fn get_all_folders(
-    root_path: String,
-    dcm: &DatabaseConnectionMutex,
-    scm: &SchemasCacheMutex,
-) -> Result<FolderListGetResult, Box<ErrFR>> {
-    let mut db = dcm.lock().await;
-    let conn = db.get_conn().await;
-
+pub async fn get_all_folders(ctx: &AppContext) -> Result<FolderListGetResult, Box<ErrFR>> {
     let res = sqlx::query("SELECT * FROM folders")
-        .fetch_all(conn)
+        .fetch_all(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
 
-    drop(db);
+    let lock = ctx.schemas_cache.get_read_lock().await;
 
-    let scm = scm.lock().await;
     let result: Vec<FolderOnDisk> = res
         .iter()
         .map(|r| {
             let pstring: String = r.get("path");
-            let sch = scm.get_schema(Path::new(&pstring));
+            let sch = ctx
+                .schemas_cache
+                .get_schema_by_lock(&lock, Path::new(&pstring));
+
             FolderOnDisk {
                 path: pstring.clone(),
-                path_relative: pstring.clone().replace(&root_path, ""),
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
                     .as_ref()
-                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .is_some_and(|s| s.location.schema_owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
-                    s.file_path.to_string_lossy().to_string()
+                    s.location.schema_path.to_string_lossy().to_string()
                 }),
             }
         })
@@ -170,52 +139,47 @@ pub async fn get_all_folders(
 }
 
 pub async fn get_all_folders_by_schema(
-    root_path: String,
-    dcm: &DatabaseConnectionMutex,
-    scm: &SchemasCacheMutex,
-    schema_path: String,
+    ctx: &AppContext,
+    schema_path_relative: &Path,
 ) -> Result<FolderListGetResult, Box<ErrFR>> {
-    let schema_p = Path::new(&schema_path);
-
-    let schema_folder = match schema_p.is_file() {
-        true => schema_p.parent().unwrap(),
-        false => schema_p,
+    let schema_folder = match schema_path_relative.is_file() {
+        true => schema_path_relative.parent().unwrap(),
+        false => schema_path_relative,
     };
-
-    let mut db = dcm.lock().await;
-    let conn = db.get_conn().await;
 
     let res = sqlx::query(&format!(
         "SELECT * FROM folders WHERE path LIKE concat('{}', '%')",
         schema_folder.to_string_lossy()
     ))
-    .fetch_all(conn)
+    .fetch_all(&ctx.database_conn.get_conn().await)
     .await
     .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
 
-    let schemas_cache = scm.lock().await;
+    let lock = ctx.schemas_cache.get_read_lock().await;
+
     let result: Vec<FolderOnDisk> = res
         .iter()
         .filter_map(|r| {
             let pstring: String = r.get("path");
-            let sch = schemas_cache.get_schema(Path::new(&pstring));
+            let sch = ctx
+                .schemas_cache
+                .get_schema_by_lock(&lock, Path::new(&pstring));
 
             sch.as_ref()?;
 
-            if sch.as_ref().unwrap().owner_folder != schema_folder {
+            if sch.as_ref().unwrap().location.schema_owner_folder != schema_folder {
                 return None;
             }
 
             Some(FolderOnDisk {
                 path: pstring.clone(),
-                path_relative: pstring.clone().replace(&root_path, ""),
                 name: r.get("name"),
                 has_schema: sch.is_some(),
                 own_schema: sch
                     .as_ref()
-                    .is_some_and(|s| s.owner_folder == Path::new(&pstring)),
+                    .is_some_and(|s| s.location.schema_owner_folder == Path::new(&pstring)),
                 schema_file_path: sch.map_or("".to_string(), |s| {
-                    s.file_path.to_string_lossy().to_string()
+                    s.location.schema_path.to_string_lossy().to_string()
                 }),
             })
         })

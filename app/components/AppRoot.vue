@@ -23,13 +23,17 @@
 </template>
 
 <script setup lang="ts">
+import { useRootPathFromQuery } from '~/composables';
+import { useProvideRootPath } from '~/composables/data/providers';
 import AppSidebar from './Core/AppSidebar.vue';
 import CustomWindowButtons from './Core/CustomWindowButtons.vue';
 import InitProcess from './Core/InitProcess.vue';
 import TabsSelector from './Core/Tabs/TabsSelector.vue';
 import RouterMain from './RouterMain.vue';
 
-const rootPath = useRootPath();
+const rootPath = useRootPathFromQuery();
+
+useProvideRootPath(rootPath);
 
 const hasRootPath = computed(() => rootPath.data.value);
 </script>

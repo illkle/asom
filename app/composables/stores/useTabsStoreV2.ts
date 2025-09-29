@@ -1,13 +1,14 @@
+import { path } from '@tauri-apps/api';
 import { platform } from '@tauri-apps/plugin-os';
 import { useEventListener, useThrottleFn } from '@vueuse/core';
 import { cloneDeep } from 'lodash-es';
-import path from 'path-browserify';
 import { defineStore } from 'pinia';
 
 import ShortUniqueId from 'short-unique-id';
 import type { ShallowRef } from 'vue';
 import { z } from 'zod';
-import { useRootPath, useUsableSchemas } from '~/composables/data/queries';
+import { c_get_root_path } from '~/api/tauriActions';
+import { useUsableSchemas } from '~/composables/data/queries';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -167,15 +168,6 @@ export const useTabsStoreV2 = defineStore('tabs', {
       return this.openedTab.history[this.openedTab.historyPointer];
     },
 
-    pathFromOpenedTab(): string | undefined {
-      if (!this.openedItem || !this.openedItem._path) return;
-
-      if (this.openedItem._type === 'file') return path.dirname(this.openedItem._path);
-      if (this.openedItem._type === 'folder') return this.openedItem._path;
-
-      return undefined;
-    },
-
     canGoBack() {
       if (this.navigationBlocks.size > 0) return false;
 
@@ -208,11 +200,19 @@ export const useTabsStoreV2 = defineStore('tabs', {
       });
       console.log('saving tabs', tabs);
 
-      await openedTabsFile.set(tabs);
+      const root = await c_get_root_path();
+      if (!root) {
+        throw new Error('Root path is not set');
+      }
+      await openedTabsFile.set(root, tabs);
     },
     async _fetchOpened() {
       try {
-        const res = await openedTabsFile.get();
+        const root = await c_get_root_path();
+        if (!root) {
+          throw new Error('Root path is not set');
+        }
+        const res = await openedTabsFile.get(root);
         this.openedTabs = res.openedTabs;
         this.focusHistory = res.focusHistory;
         this.focusHistoryPointer = res.focusHistoryPointer;
@@ -221,7 +221,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
       }
     },
 
-    /** Preservation on disk */
+    /** Internal helpers */
     _clearForwardHistoryItem(target: ITabEntry) {
       if (target.historyPointer !== target.history.length - 1) {
         /** If we are not at the end of history, we need to remove all history items after the current one */
@@ -462,7 +462,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
 
 const useTabsPreservation = () => {
   const store = useTabsStoreV2();
-  const rootPath = useRootPath();
+  const rootPath = useRootPathFromQuery();
 
   watch(
     rootPath.data,
@@ -491,8 +491,8 @@ const useTabsPreservation = () => {
 
 const useCloseInvalidTabsOnDeletions = () => {
   const store = useTabsStoreV2();
-  useListenToEvent('FileRemove', ({ c: path }) => {
-    store._handlePathDeletion(path, false);
+  useListenToEvent('FileRemove', ({ c }) => {
+    store._handlePathDeletion(c.path, false);
   });
 
   useListenToEvent('FolderRemove', ({ c: event }) => {
@@ -597,13 +597,13 @@ export const setupTabsHotkeys = () => {
 
   const { query: usableSchemas } = useUsableSchemas();
 
-  const hotkeyHandler = (e: KeyboardEvent) => {
+  const hotkeyHandler = async (e: KeyboardEvent) => {
     if (e.code === 'KeyT' && e[actionKey]) {
       e.preventDefault();
 
       const _path = store.openedItem
         ? store.openedItem._type === 'file'
-          ? path.dirname(store.openedItem._path)
+          ? await path.dirname(store.openedItem._path)
           : store.openedItem._path
         : Object.keys(usableSchemas.data.value ?? {})[0];
 
@@ -661,5 +661,6 @@ export const setupTabsHotkeys = () => {
 
   onUnmounted(() => {
     window.removeEventListener('keydown', hotkeyHandler);
+    window.removeEventListener('mousedown', mouseHandler);
   });
 };
