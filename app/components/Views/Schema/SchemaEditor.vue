@@ -125,8 +125,6 @@ const qc = useQueryCache();
 
 const { folders, isPending, foldersAsTree } = useFoldersList();
 
-const existingSchemas = useExistingSchemas();
-
 const allFolderIds = computed(() => {
   return folders.value?.folders.map((v) => v.path) ?? [];
 });

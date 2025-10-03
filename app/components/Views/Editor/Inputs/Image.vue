@@ -37,8 +37,6 @@
 </template>
 
 <script setup lang="ts">
-import { exists } from '@tauri-apps/plugin-fs';
-
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { openPath } from '@tauri-apps/plugin-opener';
 import { computedAsync } from '@vueuse/core';
@@ -66,21 +64,19 @@ const ar = computed(() => {
 
 const rootPath = useRootPathInjectSafe();
 
-const filePath = computedAsync(async () => {
+const filePath = computed(() => {
   if (!imageName.value || !rootPath.value) return null;
-  return await path.join(rootPath.value, '.assets', imageName.value);
+  return [rootPath.value, '.assets', imageName.value].join(path.sep());
 });
 
-const pathFolder = computedAsync(async () => {
+const pathFolder = computed(() => {
   if (!filePath.value) return null;
-  return await path.dirname(filePath.value);
+  return [rootPath.value, '.assets'].join(path.sep());
 });
 
 const imagePath = computedAsync(async () => {
   if (!filePath.value) return null;
-  const fileExistst = await exists(filePath.value);
-  if (!fileExistst) return null;
-  return await convertFileSrc(filePath.value);
+  return convertFileSrc(filePath.value);
 });
 
 const changeImageHandler = async () => {

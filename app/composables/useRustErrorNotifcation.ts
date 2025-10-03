@@ -9,10 +9,15 @@ export function isOurError(v: unknown): v is ErrFR {
   return Boolean(v && typeof v === 'object' && 'isError' in v && v.isError === true);
 }
 
-export const useRustErrorNotification = (
-  e: ErrFR,
+export const handleRustError = (
+  e: unknown,
   codeBinds?: Partial<Record<ErrFRActionCode, () => void>>,
 ) => {
+  if (!isOurError(e)) {
+    console.error(e);
+    return;
+  }
+
   console.log('e', e);
   toast.error(e.title, {
     description: markRaw(ErrorToast),
@@ -33,5 +38,5 @@ export const useRustErrorNotification = (
 };
 
 export const useHandleErrorsFromRust = () => {
-  useListenToEvent('ErrorHappened', (v) => useRustErrorNotification(v.c));
+  useListenToEvent('ErrorHappened', (v) => handleRustError(v.c));
 };

@@ -29,13 +29,11 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
   for (const [key, apiType] of Object.entries(apiSchema)) {
     const mapping = apiSettings.mapping[key];
     if (!mapping) {
-      console.log('no mapping for', key);
       continue;
     }
 
     const schemaItem = namedSchemaItems[mapping.schemaName];
     if (!schemaItem) {
-      console.log('no schema item for', key);
       continue;
     }
 
@@ -44,7 +42,6 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
     const apiValue = apiData[key as keyof typeof apiData];
 
     if (!apiValue) {
-      console.log('no api value for', key);
       continue;
     }
 

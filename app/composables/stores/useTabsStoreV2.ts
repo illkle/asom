@@ -198,7 +198,6 @@ export const useTabsStoreV2 = defineStore('tabs', {
         focusHistory: this.focusHistory,
         focusHistoryPointer: this.focusHistoryPointer,
       });
-      console.log('saving tabs', tabs);
 
       const root = await c_get_root_path();
       if (!root) {

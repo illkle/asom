@@ -11,7 +11,7 @@ pub async fn create_db_tables(db: &DatabaseConnection) -> Result<(), sqlx::Error
         .execute(&conn)
         .await?;
 
-    sqlx::query("CREATE TABLE files (path TEXT PRIMARY KEY, modified TEXT, attributes TEXT CHECK(json_valid(attributes)))")
+    sqlx::query("CREATE TABLE files (path TEXT PRIMARY KEY, modified INTEGER, attributes TEXT CHECK(json_valid(attributes)))")
     .execute(&conn)
     .await?;
 

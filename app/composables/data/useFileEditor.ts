@@ -1,6 +1,6 @@
+import type { UseQueryReturn } from '@pinia/colada';
 import { path } from '@tauri-apps/api';
 import { rename } from '@tauri-apps/plugin-fs';
-import { watchPausable } from '@vueuse/core';
 import { cloneDeep, throttle } from 'lodash-es';
 import type { ShallowRef } from 'vue';
 
@@ -8,55 +8,74 @@ import { c_read_file_by_path, c_save_file } from '~/api/tauriActions';
 import { useCodeMirror } from '~/composables/CodeMirror/useCodeMirror';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 
-const useSyncedValue = <T>({
+/** Creates editable ref from query data. Allows for two way sync using remote(file) write timestamp to resolve conflicts.
+ * Note that timestamp from remoteValue\editableProxy will become wrong after we start sending updates. Real timestamp is max(lastSyncedTimestamp, editableProxy['timestampLocation']).
+ */
+export const useSyncedValue = <T>({
   remoteValue,
   getTimestamp,
+  setTimestamp,
   updater,
   changesTracker,
   onExternalUpdate,
-  skipFirstUpdate = false,
 }: {
-  remoteValue: Ref<T>;
-  skipFirstUpdate?: boolean;
-  getTimestamp: (v: T) => Date;
+  remoteValue: UseQueryReturn<T, Error, T | undefined>;
+
+  getTimestamp: (v: T | undefined) => Date;
+  setTimestamp: (v: T, ts: Date) => void;
   updater: (v: T) => Promise<Date>;
   onExternalUpdate: (v: T) => void;
   changesTracker: Ref<number>;
 }) => {
-  const editableProxy = ref(remoteValue.value);
-  const lastSyncedTimestamp = ref(getTimestamp(remoteValue.value));
+  const editableProxy = ref<T | null>(null);
+  const lastSyncedTimestamp = ref<Date | null>(null);
+  let watchPaused = false;
 
-  const skipUpdate = ref(skipFirstUpdate);
-
-  watch(remoteValue, (v) => {
-    const newTs = getTimestamp(v);
-
-    if (newTs > lastSyncedTimestamp.value) {
-      pauseWatcher();
-      editableProxy.value = v;
-      lastSyncedTimestamp.value = newTs;
-      onExternalUpdate(v);
-      resumeWatcher();
-    }
-  });
-
-  const { pause: pauseWatcher, resume: resumeWatcher } = watchPausable(
+  watch(
     editableProxy,
-    () => {
-      if (skipUpdate.value) {
-        console.log('skipUpdate++');
-        skipUpdate.value = false;
-        return;
-      }
-      console.log('changesTracker++');
+    (v) => {
+      if (!v || watchPaused) return;
       changesTracker.value++;
     },
     { deep: true },
   );
 
+  const pauseWatcher = () => {
+    watchPaused = true;
+  };
+  const resumeWatcher = () => {
+    nextTick(() => {
+      watchPaused = false;
+    });
+  };
+
+  watch(
+    remoteValue.data,
+    (remoteUpdate) => {
+      if (!remoteUpdate) return;
+      const newTs = getTimestamp(remoteUpdate);
+
+      if (lastSyncedTimestamp.value === null || newTs > lastSyncedTimestamp.value) {
+        pauseWatcher();
+        watchPaused = true;
+        editableProxy.value = remoteUpdate;
+        lastSyncedTimestamp.value = newTs;
+        onExternalUpdate(remoteUpdate);
+        resumeWatcher();
+        nextTick(() => {
+          watchPaused = false;
+        });
+      }
+    },
+    { immediate: true },
+  );
+
   const performUpdate = async () => {
     try {
       const stateToSave = cloneDeep(editableProxy.value);
+      if (lastSyncedTimestamp.value) {
+        setTimestamp(stateToSave, lastSyncedTimestamp.value);
+      }
       const changesCopy = changesTracker.value;
       const newTimestamp = await updater(stateToSave);
       lastSyncedTimestamp.value = newTimestamp;
@@ -77,8 +96,8 @@ export const useFileEditorV2 = (
 ) => {
   const fileQ = useQuery({
     key: OPENED_FILE_KEY(opened),
-    query: () => {
-      return c_read_file_by_path(opened._path);
+    query: async () => {
+      return await c_read_file_by_path(opened._path);
     },
   });
 
@@ -90,7 +109,7 @@ export const useFileEditorV2 = (
 
   watch(fileQ.data, (v) => {
     if (v?.record.parsing_error) {
-      useRustErrorNotification(v.record.parsing_error);
+      handleRustError(v.record.parsing_error);
     }
   });
 
@@ -115,20 +134,28 @@ export const useFileEditorV2 = (
   const { editableProxy, performUpdate, lastSyncedTimestamp, pauseWatcher, resumeWatcher } =
     useSyncedValue({
       changesTracker,
-      remoteValue: fileQ.data,
+      remoteValue: fileQ,
       getTimestamp: (v) => new Date(v?.record.record.modified ?? 0),
+      setTimestamp: (v, ts) => {
+        v.record.record.modified = ts.getTime();
+      },
       onExternalUpdate: (v) => {
         createOrUpdateEditor(v?.record.record.markdown ?? '');
       },
-      skipFirstUpdate: true,
       updater: async (v) => {
         console.log('updater', v);
         if (!v) throw new Error('No value to save');
 
         const data = v.record;
         data.record.markdown = getEditorState();
-        const res = await c_save_file(data.record, true);
-        return new Date(res.modified);
+        try {
+          const res = await c_save_file({ record: data.record });
+          return new Date(Number(res.modified));
+        } catch (e) {
+          handleRustError(e);
+          console.error(e);
+          throw e;
+        }
       },
     });
 
@@ -139,21 +166,17 @@ export const useFileEditorV2 = (
     },
   });
 
-  onMounted(() => {
-    createOrUpdateEditor(fileQ.data.value?.record.record.markdown || '');
-  });
-
-  const throrottledUpdate = throttle(performUpdate, 2000);
+  const throttledUpdate = throttle(performUpdate, 2000);
 
   watch(changesTracker, (v) => {
     if (v > 0) {
-      console.log('throrottledUpdate');
-      throrottledUpdate();
+      console.log('DEBUG throrottledUpdate');
+      throttledUpdate();
     }
   });
 
   onBeforeUnmount(async () => {
-    await throrottledUpdate.flush();
+    await throttledUpdate.flush();
   });
 
   const ts = useTabsStoreV2();
@@ -176,6 +199,10 @@ export const useFileEditorV2 = (
     });
   };
 
+  const somethingPending = computed(() => {
+    return fileQ.isPending.value || viewLayoutQ.isPending.value || viewSettingsQ.isPending.value;
+  });
+
   return {
     fileQ,
     editableProxy,
@@ -189,5 +216,6 @@ export const useFileEditorV2 = (
     changesTracker,
     lastSyncedTimestamp,
     onRename,
+    somethingPending,
   };
 };

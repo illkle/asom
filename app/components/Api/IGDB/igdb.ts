@@ -102,15 +102,11 @@ export const getGamesFromIGDB = async ({
       c.igdb_accessToken = t.access_token;
       await setApiCredentials(c);
     } catch (e) {
-      if (isOurError(e)) {
-        console.log('our error', e);
-        useRustErrorNotification(e);
-      }
-      useRustErrorNotification({
+      handleRustError({
         isError: true,
         title: 'Failed to get token for IGDB',
         info: e instanceof Error ? e.message : 'Unknown error',
-        subErrors: [],
+        subErrors: [e],
       });
       return [];
     }
@@ -137,7 +133,7 @@ export const getGamesFromIGDB = async ({
         limit,
       });
     } catch (e) {
-      useRustErrorNotification({
+      handleRustError({
         isError: true,
         title: 'Failed to get games from IGDB',
         subErrors: [],

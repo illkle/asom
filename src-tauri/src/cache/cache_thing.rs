@@ -24,7 +24,7 @@ pub async fn insert_file_into_cache_db(
         "INSERT INTO files (path, modified, attributes) VALUES (?1, ?2, ?3) ON CONFLICT(path) DO UPDATE SET modified=excluded.modified, attributes=excluded.attributes",
     )
     .bind(path.to_string())
-    .bind(file.record.modified.clone())
+    .bind(file.record.modified)
     .bind(&attrs)
     .execute(&ctx.database_conn.get_conn().await)
     .await

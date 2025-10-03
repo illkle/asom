@@ -1,7 +1,7 @@
 import { c_get_files_by_path } from '~/api/tauriActions';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
-import { useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
+import { handleRustError } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import type {
   FileEventDataExisting,
@@ -24,9 +24,7 @@ export const useFilesListV2 = ({ opened }: { opened: IOpened }) => {
   });
 
   watch(files.error, (e) => {
-    if (e && isOurError(e)) {
-      useRustErrorNotification(e, {});
-    }
+    handleRustError(e);
   });
 
   const qc = useQueryCache();

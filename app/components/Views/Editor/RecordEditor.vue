@@ -3,7 +3,12 @@
     ref="scrollElement"
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
-    <div class="max-w-3xl mx-auto w-full">
+    <div v-if="somethingPending">
+      <div class="w-full h-full flex items-center justify-center py-16">
+        <LoaderCircle class="animate-spin" :size="24" />
+      </div>
+    </div>
+    <div v-else class="max-w-3xl mx-auto w-full">
       <div
         class="grid grid-cols-[4fr_min-content] w-full gap-2 py-2 rounded-b-md z-10 sticky top-0 bg-background"
       >
@@ -21,11 +26,16 @@
           <DropdownMenuContent>
             <DropdownMenuItem @click="openEditMode"> <EditIcon /> Edit Layout </DropdownMenuItem>
             <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
+            <DropdownMenuItem
+              @click="showInFileManager({ rootPath, targetPath: props.opened._path, reveal: true })"
+            >
+              <FolderIcon /> Reveal in {{ fileManager }}
+            </DropdownMenuItem>
             <DropdownMenuItem @click="deleteDialog = true">
               <Trash2Icon /> Delete
             </DropdownMenuItem>
 
-            <DropdownMenuItem @click="fillFromApiDialog = true">
+            <DropdownMenuItem v-if="hasApi" @click="fillFromApiDialog = true">
               <CloudDownload /> Fill from API
             </DropdownMenuItem>
 
@@ -106,7 +116,9 @@
       </Dialog>
 
       <div v-if="showLayoutWarning" class="text-xs text-muted-foreground p-1 flex">
-        You have {{ inviSchemaItms.length }} item{{ inviSchemaItms.length === 1 ? '' : 's' }}
+        You have {{ invisibleSchemaItems.length }} item{{
+          invisibleSchemaItems.length === 1 ? '' : 's'
+        }}
         in schema that are not visible in the view:
         <br />
         <span class="cursor-pointer underline ml-4" @click="openEditMode">Edit Layout</span>
@@ -142,6 +154,8 @@ import {
   EditIcon,
   EllipsisVerticalIcon,
   EyeIcon,
+  FolderIcon,
+  LoaderCircle,
   PencilIcon,
   Trash2Icon,
 } from 'lucide-vue-next';
@@ -150,6 +164,7 @@ import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
 import { c_delete_to_trash } from '~/api/tauriActions';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
@@ -161,19 +176,12 @@ import AddAndSearch from '../Add/AddAndSearch.vue';
 import BreadCrumbsList from './BreadCrumbsList.vue';
 import MetaEditor from './MetaEditor.vue';
 
-const separator = tauriPath.sep();
-
 const props = defineProps({
   opened: {
     type: Object as PropType<IOpened>,
     required: true,
   },
 });
-
-const roughBasename = (p: string) => {
-  const splitted = p.split(separator);
-  return splitted[splitted.length - 1];
-};
 
 const editorWrapper = useTemplateRef('editorWrapper');
 
@@ -191,8 +199,16 @@ const startRename = async () => {
   );
 };
 
-const { fileQ, editableProxy, viewSettingsQ, viewLayoutQ, onRename, viewSettingsUpdaterPartial } =
-  useFileEditorV2(props.opened, editorWrapper);
+const {
+  fileQ,
+  editableProxy,
+  viewSettingsQ,
+  viewLayoutQ,
+  onRename,
+  viewSettingsUpdaterPartial,
+  somethingPending,
+  lastSyncedTimestamp,
+} = useFileEditorV2(props.opened, editorWrapper);
 
 const schema = computed(() => fileQ.data.value?.record.schema);
 
@@ -227,7 +243,7 @@ const viewLayoutKeys = computed(() => {
   return hasKey;
 });
 
-const inviSchemaItms = computed(() => {
+const invisibleSchemaItems = computed(() => {
   if (!schema.value) return [];
   return (
     schema.value?.schema.items
@@ -236,7 +252,7 @@ const inviSchemaItms = computed(() => {
   );
 });
 const showLayoutWarning = computed(() => {
-  return !viewSettingsQ.data.value?.layoutWarningsHidden && inviSchemaItms.value.length;
+  return !viewSettingsQ.data.value?.layoutWarningsHidden && invisibleSchemaItems.value.length;
 });
 
 const apiConnection = useApiConnection(
@@ -255,6 +271,9 @@ const openEditMode = () => {
     'last',
   );
 };
+
+const fileManager = useFileManagerName();
+const rootPath = useRootPathInjectSafe();
 </script>
 
 <style>

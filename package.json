@@ -61,6 +61,7 @@
     "@tauri-apps/plugin-sql": "^2.3.0",
     "@tauri-apps/plugin-store": "^2.4.0",
     "@tauri-apps/plugin-updater": "^2.9.0",
+    "@vue/test-utils": "^2.4.6",
     "@vueuse/components": "^13.9.0",
     "@vueuse/core": "^13.9.0",
     "clsx": "^2.1.1",

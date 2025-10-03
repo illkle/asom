@@ -194,9 +194,10 @@ async fn c_save_file<T: tauri::Runtime>(
     app: AppHandle<T>,
     record: RecordFromDb,
     forced: bool,
+    create_new: bool,
 ) -> IPCSaveFile {
     let core = app.state::<CoreStateManager>();
-    save_file(&core.context, record, forced).await
+    save_file(&core.context, record, forced, create_new).await
 }
 
 #[tauri::command]

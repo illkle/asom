@@ -49,10 +49,9 @@ export class ConfigGeneric<
 
       const text = await fs.readTextFile(file);
       const f = JSON.parse(text);
-      console.log('returning parsed data', f);
       return this.fileSchema.parse(f);
     } catch (e) {
-      console.error('Error reading ConfigGeneric ' + this.fileName, e);
+      console.warn('Error reading ConfigGeneric ' + this.fileName, e);
     }
 
     return this.defaultData;

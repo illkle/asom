@@ -1,19 +1,18 @@
 use chrono::offset::Utc;
 use chrono::DateTime;
 
+use super::read_save::FileReadMode;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use super::read_save::FileReadMode;
-
-pub fn get_file_modified_time(path_absolute: &Path) -> Result<String, String> {
+pub fn get_file_modified_time(path_absolute: &Path) -> Result<i64, String> {
     match fs::metadata(path_absolute) {
         Ok(meta) => match meta.modified() {
             Ok(tt) => {
                 let time = Into::<DateTime<Utc>>::into(tt);
 
-                Ok(time.to_rfc3339())
+                Ok(time.timestamp_millis())
             }
             Err(e) => Err(e.to_string()),
         },
@@ -79,4 +78,74 @@ pub fn get_file_content(path_absolute: &Path, read_mode: &FileReadMode) -> io::R
         front_matter,
         content,
     })
+}
+
+pub fn get_unique_path(path: impl AsRef<Path>) -> PathBuf {
+    let path = path.as_ref();
+
+    if !path.exists() {
+        return path.to_path_buf();
+    }
+
+    let parent = path.parent().unwrap_or_else(|| Path::new(""));
+    let file_name = path.file_name().unwrap().to_string_lossy();
+
+    let (stem, extension) = match path.extension() {
+        Some(ext) => {
+            let ext_str = ext.to_string_lossy();
+            let stem = &file_name[..file_name.len() - ext_str.len() - 1];
+            (stem, Some(ext_str))
+        }
+        None => (file_name.as_ref(), None),
+    };
+
+    for i in 1.. {
+        let new_name = match extension {
+            Some(ref ext) => format!("{}({}).{}", stem, i, ext),
+            None => format!("{}({})", stem, i),
+        };
+
+        let new_path = parent.join(new_name);
+        if !new_path.exists() {
+            return new_path;
+        }
+    }
+
+    unreachable!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use tempfile::tempdir;
+
+    /** get_unique_path */
+    #[test]
+    fn test_nonexistent_file() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.txt");
+        assert_eq!(get_unique_path(&path), path);
+    }
+
+    #[test]
+    fn test_existing_file() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("test.txt");
+        File::create(&path).unwrap();
+
+        let result = get_unique_path(&path);
+        assert_eq!(result, dir.path().join("test(1).txt"));
+    }
+
+    #[test]
+    fn test_multiple_existing_files() {
+        let dir = tempdir().unwrap();
+        File::create(dir.path().join("test.txt")).unwrap();
+        File::create(dir.path().join("test(1).txt")).unwrap();
+        File::create(dir.path().join("test(2).txt")).unwrap();
+
+        let result = get_unique_path(dir.path().join("test.txt"));
+        assert_eq!(result, dir.path().join("test(3).txt"));
+    }
 }

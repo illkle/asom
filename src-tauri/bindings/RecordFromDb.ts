@@ -3,7 +3,7 @@ import type { AttrValue } from './AttrValue';
 
 export type RecordFromDb = {
   path: string | null;
-  modified: string | null;
+  modified: number;
   markdown: string | null;
   attrs: { [key in string]?: AttrValue };
 };

@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
+import { handleRustError, isOurError } from '~/composables/useRustErrorNotifcation';
 
 import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
 
@@ -100,7 +100,7 @@ const save = async () => {
   if (!schema.value) return;
   const r = await c_save_schema(props.opened._path, schema.value).catch(returnErrorHandler);
   if ('isError' in r) {
-    useRustErrorNotification(r);
+    handleRustError(r);
     return;
   }
   goBack();
@@ -114,7 +114,7 @@ onMounted(async () => {
     schema.value = res;
   } catch (e) {
     if (isOurError(e)) {
-      useRustErrorNotification(e as ErrFR);
+      handleRustError(e as ErrFR);
     }
   }
 });

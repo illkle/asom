@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp, nextTick } from 'vue';
+import { createApp } from 'vue';
 import type {
   FileEventDataExisting,
   FileEventDataRemoved,
@@ -20,7 +20,7 @@ vi.mock('~/composables/useListenToEvent', () => ({
 }));
 
 vi.mock('~/composables/useRustErrorNotifcation', () => ({
-  useRustErrorNotification: vi.fn(),
+  handleRustError: vi.fn(),
   isOurError: vi.fn(),
 }));
 
@@ -51,7 +51,7 @@ const createMockRecord = (
   attrs: Record<string, any> = {},
 ): RecordFromDb => ({
   path: opened._path + '/' + name,
-  modified: new Date().toISOString(),
+  modified: new Date().getTime(),
   markdown: `# ${name}`,
   attrs,
 });
@@ -128,10 +128,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
-
-    expect(result.files.data.value?.records).toHaveLength(2);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+    });
 
     // Simulate adding a new file
     const newRecord = createMockRecord(opened, 'file3.md');
@@ -139,11 +138,11 @@ describe('useFilesListV2 - processEvents', () => {
 
     capturedProcessEvents([{ event: 'add', data: addEvent }]);
 
-    await nextTick();
-
     // Check that the new file was added
-    expect(result.files.data.value?.records).toHaveLength(3);
-    expect(result.files.data.value?.records[2]).toEqual(newRecord);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
+      expect(result.files.data.value?.records[2]).toEqual(newRecord);
+    });
 
     dispose();
   });
@@ -161,11 +160,10 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
-
-    expect(result.files.data.value?.records).toHaveLength(2);
-    expect(result.files.data.value?.records[0]?.attrs.title).toBe('Old Title');
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+      expect(result.files.data.value?.records[0]?.attrs.title).toBe('Old Title');
+    });
 
     // Simulate updating the first file
     const updatedRecord = createMockRecord(opened, 'file1.md', { title: 'New Title' });
@@ -173,12 +171,11 @@ describe('useFilesListV2 - processEvents', () => {
 
     capturedProcessEvents!([{ event: 'update', data: updateEvent }]);
 
-    await nextTick();
-    await sleep(100);
-
     // Check that the file was updated
-    expect(result.files.data.value?.records).toHaveLength(2);
-    expect(result.files.data.value?.records[0]?.attrs.title).toBe('New Title');
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+      expect(result.files.data.value?.records[0]?.attrs.title).toBe('New Title');
+    });
 
     dispose();
   });
@@ -198,22 +195,21 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(20);
-
-    expect(result.files.data.value?.records).toHaveLength(3);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
+    });
 
     // Simulate removing the second file
     const removeEvent = createMockFileEventRemoved(opened._path + '/file2.md');
 
     capturedProcessEvents!([{ event: 'remove', data: removeEvent }]);
 
-    await nextTick();
-
     // Check that the file was removed
-    expect(result.files.data.value?.records).toHaveLength(2);
-    expect(result.files.data.value?.records[0]?.path).toBe(opened._path + '/file1.md');
-    expect(result.files.data.value?.records[1]?.path).toBe(opened._path + '/file3.md');
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+      expect(result.files.data.value?.records[0]?.path).toBe(opened._path + '/file1.md');
+      expect(result.files.data.value?.records[1]?.path).toBe(opened._path + '/file3.md');
+    });
 
     dispose();
   });
@@ -232,10 +228,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(20);
-
-    expect(result.files.data.value?.records).toHaveLength(3);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
+    });
 
     // Simulate multiple operations:
     // 1. Add a new file
@@ -253,34 +248,34 @@ describe('useFilesListV2 - processEvents', () => {
       { event: 'remove', data: createMockFileEventRemoved(opened._path + '/file2.md') },
     ]);
 
-    await nextTick();
-
     // Check that all operations were applied
-    expect(result.files.data.value?.records).toHaveLength(3);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
 
-    // file1 should be updated
-    const file1 = result.files.data.value?.records.find(
-      (r) => r.path === opened._path + '/file1.md',
-    );
-    expect(file1?.attrs.title).toBe('Updated File 1');
+      // file1 should be updated
+      const file1 = result.files.data.value?.records.find(
+        (r) => r.path === opened._path + '/file1.md',
+      );
+      expect(file1?.attrs.title).toBe('Updated File 1');
 
-    // file2 should be removed
-    const file2 = result.files.data.value?.records.find(
-      (r) => r.path === opened._path + '/file2.md',
-    );
-    expect(file2).toBeUndefined();
+      // file2 should be removed
+      const file2 = result.files.data.value?.records.find(
+        (r) => r.path === opened._path + '/file2.md',
+      );
+      expect(file2).toBeUndefined();
 
-    // file3 should remain unchanged
-    const file3 = result.files.data.value?.records.find(
-      (r) => r.path === opened._path + '/file3.md',
-    );
-    expect(file3?.attrs.title).toBe('File 3');
+      // file3 should remain unchanged
+      const file3 = result.files.data.value?.records.find(
+        (r) => r.path === opened._path + '/file3.md',
+      );
+      expect(file3?.attrs.title).toBe('File 3');
 
-    // file4 should be added
-    const file4 = result.files.data.value?.records.find(
-      (r) => r.path === opened._path + '/file4.md',
-    );
-    expect(file4?.attrs.title).toBe('File 4');
+      // file4 should be added
+      const file4 = result.files.data.value?.records.find(
+        (r) => r.path === opened._path + '/file4.md',
+      );
+      expect(file4?.attrs.title).toBe('File 4');
+    });
 
     dispose();
   });
@@ -295,8 +290,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(1);
+    });
 
     // Spy on console.warn to verify the warning
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -311,10 +307,12 @@ describe('useFilesListV2 - processEvents', () => {
     ]);
 
     // Check that a warning was logged
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
-      'useFileList: duplicate path event',
-      opened._path + '/file1.md',
-    );
+    await vi.waitFor(() => {
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'useFileList: duplicate path event',
+        opened._path + '/file1.md',
+      );
+    });
 
     consoleWarnSpy.mockRestore();
     dispose();
@@ -361,10 +359,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
-
-    expect(result.files.data.value?.records).toHaveLength(2);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+    });
 
     // Simulate removing and then adding a file (e.g., file replacement)
     // This should NOT trigger duplicate path warning because we process them in order
@@ -378,16 +375,16 @@ describe('useFilesListV2 - processEvents', () => {
       { event: 'add', data: createMockFileEventExisting(opened, 'file1.md', newRecord) },
     ]);
 
-    await nextTick();
-
     // Check that we still have 2 files
-    expect(result.files.data.value?.records).toHaveLength(2);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
 
-    // The file should have the new content
-    const file1 = result.files.data.value?.records.find(
-      (r) => r.path === opened._path + '/file1.md',
-    );
-    expect(file1?.attrs.title).toBe('Replaced');
+      // The file should have the new content
+      const file1 = result.files.data.value?.records.find(
+        (r) => r.path === opened._path + '/file1.md',
+      );
+      expect(file1?.attrs.title).toBe('Replaced');
+    });
 
     dispose();
   });
@@ -406,8 +403,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
+    });
 
     // Update the middle file
     const updatedRecord = createMockRecord(opened, 'file2.md', { updated: true });
@@ -419,14 +417,14 @@ describe('useFilesListV2 - processEvents', () => {
       },
     ]);
 
-    await nextTick();
-
     // Check that the order is preserved
-    expect(result.files.data.value?.records).toHaveLength(3);
-    expect(result.files.data.value?.records[0]?.path).toBe(opened._path + '/file1.md');
-    expect(result.files.data.value?.records[1]?.path).toBe(opened._path + '/file2.md');
-    expect(result.files.data.value?.records[2]?.path).toBe(opened._path + '/file3.md');
-    expect(result.files.data.value?.records[1]?.attrs.updated).toBe(true);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(3);
+      expect(result.files.data.value?.records[0]?.path).toBe(opened._path + '/file1.md');
+      expect(result.files.data.value?.records[1]?.path).toBe(opened._path + '/file2.md');
+      expect(result.files.data.value?.records[2]?.path).toBe(opened._path + '/file3.md');
+      expect(result.files.data.value?.records[1]?.attrs.updated).toBe(true);
+    });
 
     dispose();
   });
@@ -444,8 +442,9 @@ describe('useFilesListV2 - processEvents', () => {
     });
 
     // Wait for initial query to complete
-    await nextTick();
-    await sleep(100);
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(2);
+    });
 
     // Add multiple files
     const newRecord3 = createMockRecord(opened, 'file3.md');
@@ -456,12 +455,12 @@ describe('useFilesListV2 - processEvents', () => {
       { event: 'add', data: createMockFileEventExisting(opened, 'file4.md', newRecord4) },
     ]);
 
-    await nextTick();
-
     // Check that files were added in order at the end
-    expect(result.files.data.value?.records).toHaveLength(4);
-    expect(result.files.data.value?.records[2]?.path).toBe(opened._path + '/file3.md');
-    expect(result.files.data.value?.records[3]?.path).toBe(opened._path + '/file4.md');
+    await vi.waitFor(() => {
+      expect(result.files.data.value?.records).toHaveLength(4);
+      expect(result.files.data.value?.records[2]?.path).toBe(opened._path + '/file3.md');
+      expect(result.files.data.value?.records[3]?.path).toBe(opened._path + '/file4.md');
+    });
 
     dispose();
   });

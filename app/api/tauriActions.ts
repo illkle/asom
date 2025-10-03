@@ -28,8 +28,16 @@ export const c_get_root_path = async () => {
  *  1. Book.modified is not null but is not equal to file last modified
  *  2. File does not exist already.
  */
-export const c_save_file = async (record: RecordFromDb, forced = false) => {
-  return invoke('c_save_file', { record, forced }).then(
+export const c_save_file = async ({
+  record,
+  forced = false,
+  createNew = false,
+}: {
+  record: RecordFromDb;
+  forced?: boolean;
+  createNew?: boolean;
+}) => {
+  return invoke('c_save_file', { record, forced, createNew }).then(
     (v) => v as ExtractIpcResponcesType<'c_save_file'>,
   );
 };
@@ -39,7 +47,6 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const c_get_files_by_path = async (pathRelative: string) => {
   console.log(' c_get_files_by_path', pathRelative);
   return invoke('c_get_files_by_path', { pathRelative }).then((v) => {
-    console.log('c_get_files_by_path', v);
     return v as ExtractIpcResponcesType<'c_get_files_by_path'>;
   });
 };
@@ -50,13 +57,11 @@ export const c_get_all_tags = async () => {
 
 export const c_get_all_folders = async () => {
   return invoke('c_get_all_folders').then((v) => {
-    console.log('c_get_all_folders', v);
     return v as ExtractIpcResponcesType<'c_get_all_folders'>;
   });
 };
 
 export const c_get_all_folders_by_schema = async (schemaPath: string) => {
-  console.log('c_get_all_folders_by_schema', schemaPath);
   return invoke('c_get_all_folders_by_schema', { schemaPath }).then((v) => {
     return v as ExtractIpcResponcesType<'c_get_all_folders_by_schema'>;
   });
@@ -71,7 +76,6 @@ export type BookReadResult = {
 };
 
 export const c_read_file_by_path = async (path: string) => {
-  console.log('c_read_file_by_path', path);
   return invoke('c_read_file_by_path', { path }).then(
     (v) => v as ExtractIpcResponcesType<'c_read_file_by_path'>,
   );
@@ -85,12 +89,10 @@ export const c_get_schemas_usable = async () => {
 };
 
 export const c_get_schemas_all = async () => {
-  console.log('c_get_schemas_all');
   return invoke('c_get_schemas_all').then((v) => v as ExtractIpcResponcesType<'c_get_schemas_all'>);
 };
 
 export const c_save_schema = async (path: string, schema: Schema) => {
-  console.log('c_save_schema', path, schema);
   return invoke('c_save_schema', { path, schema }).then(
     (v) => v as ExtractIpcResponcesType<'c_save_schema'>,
   );
@@ -98,16 +100,13 @@ export const c_save_schema = async (path: string, schema: Schema) => {
 
 // All schema.yaml files we can find
 export const c_load_schema = async (path: string) => {
-  console.log('c_load_schema', path);
   return invoke('c_load_schema', { path }).then(
     (v) => v as ExtractIpcResponcesType<'c_load_schema'>,
   );
 };
 
 export const c_resolve_schema_path = async (path: string) => {
-  console.log('c_resolve_schema_path', path);
   if (!path) {
-    console.log('c_resolve_schema_path', path, 'is null');
     return null as ExtractIpcResponcesType<'c_resolve_schema_path'>;
   }
 
@@ -118,7 +117,6 @@ export const c_resolve_schema_path = async (path: string) => {
 
 // Moves file to recycle bin. Works with folders too
 export const c_delete_to_trash = async (path: string) => {
-  console.log('c_delete_to_trash', path);
   return invoke('c_delete_to_trash', { path }).then(
     (v) => v as ExtractIpcResponcesType<'c_delete_to_trash'>,
   );

@@ -6,6 +6,7 @@ use ts_rs::TS;
 
 use crate::cache::query::RecordFromDb;
 use crate::core::core_state::AppContext;
+use crate::files::utils::get_unique_path;
 use crate::schema::schema_cache::SchemaResult;
 use crate::schema::types::{AttrValue, AttrValueOnDisk};
 use crate::utils::errorhandling::{ErrFR, ErrFRActionCode};
@@ -81,13 +82,15 @@ pub async fn read_file_by_path(
 #[ts(export)]
 pub struct RecordSaveResult {
     pub path: String,
-    pub modified: String,
+    #[ts(type = "number")]
+    pub modified: i64, // UNIX milliseconds
 }
 
 pub async fn save_file(
     ctx: &AppContext,
     record: RecordFromDb,
     forced: bool,
+    create_new: bool,
 ) -> Result<RecordSaveResult, Box<ErrFR>> {
     let path = match record.path {
         Some(v) => v,
@@ -98,9 +101,11 @@ pub async fn save_file(
         }
     };
 
-    let path_absolute = ctx.relative_path_to_absolute(Path::new(&path)).await?;
+    let mut path_absolute = ctx.relative_path_to_absolute(Path::new(&path)).await?;
 
-    if !forced {
+    if create_new {
+        path_absolute = get_unique_path(&path_absolute);
+    } else if !forced {
         if let Some(v) = record.modified {
             let modified_before = match get_file_modified_time(&path_absolute) {
                 Ok(v) => v,
