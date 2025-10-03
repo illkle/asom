@@ -7,22 +7,17 @@ export type DraggableProps = {
   disabled?: boolean;
 };
 
-export const useDraggable = (
-  props: DraggableProps,
-  constraintsRef: Ref<HTMLDivElement | null>,
-  measureRef: Ref<HTMLDivElement | null>,
-) => {
-  const { startDrag, draggedItem, cursorPosition } = useCoolDndContext<unknown, DraggableInfo>();
+export const useDraggable = (props: DraggableProps, constraintsRef: Ref<HTMLDivElement | null>) => {
+  const { startDrag, draggedItem, cursorPosition, compensateForScroll } = useCoolDndContext<
+    unknown,
+    DraggableInfo
+  >();
 
   const isDraggingMe = computed(() => {
     return draggedItem.value?.id === props.id;
   });
 
   const pos = ref({
-    leftStart: 0,
-    topStart: 0,
-    leftCurrent: 0,
-    topCurrent: 0,
     cursorStartX: 0,
     cursorStartY: 0,
   });
@@ -36,14 +31,8 @@ export const useDraggable = (
     }
 
     return {
-      x:
-        pos.value.leftStart -
-        pos.value.leftCurrent +
-        (cursorPosition.value.x - pos.value.cursorStartX),
-      y:
-        pos.value.topStart -
-        pos.value.topCurrent +
-        (cursorPosition.value.y - pos.value.cursorStartY),
+      x: cursorPosition.value.x - pos.value.cursorStartX - compensateForScroll.value.x,
+      y: cursorPosition.value.y - pos.value.cursorStartY - compensateForScroll.value.y,
     };
   });
 
@@ -60,34 +49,11 @@ export const useDraggable = (
       constraintsRef.value,
     );
 
-    nextTick(() => {
-      if (!measureRef.value) return;
-      const rect = measureRef.value.getBoundingClientRect();
-
-      pos.value.leftStart = rect.left;
-      pos.value.topStart = rect.top;
-      pos.value.leftCurrent = rect.left;
-      pos.value.topCurrent = rect.top;
-    });
-
-    document.addEventListener('scroll', scrollAnywhere, { capture: true });
     document.addEventListener('pointerup', pointerUp, { once: true });
   };
 
-  const scrollAnywhere = () => {
-    if (!measureRef.value) return;
-    const rect = measureRef.value.getBoundingClientRect();
-    pos.value.leftCurrent = rect.left;
-    pos.value.topCurrent = rect.top;
-  };
-
   const pointerUp = () => {
-    document.removeEventListener('scroll', scrollAnywhere, { capture: true });
     pos.value = {
-      leftStart: 0,
-      topStart: 0,
-      leftCurrent: 0,
-      topCurrent: 0,
       cursorStartX: 0,
       cursorStartY: 0,
     };

@@ -63,8 +63,11 @@ const ar = computed(() => {
 });
 
 const rootPath = useRootPathInjectSafe();
+// Used for testing without tauri
+const isPreviewMode = inject<boolean>('PREVIEW_MODE');
 
 const filePath = computed(() => {
+  if (isPreviewMode) return null;
   if (!imageName.value || !rootPath.value) return null;
   return [rootPath.value, '.assets', imageName.value].join(path.sep());
 });

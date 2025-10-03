@@ -1,5 +1,9 @@
 <template>
-  <div :style="getStyleWrapper(props.item)" class="relative p-1.5 pt-10">
+  <div
+    :data-id="props.level + '-style-wrapper-' + props.item.id"
+    :style="getStyleWrapper(props.item)"
+    class="p-1.5 pt-9.5"
+  >
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
       <RenderDynamicEditorTopMenu @addItem="addItem">
@@ -20,7 +24,7 @@
           :parentIds="[...props.parentIds]"
           :class="[
             'rounded-md relative w-full',
-            'data-[is-dragging-me=true]:bg-background/50',
+            'data-[is-dragging-me=true]:bg-muted-foreground/5',
             'rounded-md cursor-grab data-[is-dragging-me=true]:border-muted-foreground transition-colors duration-300',
             p.type === 'item' ? '' : 'border',
           ]"

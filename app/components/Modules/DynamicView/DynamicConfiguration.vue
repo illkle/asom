@@ -1,6 +1,7 @@
 <template>
   <LayoutGroup v-if="layout">
     <MotionConfig :transition="{ duration: 0.2, type: 'tween' }">
+      <div ref="emptyDivForScrollCompensation"></div>
       <RenderDynamicEditor
         :item="layout"
         :level="0"
@@ -69,7 +70,10 @@ const emit = defineEmits<{
   (e: 'update:layout', layout: IDynamicViewGroup): void;
 }>();
 
+const emptyDivForScrollCompensation = useTemplateRef('emptyDivForScrollCompensation');
+
 const { draggedItem } = useProvideDNDContext({
+  emptyDivForScrollCompensation,
   onMove: (draggedItem, hoveredItem, quadrant) => {
     if (!props.layout) return;
 

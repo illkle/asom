@@ -13,7 +13,7 @@
         :schema="schema.data.value.schema"
       >
         <template #item="{ item }">
-          <div class="pointer-events-none p-1">
+          <div class="pointer-events-none">
             <AttributesRouter
               v-if="attributesByKey?.[item.id]"
               v-model:model-value="editableProxy.attrs[item.id]"

@@ -9,8 +9,8 @@
 </template>
 
 <script setup lang="ts">
+import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
 import type { AttrValue, SchemaItem } from '~/types';
-import AttributesRouter from '../Views/Editor/AttributesRouter.vue';
 
 onBeforeMount(() => {});
 

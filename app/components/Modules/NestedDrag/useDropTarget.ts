@@ -22,7 +22,7 @@ export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement | n
     draggedItem,
     hoveredItem,
     registerDropTarget,
-    updateDropTargetPositon,
+    updateDropTargetPositon: updateDropTargetPosition,
     unregisterDropTarget,
     updateDropTargetInfo,
   } = useCoolDndContext<unknown, DraggableInfo>();
@@ -59,7 +59,7 @@ export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement | n
   const computeIfTracking = () => {
     if (trackSizeChanges.value) {
       const sd = computeSizeData();
-      updateDropTargetPositon(props.id, regKey.value, sd);
+      updateDropTargetPosition(props.id, regKey.value, sd);
       backup.value = sd;
     }
   };

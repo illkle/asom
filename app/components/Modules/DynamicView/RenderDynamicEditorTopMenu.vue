@@ -1,7 +1,7 @@
 <template>
   <motion.div
     layout
-    class="flex justify-between items-center pl-2 w-full border-b absolute top-0 right-0 h-8"
+    class="flex justify-between items-center pl-2 w-full border-b absolute top-0 right-0 h-8 box-border"
   >
     <motion.div layout="preserve-aspect" class="text-xs text-muted-foreground"></motion.div>
     <motion.div layout="preserve-aspect" class="flex">

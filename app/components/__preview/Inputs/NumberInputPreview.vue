@@ -1,15 +1,15 @@
 <template>
   <div class="flex gap-4">
-    <Button variant="outline" @click="setAllValues(1)">Set all 1</Button>
-    <Button variant="outline" @click="setAllValues(10000)">Set all 10k</Button>
-    <Button variant="outline" @click="setAllValues(null)">Set all null</Button>
+    <Button variant="outline" @click="quickSet(1)">Set all 1</Button>
+    <Button variant="outline" @click="quickSet(10000)">Set all 10k</Button>
+    <Button variant="outline" @click="quickSet(null)">Set all null</Button>
   </div>
   <template v-for="key in Object.keys(possibleValues)" :key="key">
     <h3 class="text-lg font-bold">{{ key }}</h3>
     <div class="grid grid-cols-3 gap-4">
       <div v-for="value in possibleValues[key as keyof SettingsOptions<NumberSettings>]">
         <h5 class="text-sm opacity-20">{{ value ?? 'undefined' }}</h5>
-        <NumberInput
+        <Number
           :model-value="vals[String(key) + String(value)]!"
           @update:model-value="(v) => (vals[String(key) + String(value)] = v)"
           :settings="{ ...defaultNumberSettings, [key]: value }"
@@ -23,7 +23,7 @@
     <div v-for="extra in extras">
       <h5 class="text-sm opacity-20">{{ extra.label }}</h5>
 
-      <NumberInput
+      <Number
         v-model="vals[String(extra.label)]!"
         @update:model-value="(v) => (vals[String(extra.label)] = v)"
         :settings="extra.settings"
@@ -34,9 +34,9 @@
 </template>
 
 <script setup lang="ts">
+import Number from '~/components/Views/Editor/Inputs/Number.vue';
 import type { NumberSettings } from '~/types';
-import NumberInput from '../Views/Editor/Inputs/Number.vue';
-import type { SettingsOptions } from './helpers';
+import type { SettingsOptions } from '../helpers';
 
 const vals = ref<Record<string, number | null>>({});
 
@@ -55,20 +55,29 @@ const possibleValues: SettingsOptions<NumberSettings> = {
   style: ['Default', 'Slider', 'Stars'],
 };
 
-const setAllValues = (v: number | null) => {
+const setAllValues = (f: (obj: { label: string; settings: NumberSettings }) => number | null) => {
   const keys = Object.keys(possibleValues);
   for (const key of keys) {
     for (const value of possibleValues[key as keyof SettingsOptions<NumberSettings>] ?? []) {
-      vals.value[String(key) + String(value)] = v;
+      vals.value[String(key) + String(value)] = f({
+        label: key,
+        settings: { ...defaultNumberSettings, [key]: value },
+      });
     }
   }
   for (const extra of extras) {
-    vals.value[String(extra.label)] = v;
+    vals.value[String(extra.label)] = f(extra);
   }
 };
 
+const quickSet = (v: number | null) => {
+  setAllValues((obj) =>
+    v === null ? null : clamp(v, obj.settings.min ?? -Infinity, obj.settings.max ?? Infinity),
+  );
+};
+
 onBeforeMount(() => {
-  setAllValues(1);
+  quickSet(1);
 });
 
 const extras: { label: string; settings: NumberSettings }[] = [
