@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="isPending">
+  <PageTemplate :data-pending="isPending" tab-title="Root path & Schema">
     <template #title> Root path & Schema </template>
 
     <div class="flex items-stretch justify-between">

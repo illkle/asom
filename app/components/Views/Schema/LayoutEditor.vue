@@ -1,5 +1,8 @@
 <template>
-  <PageTemplate :data-pending="!viewLayoutData.q.data.value || viewSettingsQ.isPending.value">
+  <PageTemplate
+    :data-pending="!viewLayoutData.q.data.value || viewSettingsQ.isPending.value"
+    tab-title="Layout editor"
+  >
     <template #title> Layout editor </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />

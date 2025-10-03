@@ -105,7 +105,6 @@ import {
   WrenchIcon,
 } from 'lucide-vue-next';
 import RecordAdder from '~/components/Views/Add/RecordAdder.vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import { useIsMac } from '~/composables/useTools';
 import FileTree from '../FileTree/FileTree.vue';
@@ -115,9 +114,6 @@ import CheckUpdates from './CheckUpdates.vue';
 const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStoreV2();
-
-const colorMode = useColorMode();
-const store = useMainStore();
 
 const isMac = useIsMac();
 

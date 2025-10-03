@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate>
+  <PageTemplate tab-title="Goodreads importer">
     <template #title>Goodreads importer</template>
     <div class="mt-2">
       <h3 class="font-mono text-xl">Source</h3>

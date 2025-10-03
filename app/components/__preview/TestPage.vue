@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate>
+  <PageTemplate tab-title="Test Page">
     <Input v-model="input" />
     <TestPageSub />
 

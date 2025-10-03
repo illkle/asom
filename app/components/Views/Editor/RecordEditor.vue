@@ -161,7 +161,8 @@ import {
 
 import type { PropType } from 'vue';
 
-import { path as tauriPath } from '@tauri-apps/api';
+import { path, path as tauriPath } from '@tauri-apps/api';
+import { computedAsync } from '@vueuse/core';
 import { c_delete_to_trash } from '~/api/tauriActions';
 import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
@@ -169,6 +170,7 @@ import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
+  useUpdateCurrentTabTitleFrom,
   type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../../Modules/DynamicView/helpers';
@@ -181,6 +183,14 @@ const props = defineProps({
     type: Object as PropType<IOpened>,
     required: true,
   },
+});
+
+const title = computedAsync(async () => {
+  return await path.basename(props.opened._path, '.md');
+});
+
+useUpdateCurrentTabTitleFrom({
+  target: title,
 });
 
 const editorWrapper = useTemplateRef('editorWrapper');
@@ -207,7 +217,6 @@ const {
   onRename,
   viewSettingsUpdaterPartial,
   somethingPending,
-  lastSyncedTimestamp,
 } = useFileEditorV2(props.opened, editorWrapper);
 
 const schema = computed(() => fileQ.data.value?.record.schema);

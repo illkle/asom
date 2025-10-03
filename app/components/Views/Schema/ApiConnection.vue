@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="apiConnectionData.q.isPending.value">
+  <PageTemplate :data-pending="apiConnectionData.q.isPending.value" tab-title="Api Connection">
     <template #title> Api Connection </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />

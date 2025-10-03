@@ -7,12 +7,13 @@
     ]"
   >
     <div class="flex items-center gap-1 truncate text-xs">
-      <div>
-        <FolderIcon v-if="display.type === 'folder'" :size="12" />
-        <FileIcon v-if="display.type === 'file'" :size="12" />
+      <div class="shrink-0 opacity-50">
+        <FolderIcon v-if="type === 'folder'" :size="12" />
+        <FileIcon v-if="type === 'file'" :size="12" />
+        <SettingsIcon v-if="type === 'settings'" :size="12" />
       </div>
 
-      {{ display.label }}
+      {{ opened?._tabTitle ?? '' }}
     </div>
 
     <Button variant="ghost" size="icon" class="w-6 h-6" @mousedown.stop @click.stop="emit('close')">
@@ -22,11 +23,9 @@
 </template>
 
 <script lang="ts" setup>
-import { FileIcon, FolderIcon, XIcon } from 'lucide-vue-next';
+import { FileIcon, FolderIcon, SettingsIcon, XIcon } from 'lucide-vue-next';
 
 import { computed, type PropType } from 'vue';
-import { useRootPathInjectSafe } from '~/composables/data/providers';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import type { ITabEntry } from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps({
@@ -51,27 +50,30 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const store = useMainStore();
-const rootPath = useRootPathInjectSafe();
+const opened = computed(() => {
+  if (!props.item) return null;
+  return props.item.history[props.item.historyPointer]!;
+});
 
-const capitalize = (string: string) => {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-};
+const label = computed(() => {
+  if (!opened.value) return null;
+});
 
-const display = computed(() => {
-  if (!props.item) return { label: '', type: '' };
-
-  const opened = props.item.history[props.item.historyPointer]!;
-
-  if (opened._type === 'folder') {
-    return { label: opened._path.split(/[\\/]/).pop(), type: 'folder' };
+const type = computed(() => {
+  if (!opened.value) return null;
+  if (opened.value._type === 'folder') {
+    return 'folder';
   }
 
-  if (opened._type === 'file') {
-    return { label: opened._path.split(/[\\/]/).pop(), type: 'file' };
+  if (opened.value._type === 'file') {
+    return 'file';
   }
 
-  return { label: opened._type, type: opened._type };
+  if (opened.value._type.startsWith('settings')) {
+    return 'settings';
+  }
+
+  return null;
 });
 </script>
 

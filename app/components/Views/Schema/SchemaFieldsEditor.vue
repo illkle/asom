@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="!schema">
+  <PageTemplate :data-pending="!schema" tab-title="Schema editor">
     <template #title> Schema editor </template>
 
     <template #header>

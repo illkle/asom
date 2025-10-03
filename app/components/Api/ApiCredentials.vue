@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate>
+  <PageTemplate tab-title="Api Credentials">
     <template #title> Api Credentials </template>
 
     <template #header> </template>

@@ -1,3 +1,4 @@
+import type { StyleValue } from 'vue';
 import z from 'zod/v4';
 import type { ItemInfoCore, PointQuadrant } from '~/components/Modules/NestedDrag/common';
 
@@ -47,7 +48,7 @@ export const mapJustify: Record<IDynamicViewGroup['style']['justify'], string> =
   evenly: 'space-evenly',
 };
 
-export const getStyleWrapper = (group: IDynamicItem) => {
+export const getStyleWrapper = (group: IDynamicItem): StyleValue => {
   if (group.type === 'item') {
     return {};
   }
@@ -59,6 +60,7 @@ export const getStyleWrapper = (group: IDynamicItem) => {
     alignItems: mapAlign[group.style.align],
     justifyContent: mapJustify[group.style.justify],
     flex: `${group.style.sizeUnits} 1 0`,
+    position: 'relative',
   };
 };
 

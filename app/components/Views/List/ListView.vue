@@ -60,12 +60,16 @@
             }"
             @mousedown="() => header.column.toggleSorting()"
           >
-            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" />
-            <ArrowUp :size="16" v-else-if="header.column.getIsSorted() === 'asc'" />
+            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" class="shrink-0" />
+            <ArrowUp
+              :size="16"
+              v-else-if="header.column.getIsSorted() === 'asc'"
+              class="shrink-0"
+            />
 
             <div
               v-if="!header.isPlaceholder"
-              class="overflow-hidden text-ellipsis flex gap-2 items-center"
+              class="overflow-hidden truncate flex gap-2 items-center"
             >
               <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
             </div>

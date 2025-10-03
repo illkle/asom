@@ -75,6 +75,7 @@ const zCore = z.object({
     'settings/apiCredentials',
   ]),
   _path: z.string(),
+  _tabTitle: z.string().optional(),
 });
 
 const zPathV2 = zCore.extend({
@@ -92,7 +93,6 @@ export const zTabEntry = z.object({
   id: z.string(),
   /** History is state. Tab without history is just an array of 1 item */
   history: z.array(zOpened).min(1),
-
   historyPointer: z.number(),
 });
 
@@ -360,6 +360,11 @@ export const useTabsStoreV2 = defineStore('tabs', {
         throw new Error(`indexToSet is undefined ${indexToSet}`);
       }
       this.focusTab(id);
+    },
+
+    setCurrentTabTitle(title: string) {
+      if (!this.openedItem) return;
+      this.openedItem._tabTitle = title;
     },
 
     /**
@@ -662,4 +667,22 @@ export const setupTabsHotkeys = () => {
     window.removeEventListener('keydown', hotkeyHandler);
     window.removeEventListener('mousedown', mouseHandler);
   });
+};
+
+export const useUpdateCurrentTabTitleFrom = ({
+  target: refToUpdate,
+  setEmptyTitle = false,
+}: {
+  target: Ref<string | undefined>;
+  setEmptyTitle?: boolean;
+}) => {
+  const store = useTabsStoreV2();
+  watch(
+    refToUpdate,
+    (v) => {
+      if (!v && !setEmptyTitle) return;
+      store.setCurrentTabTitle(v ?? '');
+    },
+    { immediate: true },
+  );
 };

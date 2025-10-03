@@ -23,12 +23,20 @@
 </template>
 
 <script setup lang="ts">
-import { useScrollRestorationOnMount, useScrollWatcher } from '~/composables/stores/useTabsStoreV2';
+import {
+  useScrollRestorationOnMount,
+  useScrollWatcher,
+  useUpdateCurrentTabTitleFrom,
+} from '~/composables/stores/useTabsStoreV2';
 
 const props = defineProps({
   dataPending: {
     type: Boolean,
     default: false,
+  },
+  tabTitle: {
+    type: String,
+    required: true,
   },
 });
 
@@ -38,4 +46,6 @@ useScrollRestorationOnMount(
   scrollElement,
   computed(() => !props.dataPending),
 );
+
+useUpdateCurrentTabTitleFrom({ target: computed(() => props.tabTitle) });
 </script>
