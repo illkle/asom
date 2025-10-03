@@ -115,7 +115,7 @@ const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBoo
   return book;
 };
 
-export const extractDataFromGoodreadsHTML = async (event: Event, rootPath: string) => {
+export const extractDataFromGoodreadsHTML = async (event: Event) => {
   if (!event.target) return;
   const target = event.target as HTMLInputElement;
 

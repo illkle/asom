@@ -231,7 +231,7 @@ export const useProvideDNDContext = ({
 
 export type DNDContext = ReturnType<typeof useProvideDNDContext>;
 
-export const useCoolDndContext = <ItemShape, TargetShape>() => {
+export const useCoolDndContext = () => {
   const dndContext = inject<DNDContext>('dndContext');
   if (!dndContext) {
     throw new Error('DND context is not provided');

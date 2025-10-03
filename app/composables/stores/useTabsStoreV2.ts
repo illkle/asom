@@ -216,6 +216,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
         this.focusHistory = res.focusHistory;
         this.focusHistoryPointer = res.focusHistoryPointer;
       } catch (e) {
+        console.error(e);
         console.error('Encountered an error when trying to load tabs state from disk');
       }
     },

@@ -9,5 +9,3 @@ export const appFlagsConfigDisk = new ConfigStoredInRootFolder(
   zAppFlags,
   {} as z.infer<typeof zAppFlags>,
 );
-
-const KEY = (root: string | null | undefined) => [...KEY_DEPENDENT_ON_ROOT(root), 'apiCredentials'];

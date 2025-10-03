@@ -17,12 +17,13 @@ export const useSyncedValue = <T>({
   remoteValue,
   getTimestamp,
   setTimestamp,
+  getKey,
   updater,
   changesTracker,
   onExternalUpdate,
 }: {
   remoteValue: UseQueryReturn<T, Error, T | undefined>;
-
+  getKey: (v: T) => string;
   getTimestamp: (v: T | undefined) => Date;
   setTimestamp: (v: T, ts: Date) => void;
   updater: (v: T) => Promise<Date>;
@@ -31,26 +32,17 @@ export const useSyncedValue = <T>({
 }) => {
   const editableProxy = ref<T | null>(null);
   const lastSyncedTimestamp = ref<Date | null>(null);
-  let watchPaused = false;
 
   watch(
     editableProxy,
     (updatedValue, oldValue) => {
       if (!updatedValue) return;
       if (getTimestamp(updatedValue).getTime() !== getTimestamp(oldValue).getTime()) return;
+      if (getKey(updatedValue) !== getKey(oldValue)) return;
       changesTracker.value++;
     },
     { deep: true },
   );
-
-  const pauseWatcher = () => {
-    watchPaused = true;
-  };
-  const resumeWatcher = () => {
-    nextTick(() => {
-      watchPaused = false;
-    });
-  };
 
   watch(
     remoteValue.data,
@@ -82,7 +74,7 @@ export const useSyncedValue = <T>({
     }
   };
 
-  return { editableProxy, performUpdate, lastSyncedTimestamp, pauseWatcher, resumeWatcher };
+  return { editableProxy, performUpdate, lastSyncedTimestamp };
 };
 
 export const OPENED_FILE_KEY = (opened: IOpened) => ['files', opened._type, opened._path];
@@ -135,39 +127,38 @@ export const useFileEditorV2 = (
     },
   });
 
-  const { editableProxy, performUpdate, lastSyncedTimestamp, pauseWatcher, resumeWatcher } =
-    useSyncedValue({
-      changesTracker,
-      remoteValue: fileQ,
-      getTimestamp: (v) => new Date(v?.record.record.modified ?? 0),
-      setTimestamp: (v, ts) => {
-        v.record.record.modified = ts.getTime();
-      },
-      onExternalUpdate: (v) => {
-        createOrUpdateEditor(v?.record.record.markdown ?? '');
-      },
-      updater: async (v) => {
-        console.log('updater', v);
-        if (!v) throw new Error('No value to save');
+  const { editableProxy, performUpdate, lastSyncedTimestamp } = useSyncedValue({
+    changesTracker,
+    remoteValue: fileQ,
+    getTimestamp: (v) => new Date(v?.record.record.modified ?? 0),
+    setTimestamp: (v, ts) => {
+      v.record.record.modified = ts.getTime();
+    },
+    onExternalUpdate: (v) => {
+      createOrUpdateEditor(v?.record.record.markdown ?? '');
+    },
+    getKey: (v) => v.record.record.path ?? '',
+    updater: async (v) => {
+      console.log('updater', v);
+      if (!v) throw new Error('No value to save');
 
-        const data = v.record;
-        data.record.markdown = getEditorState();
-        try {
-          const res = await c_save_file({ record: data.record });
-          return new Date(Number(res.modified));
-        } catch (e) {
-          handleRustError(e);
-          console.error(e);
-          throw e;
-        }
-      },
-    });
+      const data = v.record;
+      data.record.markdown = getEditorState();
+      try {
+        const res = await c_save_file({ record: data.record });
+        return new Date(Number(res.modified));
+      } catch (e) {
+        handleRustError(e);
+        console.error(e);
+        throw e;
+      }
+    },
+  });
 
   const throttledUpdate = throttle(performUpdate, 2000);
 
   watch(changesTracker, (v) => {
     if (v > 0) {
-      console.log('DEBUG throrottledUpdate');
       throttledUpdate();
     }
   });
@@ -184,14 +175,12 @@ export const useFileEditorV2 = (
     ts._markPathAsIgnoredForDeletion(opened._path);
 
     await performUpdate();
-    pauseWatcher();
     await rename(opened._path, np);
 
     await listenOnce('FileAdd', (e) => {
       if (e.c.path === np) {
         ts._handlePathRename(opened._path, np);
         ts._unmarkPathAsIgnoredForDeletion(opened._path);
-        resumeWatcher();
       }
     });
   };

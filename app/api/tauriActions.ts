@@ -42,6 +42,7 @@ export const c_save_file = async ({
   );
 };
 
+// oxlint-disable-next-line no-unused-vars
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const c_get_files_by_path = async (pathRelative: string) => {

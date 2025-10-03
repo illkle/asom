@@ -122,6 +122,7 @@ export const getGamesFromIGDB = async ({
       limit,
     });
   } catch (e) {
+    console.log(e);
     const t = await getToken(c.igdb_clientId, c.igdb_clientSecret);
     c.igdb_accessToken = t.access_token;
     await setApiCredentials(c);
@@ -137,6 +138,7 @@ export const getGamesFromIGDB = async ({
         isError: true,
         title: 'Failed to get games from IGDB',
         subErrors: [],
+        details: e instanceof Error ? e.message : 'Unknown error',
       });
       return [];
     }

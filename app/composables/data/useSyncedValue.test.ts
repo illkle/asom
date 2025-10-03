@@ -64,6 +64,7 @@ const makeMockComponent = ({
 
       const syncedValue = useSyncedValue({
         remoteValue: remote,
+        getKey: (v) => v.record.record.path ?? '',
         getTimestamp,
         setTimestamp: setTimestamp as any,
         updater,
@@ -278,6 +279,44 @@ describe('useSyncedValue', () => {
       expect(syncedValue.editableProxy.value).toEqual(expectations);
       expect(changesTracker.value).toEqual(1);
     });
+
+    c.unmount();
+  });
+
+  it('changes tracker ignores changes on timestamp and key changes', async () => {
+    const vals = [makeRecord('initial', 5000)];
+    let index = 0;
+
+    const fetcher = () => vals[index++] as IPCReadFileByPathResult;
+
+    const changesTracker = ref(0);
+
+    const updater = vi.fn(async () => new Date(Date.now() + 1000));
+    const onExternalUpdate = vi.fn();
+
+    const { c, syncedValue } = makeMockComponent({
+      fetcher,
+      initial: vals[0],
+      updater,
+      changesTracker,
+      onExternalUpdate,
+    });
+
+    await vi.waitFor(() => {
+      expect(syncedValue!.editableProxy.value).toEqual(vals[0]);
+      expect(syncedValue!.lastSyncedTimestamp.value).toEqual(getTimestamp(vals[0]));
+      expect(onExternalUpdate).toHaveBeenCalledWith(vals[0]);
+    });
+
+    if (!syncedValue.editableProxy.value) {
+      assert.fail('No editable proxy');
+      return;
+    }
+
+    syncedValue.editableProxy.value.record.record.modified = 6000;
+    syncedValue.editableProxy.value.record.record.path = '123123';
+
+    expect(changesTracker.value).toEqual(0);
 
     c.unmount();
   });
