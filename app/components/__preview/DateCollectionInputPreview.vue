@@ -20,7 +20,12 @@ const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
     label: 'basic',
     schema: {
       name: 'test',
-      value: { type: 'DateCollection', settings: {} },
+      value: {
+        type: 'DateCollection',
+        settings: {
+          settingsType: 'DateCollection',
+        },
+      },
     },
   },
   {
@@ -28,7 +33,12 @@ const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
     label: 'empty ',
     schema: {
       name: 'test',
-      value: { type: 'DateCollection', settings: {} },
+      value: {
+        type: 'DateCollection',
+        settings: {
+          settingsType: 'DateCollection',
+        },
+      },
     },
   },
 ]);

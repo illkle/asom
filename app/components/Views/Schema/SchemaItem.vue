@@ -69,7 +69,6 @@ watch(
 
     if (lastType.value !== newVal.type) {
       lastType.value = newVal.type;
-      item.value.value.settings = {};
     }
   },
   { deep: true, immediate: true },

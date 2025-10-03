@@ -1,3 +1,5 @@
+import { mkdir } from '@tauri-apps/plugin-fs';
+import { c_save_schema } from '~/api/tauriActions';
 import type { IDynamicViewGroup } from '~/components/Modules/DynamicView/helpers';
 import type { Schema } from '~/types';
 
@@ -514,6 +516,12 @@ export const DefaultSchemaPacks: DefaultSchemaPack[] = [
   { name: 'Movies', schema: DefaultMovieSchema, view: DefaultMovieView },
   { name: 'Games', schema: DefaultGameSchema, view: DefaultGameView },
 ];
+
+export const createDefaultSchema = async (schema: DefaultSchemaPack, folderPath: string) => {
+  await mkdir(folderPath, { recursive: true });
+  await c_save_schema(folderPath, schema.schema);
+  await saveViewLayout(folderPath, schema.view);
+};
 
 export const createDefaultSchemas = async () => {
   await sleep(1000);

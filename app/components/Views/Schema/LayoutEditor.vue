@@ -40,7 +40,7 @@ const tabsStore = useTabsStoreV2();
 
 const editableProxy = ref<RecordFromDb>({
   path: null,
-  modified: null,
+  modified: 0,
   markdown: 'null',
   attrs: {},
 });

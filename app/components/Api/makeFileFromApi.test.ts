@@ -57,7 +57,7 @@ describe('makeFileAttrsFromApi', () => {
         items: [
           { name: 'name_s', value: { type: 'Text', settings: { settingsType: 'Text' } } },
           { name: 'cover_s', value: { type: 'Image', settings: { settingsType: 'Image' } } },
-          { name: 'releaseDate_s', value: { type: 'Date', settings: {} } },
+          { name: 'releaseDate_s', value: { type: 'Date', settings: { settingsType: 'Date' } } },
           {
             name: 'genres_s',
             value: { type: 'TextCollection', settings: { settingsType: 'TextCollection' } },

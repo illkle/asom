@@ -35,7 +35,7 @@ export const addThing = async ({
       path: finalPath,
       attrs: attrsInput ?? {},
       markdown: '',
-      modified: null,
+      modified: 0,
     },
     createNew: true,
   });
