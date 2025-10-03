@@ -86,8 +86,8 @@ impl SchemasInMemoryCache {
         self.map.write().await.clear();
     }
 
-    async fn insert(&self, path: PathBuf, value: Schema) {
-        self.map.write().await.insert(path, value);
+    async fn insert(&self, relative_folder_path: PathBuf, value: Schema) {
+        self.map.write().await.insert(relative_folder_path, value);
     }
 
     fn get_schema_internal(
@@ -251,34 +251,45 @@ impl SchemasInMemoryCache {
 
     pub async fn save_schema(
         &self,
-        schema_or_folder_path: &Path,
+        ctx: &AppContext,
+        relative_path_schema_or_folder: &Path,
         mut schema: Schema,
     ) -> Result<Schema, Box<ErrFR>> {
         schema.version = SCHEMA_VERSION.to_string();
+
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
-        let (schema_path, folder_path) = locate_schema_and_folder(schema_or_folder_path)?;
+        let absolute_path_schema_or_folder = ctx
+            .relative_path_to_absolute(relative_path_schema_or_folder)
+            .await?;
 
-        let asom_folder_path = folder_path.join(INTERNAL_FOLDER_NAME);
+        let (absolute_schema_path, absolute_folder_path) =
+            locate_schema_and_folder(&absolute_path_schema_or_folder)?;
+
+        let asom_folder_path = absolute_folder_path.join(INTERNAL_FOLDER_NAME);
 
         if !asom_folder_path.exists() {
             create_dir_all(&asom_folder_path).map_err(|e| {
                 ErrFR::new("Error creating directory")
-                    .info("Could not create schema folder")
+                    .info(&format!(
+                        "Could not create schema folder {}",
+                        &asom_folder_path.to_string_lossy()
+                    ))
                     .raw(e)
             })?;
         }
 
-        println!("schema_path {:?}", schema_path);
-
-        write(schema_path.clone(), serialized).map_err(|e| {
+        write(absolute_schema_path.clone(), serialized).map_err(|e| {
             ErrFR::new("Error writing to disk")
                 .info("Schema was not saved")
                 .raw(e)
         })?;
 
-        self.insert(folder_path.clone(), schema.clone()).await;
+        let relative_folder_path = ctx.absolute_path_to_relative(&asom_folder_path).await?;
+
+        self.insert(relative_folder_path.clone(), schema.clone())
+            .await;
 
         Ok(schema)
     }

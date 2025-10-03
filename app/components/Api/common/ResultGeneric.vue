@@ -10,15 +10,15 @@
     <slot name="item" :item="item" />
   </component>
   <div v-if="props.query.isLoading.value" class="w-full h-full z-20">
-    <div class="animate-spin flex items-center justify-center">
-      <LoaderCircle :size="16" />
+    <div class="flex items-center justify-center">
+      <LoaderAnimated class="text-muted-foreground" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts" generic="T extends ExApiSchema">
 import type { UseQueryReturn } from '@pinia/colada';
-import { LoaderCircle } from 'lucide-vue-next';
+import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
 import type { ExApiData, ExApiSchema } from '../base';
 import { useResultGenericWrapper } from './resultGeneric';
 

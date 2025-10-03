@@ -9,7 +9,9 @@ import { useCodeMirror } from '~/composables/CodeMirror/useCodeMirror';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 
 /** Creates editable ref from query data. Allows for two way sync using remote(file) write timestamp to resolve conflicts.
- * Note that timestamp from remoteValue\editableProxy will become wrong after we start sending updates. Real timestamp is max(lastSyncedTimestamp, editableProxy['timestampLocation']).
+ * Important notes:
+ * 1) timestamp from remoteValue\editableProxy will become wrong after we start sending updates. Real timestamp is max(lastSyncedTimestamp, editableProxy['timestampLocation']).
+ * 2) this assumes that timestamp on editableProxy is never mutated, we are comparing it on changes to editableProxy to determine if update was made by user or by remote.
  */
 export const useSyncedValue = <T>({
   remoteValue,
@@ -33,8 +35,9 @@ export const useSyncedValue = <T>({
 
   watch(
     editableProxy,
-    (v) => {
-      if (!v || watchPaused) return;
+    (updatedValue, oldValue) => {
+      if (!updatedValue) return;
+      if (getTimestamp(updatedValue).getTime() !== getTimestamp(oldValue).getTime()) return;
       changesTracker.value++;
     },
     { deep: true },
@@ -56,15 +59,9 @@ export const useSyncedValue = <T>({
       const newTs = getTimestamp(remoteUpdate);
 
       if (lastSyncedTimestamp.value === null || newTs > lastSyncedTimestamp.value) {
-        pauseWatcher();
-        watchPaused = true;
         editableProxy.value = remoteUpdate;
         lastSyncedTimestamp.value = newTs;
         onExternalUpdate(remoteUpdate);
-        resumeWatcher();
-        nextTick(() => {
-          watchPaused = false;
-        });
       }
     },
     { immediate: true },
@@ -131,6 +128,13 @@ export const useFileEditorV2 = (
 
   const changesTracker = ref(0);
 
+  const { getEditorState, createOrUpdateEditor } = useCodeMirror({
+    editorTemplateRef,
+    onChange: () => {
+      changesTracker.value++;
+    },
+  });
+
   const { editableProxy, performUpdate, lastSyncedTimestamp, pauseWatcher, resumeWatcher } =
     useSyncedValue({
       changesTracker,
@@ -158,13 +162,6 @@ export const useFileEditorV2 = (
         }
       },
     });
-
-  const { getEditorState, createOrUpdateEditor } = useCodeMirror({
-    editorTemplateRef,
-    onChange: () => {
-      changesTracker.value++;
-    },
-  });
 
   const throttledUpdate = throttle(performUpdate, 2000);
 

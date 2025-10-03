@@ -56,8 +56,18 @@ export function filePathsToTree(paths: FolderListGetResult) {
     return currentResults;
   }, [] as FolderNode[]);
 
-  return folders;
+  return sortTree(folders);
 }
+
+const sortTree = (tree: FolderNode[]) => {
+  const c: FolderNode[] = tree.map((node) => {
+    return {
+      ...node,
+      children: sortTree(node.children),
+    };
+  });
+  return c.sort((a, b) => a.name.localeCompare(b.name));
+};
 
 export const dropIfSingleFolder = (tree: FolderNode[]) => {
   if (tree.length === 1) {

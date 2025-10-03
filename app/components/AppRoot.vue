@@ -1,22 +1,31 @@
 <template>
   <SidebarProvider>
-    <AppSidebar v-if="hasRootPath" class="box-border" />
+    <AppSidebar v-if="canShowApp" class="box-border" />
 
     <main class="relative flex w-36 flex-1 flex-col h-screen max-h-screen box-border">
       <div class="shrink-0 flex justify-between gap-2">
-        <div class="flex-1 pt-[0.5rem]" v-if="hasRootPath">
+        <div class="flex-1 pt-[0.5rem]" v-if="canShowApp">
           <TabsSelector />
         </div>
-        <div v-else data-tauri-drag-region class="dragApp w-full h-full pt-[0.5rem]"></div>
+        <div
+          v-else
+          data-tauri-drag-region
+          class="dragApp w-full h-full pt-[2rem] z-100 bg-background"
+        ></div>
         <CustomWindowButtons />
       </div>
       <!-- InitQ returned a root path, show app -->
-      <RouterMain v-if="hasRootPath" />
+      <RouterMain v-if="canShowApp" />
       <!-- loading\no root\error -->
-      <div v-else class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)]">
-        <div class="bg-background rounded-md p-4">
-          <InitProcess :query="rootPath" />
-        </div>
+      <div
+        v-else
+        class="flex w-full flex-col items-center justify-center h-[calc(100svh-2rem)] bg-background"
+      >
+        <InitProcess
+          :query="rootPath"
+          @lockForOnboarding="lockedInIntro = true"
+          @unlockFromOnboarding="lockedInIntro = false"
+        />
       </div>
     </main>
   </SidebarProvider>
@@ -32,10 +41,9 @@ import TabsSelector from './Core/Tabs/TabsSelector.vue';
 import RouterMain from './RouterMain.vue';
 
 const rootPath = useRootPathFromQuery();
-
 useProvideRootPath(rootPath);
-
-const hasRootPath = computed(() => rootPath.data.value);
+const lockedInIntro = ref(false);
+const canShowApp = computed(() => rootPath.data.value && !lockedInIntro.value);
 </script>
 
 <style>

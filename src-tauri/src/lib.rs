@@ -183,9 +183,11 @@ async fn c_save_schema<T: tauri::Runtime>(
     schema: Schema,
 ) -> IPCSaveSchema {
     let core = app.state::<CoreStateManager>();
+    let ctx = &core.context;
+    let normalized_path = normalize_path_to_os(&path);
     core.context
         .schemas_cache
-        .save_schema(&PathBuf::from(path), schema)
+        .save_schema(ctx, &normalized_path, schema)
         .await
 }
 

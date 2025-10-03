@@ -1,5 +1,3 @@
-import { mkdir } from '@tauri-apps/plugin-fs';
-import { c_save_schema } from '~/api/tauriActions';
 import type { IDynamicViewGroup } from '~/components/Modules/DynamicView/helpers';
 import type { Schema } from '~/types';
 
@@ -62,7 +60,10 @@ export const DefaultBookSchema: Schema = {
       name: 'read',
       value: {
         type: 'DatesPairCollection',
-        settings: {},
+        settings: {
+          settingsType: 'DatesPairCollection',
+          displayName: 'Read',
+        },
       },
     },
     {
@@ -218,7 +219,10 @@ export const DefaultMovieSchema: Schema = {
       name: 'premiere',
       value: {
         type: 'Date',
-        settings: {},
+        settings: {
+          settingsType: 'Date',
+          displayName: 'Premiere',
+        },
       },
     },
     {
@@ -239,7 +243,10 @@ export const DefaultMovieSchema: Schema = {
       name: 'watched',
       value: {
         type: 'DateCollection',
-        settings: {},
+        settings: {
+          settingsType: 'DateCollection',
+          displayName: 'Watched',
+        },
       },
     },
     {
@@ -377,7 +384,10 @@ export const DefaultGameSchema: Schema = {
       name: 'releaseDate',
       value: {
         type: 'Date',
-        settings: {},
+        settings: {
+          settingsType: 'Date',
+          displayName: 'Release Date',
+        },
       },
     },
     {
@@ -396,7 +406,10 @@ export const DefaultGameSchema: Schema = {
       name: 'played',
       value: {
         type: 'DatesPairCollection',
-        settings: {},
+        settings: {
+          settingsType: 'DatesPairCollection',
+          displayName: 'Played',
+        },
       },
     },
     {
@@ -502,8 +515,8 @@ export const DefaultSchemaPacks: DefaultSchemaPack[] = [
   { name: 'Games', schema: DefaultGameSchema, view: DefaultGameView },
 ];
 
-export const createDefaultSchema = async (schema: DefaultSchemaPack, folderPath: string) => {
-  await mkdir(folderPath, { recursive: true });
-  await c_save_schema(folderPath, schema.schema);
-  await saveViewLayout(folderPath, schema.view);
+export const createDefaultSchemas = async () => {
+  await sleep(1000);
+  // TODO
+  return;
 };

@@ -41,7 +41,7 @@ const isOpened = ref(false);
 
 <template>
   <Popover class="">
-    <PopoverTrigger class="flex flex-col w-full overflow-hidden @container">
+    <PopoverTrigger as="div" class="flex flex-col justify-start w-full overflow-hidden @container">
       <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
 
       <div class="flex w-full">

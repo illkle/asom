@@ -1,8 +1,8 @@
 <template>
   <div class="relative group/search">
-    <LoaderCircle
+    <LoaderAnimated
       v-if="props.query.isLoading.value"
-      class="animate-spin absolute right-2 top-1/2 -translate-y-1/2"
+      class="absolute right-2 top-1/2 -translate-y-1/2"
     />
 
     <Input
@@ -59,7 +59,7 @@
 
 <script setup lang="ts" generic="T extends ExApiSchema">
 import type { UseQueryReturn } from '@pinia/colada';
-import { LoaderCircle } from 'lucide-vue-next';
+import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
 import type { ExApiData, ExApiSchema } from '../base';
 
 const search = defineModel<string>();

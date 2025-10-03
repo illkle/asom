@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createApp, ref, type Ref } from 'vue';
+import { ref, type Ref } from 'vue';
 
 // Build a minimal mock UseQueryReturn-like object from @pinia/colada
 type MockUseQueryReturn<T> = {
@@ -11,20 +11,6 @@ type MockUseQueryReturn<T> = {
 import { cloneDeep } from 'lodash-es';
 import type { IPCReadFileByPathResult } from '~~/src-tauri/bindings/IPCReadFileByPathResult';
 import { useSyncedValue } from './useFileEditor';
-
-const withSetup = (setup: () => void) => {
-  const app = createApp({ setup, render: () => null });
-  const el = document.createElement('div');
-  app.mount(el);
-  return () => app.unmount();
-};
-
-const createComponent = <T>(setup: () => T) => {
-  return mount({
-    setup,
-    render: () => null,
-  });
-};
 
 const useMockQuery = (
   getter: () => Promise<IPCReadFileByPathResult> | IPCReadFileByPathResult,
@@ -292,5 +278,7 @@ describe('useSyncedValue', () => {
       expect(syncedValue.editableProxy.value).toEqual(expectations);
       expect(changesTracker.value).toEqual(1);
     });
+
+    c.unmount();
   });
 });

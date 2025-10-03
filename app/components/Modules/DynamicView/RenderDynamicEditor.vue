@@ -1,5 +1,5 @@
 <template>
-  <div :style="getStyleWrapper(props.item)" class="relative p-4 pt-10">
+  <div :style="getStyleWrapper(props.item)" class="relative p-1.5 pt-10">
     <template v-if="props.item.type === 'group'">
       <!-- Top Menu-->
       <RenderDynamicEditorTopMenu @addItem="addItem">

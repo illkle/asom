@@ -5,7 +5,7 @@
   >
     <div v-if="somethingPending">
       <div class="w-full h-full flex items-center justify-center py-16">
-        <LoaderCircle class="animate-spin" :size="24" />
+        <LoaderAnimated class="text-muted-foreground" />
       </div>
     </div>
     <div v-else class="max-w-3xl mx-auto w-full">
@@ -155,7 +155,6 @@ import {
   EllipsisVerticalIcon,
   EyeIcon,
   FolderIcon,
-  LoaderCircle,
   PencilIcon,
   Trash2Icon,
 } from 'lucide-vue-next';
@@ -164,6 +163,7 @@ import type { PropType } from 'vue';
 
 import { path as tauriPath } from '@tauri-apps/api';
 import { c_delete_to_trash } from '~/api/tauriActions';
+import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
 import {
   useScrollRestorationOnMount,
