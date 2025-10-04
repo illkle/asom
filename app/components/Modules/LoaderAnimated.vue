@@ -20,7 +20,7 @@ const getLetter = (index: number) => {
 <template>
   <div class="w-full flex justify-center font-mono text-primary">
     <div
-      class="endlessRotation origin-center opacityAnimation"
+      class="endlessRotation origin-center"
       :class="{
         'h-24 w-24': props.size === 'lg',
         'h-14 w-14': props.size === 'md',

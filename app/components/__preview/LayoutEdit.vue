@@ -31,7 +31,6 @@ import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
 import { getValByType } from '../Views/Schema/mocks';
 
 provide(ROOT_PATH_PROVIDE, ref('preview'));
-provide('PREVIEW_MODE', true);
 const ppp = cloneDeep(DefaultSchemaPacks[0]!);
 
 const schema = ref(ppp.schema);

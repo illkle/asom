@@ -17,12 +17,18 @@
         <slot name="header" />
       </div>
 
-      <slot />
+      <div v-if="!dataPending">
+        <slot />
+      </div>
+      <div v-else class="flex items-center justify-center py-32">
+        <LoaderAnimated class="text-muted-foreground opacity-70" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,

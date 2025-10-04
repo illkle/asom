@@ -33,11 +33,11 @@
 <script setup lang="ts">
 import DynamicConfiguration from '~/components/Modules/DynamicView/DynamicConfiguration.vue';
 import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
+import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
+import TitleSchemaBadge from '~/components/Views/Schema/common/TitleSchemaBadge.vue';
+import { getValByType } from '~/components/Views/Schema/mocks';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
-import PageTemplate from './common/PageTemplate.vue';
-import TitleSchemaBadge from './common/TitleSchemaBadge.vue';
-import { getValByType } from './mocks';
 
 const tabsStore = useTabsStoreV2();
 

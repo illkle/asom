@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -369,6 +370,30 @@ pub struct Schema {
     pub fill_api_search_from: Option<String>,
 
     pub items: SchemaItems,
+}
+
+impl Schema {
+    pub fn remove_empty_and_duplicates(self) -> Self {
+        let mut seen_names = HashSet::new();
+        let cleaned_items = self
+            .items
+            .into_iter()
+            .filter(|item| {
+                if item.name.trim().is_empty() {
+                    return false;
+                }
+                seen_names.insert(item.name.clone())
+            })
+            .collect();
+
+        Schema {
+            name: self.name,
+            version: self.version,
+            fill_from_filename: self.fill_from_filename,
+            fill_api_search_from: self.fill_api_search_from,
+            items: cleaned_items,
+        }
+    }
 }
 
 pub const SCHEMA_VERSION: &str = "1.0";

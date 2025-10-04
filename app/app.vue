@@ -42,6 +42,8 @@ if (!previewMode) {
   useGlobalInvalidators();
   useGlobalTabHooks();
 }
+
+provide('PREVIEW_MODE', previewMode);
 </script>
 
 <style></style>

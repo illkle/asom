@@ -44,7 +44,7 @@ const props = defineProps<{
   acceptedTypes?: DropTargetInfo['acceptedTypes'];
 }>();
 
-const { draggedItem } = useCoolDndContext<unknown, DraggableInfo>();
+const { draggedItem } = useCoolDndContext();
 
 const constraintsRef = useDomRef() as Ref<HTMLDivElement>;
 

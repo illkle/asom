@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex h-fit fill-foreground relative w-fit"
+    class="flex h-fit fill-foreground relative w-fit py-0.5"
     :class="!disabled ? 'cursor-pointer' : 'opacity-50'"
     ref="target"
     @click="$emit('update:modelValue', hoveredValue)"
@@ -8,8 +8,8 @@
     <div v-for="index in starsCount" :key="index" class="relative h-fit">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
+        width="28"
+        height="28"
         viewBox="0 0 24 24"
         stroke="var(--border)"
         :fill="`url(#${id}-grad-${index})`"

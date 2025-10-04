@@ -1,5 +1,5 @@
 <template>
-  <div v-if="attr" class="w-full">
+  <template v-if="attr" class="w-full">
     <TextInput
       v-if="schemaItem.value.type === 'Text' && attr.type === 'String'"
       v-model="attr.value"
@@ -68,7 +68,7 @@
         Schema: {{ schemaItem.value.type }} Attribute: {{ attr.type }}
       </div>
     </div>
-  </div>
+  </template>
 </template>
 
 <script setup lang="ts">

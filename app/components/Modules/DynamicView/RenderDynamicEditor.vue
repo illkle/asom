@@ -8,7 +8,7 @@
       <!-- Top Menu-->
       <RenderDynamicEditorTopMenu @addItem="addItem">
         <template #config>
-          <DropdownConfigMenu v-model="props.item.style" />
+          <DropdownConfigMenu :style="props.item.style" @update:style="onStyleUpdate" />
         </template>
       </RenderDynamicEditorTopMenu>
       <!-- Content-->
@@ -62,6 +62,8 @@
               :disabled="isDraggingMe"
               :parentIds="[...props.parentIds, p.id]"
               @delete="(v) => emit('delete', v)"
+              @update:style="(id, v) => emit('update:style', id, v)"
+              @addItem="(parentIds, item) => emit('addItem', parentIds, item)"
             >
               <!-- @vue-expect-error This is correct, but ts is stuck because recursive type -->
               <template #item="{ item }">
@@ -94,7 +96,7 @@ import { motion } from 'motion-v';
 import type { ItemInfoCore } from '~/components/Modules/NestedDrag/common';
 import { DropTarget, Orderable } from '../NestedDrag';
 import DropdownConfigMenu from './DropdownConfigMenu.vue';
-import type { IDynamicItem } from './helpers';
+import type { IDynamicItem, IDynamicViewGroup } from './helpers';
 import RenderDynamicEditorTopMenu from './RenderDynamicEditorTopMenu.vue';
 
 import { getStyleGroup, getStyleWrapper } from './helpers';
@@ -109,22 +111,26 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'delete', id: ItemInfoCore): void;
+  (e: 'update:style', id: ItemInfoCore, style: IDynamicViewGroup['style']): void;
+  (e: 'addItem', parentIds: ItemInfoCore['parentIds'], item: IDynamicItem): void;
 }>();
 
 const addItem = () => {
-  if (props.item.type === 'group') {
-    props.item.content.push({
-      id: generateUniqId(),
-      type: 'group',
-      style: {
-        direction: 'column',
-        gap: '4',
-        align: 'start',
-        justify: 'start',
-        sizeUnits: '1',
-      },
-      content: [],
-    });
-  }
+  emit('addItem', [...props.parentIds], {
+    id: generateUniqId(),
+    type: 'group',
+    style: {
+      direction: 'column',
+      gap: '4',
+      align: 'start',
+      justify: 'start',
+      sizeUnits: '1',
+    },
+    content: [],
+  });
+};
+
+const onStyleUpdate = (style: IDynamicViewGroup['style']) => {
+  emit('update:style', { parentIds: [...props.parentIds], id: props.item.id }, style);
 };
 </script>

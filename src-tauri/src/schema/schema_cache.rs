@@ -257,6 +257,8 @@ impl SchemasInMemoryCache {
     ) -> Result<Schema, Box<ErrFR>> {
         schema.version = SCHEMA_VERSION.to_string();
 
+        schema = schema.remove_empty_and_duplicates();
+
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 

@@ -8,6 +8,8 @@
         :index="0"
         class="border rounded-md rounded-b-none grow data-[is-over=true]:bg-accent"
         @delete="onDelete"
+        @update:style="(id, v) => onUpdateStyle(id, v)"
+        @addItem="(parentIds, item) => onAddItem(parentIds, item)"
         :parentIds="[]"
       >
         <template #item="{ item }">
@@ -55,7 +57,10 @@ import {
   findAndRemoveItem,
   getFlatItems,
   insertItemIntoGroup,
+  insertItemIntoGroupTargeted,
+  locateItem,
   swapItems,
+  type IDynamicItem,
   type IDynamicViewGroup,
   type ILayoutItem,
 } from './helpers';
@@ -92,7 +97,7 @@ const { draggedItem } = useProvideDNDContext({
         throw new Error('Item not found ' + draggedItem.id);
       }
 
-      insertItemIntoGroup(newState, i, hoveredItem, quadrant);
+      insertItemIntoGroupTargeted(newState, i, hoveredItem, quadrant);
     } else {
       swapItems(newState, draggedItem, hoveredItem, quadrant);
     }
@@ -108,6 +113,24 @@ const onDelete = (info: ItemInfoCore) => {
 
   findAndRemoveItem(newState, info);
 
+  emit('update:layout', newState);
+};
+
+const onUpdateStyle = (id: ItemInfoCore, value: IDynamicViewGroup['style']) => {
+  if (!props.layout) return;
+  const newState = cloneDeep(props.layout);
+  const target = locateItem(newState, id);
+  if (!target || target.type !== 'group') {
+    throw new Error('Invalid target for onUpdateStyle');
+  }
+  target.style = value;
+  emit('update:layout', newState);
+};
+
+const onAddItem = (parentIds: ItemInfoCore['parentIds'], item: IDynamicItem) => {
+  if (!props.layout) return;
+  const newState = cloneDeep(props.layout);
+  insertItemIntoGroup(newState, item, { parentIds, id: 'new' });
   emit('update:layout', newState);
 };
 
