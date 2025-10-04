@@ -1,7 +1,7 @@
 import { markRaw } from 'vue';
 import { toast } from 'vue-sonner';
 
-import ErrorToast from '~/components/Modules/Error/ErrorToast.vue';
+import ErrorToast from '~/components/Core/Errors/ErrorToast.vue';
 import { useListenToEvent } from '~/composables/useListenToEvent';
 import type { ErrFR, ErrFRActionCode } from '~/types';
 
@@ -9,7 +9,7 @@ export function isOurError(v: unknown): v is ErrFR {
   return Boolean(v && typeof v === 'object' && 'isError' in v && v.isError === true);
 }
 
-export const handleRustError = (
+export const showErrorNotification = (
   e: unknown,
   codeBinds?: Partial<Record<ErrFRActionCode, () => void>>,
 ) => {
@@ -38,5 +38,5 @@ export const handleRustError = (
 };
 
 export const useHandleErrorsFromRust = () => {
-  useListenToEvent('ErrorHappened', (v) => handleRustError(v.c));
+  useListenToEvent('ErrorHappened', (v) => showErrorNotification(v.c));
 };

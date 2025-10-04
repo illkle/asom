@@ -2,6 +2,7 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { z } from 'zod';
 import type { IgdbApiGame } from '~/components/Api/IGDB';
 import { zGame, zToken, type IGDBGame } from '~/components/Api/IGDB/externalSchema';
+import { showErrorNotification } from '~/components/Core/Errors/errors';
 
 const getToken = async (clientId: string, clientSecret: string) => {
   const res = await fetch(
@@ -102,7 +103,7 @@ export const getGamesFromIGDB = async ({
       c.igdb_accessToken = t.access_token;
       await setApiCredentials(c);
     } catch (e) {
-      handleRustError({
+      showErrorNotification({
         isError: true,
         title: 'Failed to get token for IGDB',
         info: e instanceof Error ? e.message : 'Unknown error',
@@ -134,7 +135,7 @@ export const getGamesFromIGDB = async ({
         limit,
       });
     } catch (e) {
-      handleRustError({
+      showErrorNotification({
         isError: true,
         title: 'Failed to get games from IGDB',
         subErrors: [],

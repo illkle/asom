@@ -76,9 +76,9 @@
 </template>
 
 <script setup lang="ts">
-import { handleRustError, isOurError } from '~/composables/useRustErrorNotifcation';
+import { isOurError, showErrorNotification } from '~/components/Core/Errors/errors';
 
-import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
+import { c_load_schema, c_save_schema } from '~/api/tauriActions';
 
 import { TriangleAlert } from 'lucide-vue-next';
 import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
@@ -101,16 +101,12 @@ const props = defineProps({
 const selectedItemIndex = ref<number | null>(null);
 
 const goBack = () => {
-  tabsStore.moveBack();
+  tabsStore.openNewThingFast({ _type: 'settings', _path: '' });
 };
 
 const save = async () => {
   if (!schema.value) return;
-  const r = await c_save_schema(props.opened._path, schema.value).catch(returnErrorHandler);
-  if ('isError' in r) {
-    handleRustError(r);
-    return;
-  }
+  await c_save_schema(props.opened._path, schema.value);
   goBack();
 };
 
@@ -122,7 +118,7 @@ onMounted(async () => {
     schema.value = res;
   } catch (e) {
     if (isOurError(e)) {
-      handleRustError(e as ErrFR);
+      showErrorNotification(e as ErrFR);
     }
   }
 });

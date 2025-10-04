@@ -1,7 +1,6 @@
 import { c_get_files_by_path } from '~/api/tauriActions';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
 import { useListenToEvent } from '~/composables/useListenToEvent';
-import { handleRustError } from '~/composables/useRustErrorNotifcation';
 import { useThrottledEvents } from '~/composables/useTrottledEvents';
 import type {
   FileEventDataExisting,
@@ -18,13 +17,12 @@ export const FILES_LIST_KEY = (opened: IOpened) => ['files', opened._type, opene
 export const useFilesListV2 = ({ opened }: { opened: IOpened }) => {
   const files = useQuery({
     key: () => FILES_LIST_KEY(opened),
-    query: () => c_get_files_by_path(opened._path),
+    query: async () => {
+      const res = await c_get_files_by_path(opened._path);
+      return res;
+    },
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-  });
-
-  watch(files.error, (e) => {
-    handleRustError(e);
   });
 
   const qc = useQueryCache();

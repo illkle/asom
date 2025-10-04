@@ -216,8 +216,13 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
 }
 
 #[tauri::command]
-async fn c_delete_to_trash<T: tauri::Runtime>(_: AppHandle<T>, path: String) -> IPCDeleteFile {
-    trash::delete(&path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
+async fn c_delete_to_trash<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCDeleteFile {
+    let core = app.state::<CoreStateManager>();
+    let absolute_path = core
+        .context
+        .relative_path_to_absolute(&PathBuf::from(path))
+        .await?;
+    trash::delete(&absolute_path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
 }
 
 pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T> {

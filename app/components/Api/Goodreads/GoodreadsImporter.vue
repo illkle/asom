@@ -177,7 +177,7 @@ const handleFileChange = async (event: Event) => {
 
   selectedFileInfo.value.fileName = file.name;
   selectedFileInfo.value.importDone = false;
-  const result = await extractDataFromGoodreadsHTML(event, '');
+  const result = await extractDataFromGoodreadsHTML(event);
   if (!result) return;
   books.value = result;
   selectedFileInfo.value.bookCount = result.length;
@@ -247,16 +247,7 @@ const importBooks = async () => {
       attrs,
     };
 
-    try {
-      await c_save_file({ record: bookFile, createNew: true });
-    } catch (e) {
-      if (isOurError(e)) {
-        console.log('our error', e);
-        handleRustError(e);
-      } else {
-        console.error(e);
-      }
-    }
+    await c_save_file({ record: bookFile, createNew: true });
 
     selectedFileInfo.value.importDone = true;
   }

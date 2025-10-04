@@ -10,18 +10,12 @@ import type {
 
 import { useFilesListV2 } from './useFileList';
 
-// Mock dependencies
 vi.mock('~/api/tauriActions', () => ({
   c_get_files_by_path: vi.fn(),
 }));
 
 vi.mock('~/composables/useListenToEvent', () => ({
   useListenToEvent: vi.fn(),
-}));
-
-vi.mock('~/composables/useRustErrorNotifcation', () => ({
-  handleRustError: vi.fn(),
-  isOurError: vi.fn(),
 }));
 
 vi.mock('~/composables/useTrottledEvents', () => ({
@@ -73,7 +67,6 @@ const createMockFileEventRemoved = (path: string): FileEventDataRemoved => ({
 
 type ReturnOfUseFilesListV2 = ReturnType<typeof useFilesListV2>;
 
-// Helper to setup composable in a proper context with Vue app
 const withSetup = ({ opened, records }: { opened: IOpened; records: RecordFromDb[] }) => {
   const mockResult: RecordListGetResult = {
     schema: {

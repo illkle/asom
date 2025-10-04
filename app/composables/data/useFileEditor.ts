@@ -5,6 +5,7 @@ import { cloneDeep, throttle } from 'lodash-es';
 import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file } from '~/api/tauriActions';
+import { showErrorNotification } from '~/components/Core/Errors/errors';
 import { useCodeMirror } from '~/composables/CodeMirror/useCodeMirror';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 
@@ -86,19 +87,17 @@ export const useFileEditorV2 = (
   const fileQ = useQuery({
     key: OPENED_FILE_KEY(opened),
     query: async () => {
-      return await c_read_file_by_path(opened._path);
+      const res = await c_read_file_by_path(opened._path);
+      if (res.record.parsing_error) {
+        showErrorNotification(res.record.parsing_error);
+      }
+      return res;
     },
   });
 
   useListenToEvent('FileUpdate', async (v) => {
     if (v.c.path === opened._path) {
       await fileQ.refetch();
-    }
-  });
-
-  watch(fileQ.data, (v) => {
-    if (v?.record.parsing_error) {
-      handleRustError(v.record.parsing_error);
     }
   });
 
@@ -148,7 +147,7 @@ export const useFileEditorV2 = (
         const res = await c_save_file({ record: data.record });
         return new Date(Number(res.modified));
       } catch (e) {
-        handleRustError(e);
+        showErrorNotification(e);
         console.error(e);
         throw e;
       }
