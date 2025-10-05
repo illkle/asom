@@ -140,8 +140,9 @@ pub async fn remove_folder_from_cache(
 ) -> Result<(), Box<ErrFR>> {
     let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
 
-    sqlx::query("DELETE FROM folders WHERE path LIKE concat(?1, '%')")
+    sqlx::query("DELETE FROM folders WHERE path = ?1 OR path LIKE concat(?1, ?2, '%')")
         .bind(path_relative.to_string_lossy().to_string())
+        .bind(std::path::MAIN_SEPARATOR.to_string())
         .execute(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when removing folder from cache").raw(e))?;
@@ -153,7 +154,9 @@ pub async fn remove_files_in_folder_from_cache(
     ctx: &AppContext,
     path_relative: &Path,
 ) -> Result<(), Box<ErrFR>> {
-    sqlx::query("DELETE FROM files WHERE path LIKE concat(?1, '%')")
+    sqlx::query("DELETE FROM files WHERE path = ?1 OR path LIKE concat(?1, ?2, '%')")
+        .bind(path_relative.to_string_lossy().to_string())
+        .bind(std::path::MAIN_SEPARATOR.to_string())
         .bind(path_relative.to_string_lossy().to_string())
         .execute(&ctx.database_conn.get_conn().await)
         .await

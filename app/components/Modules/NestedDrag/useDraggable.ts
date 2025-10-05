@@ -8,10 +8,7 @@ export type DraggableProps = {
 };
 
 export const useDraggable = (props: DraggableProps, constraintsRef: Ref<HTMLDivElement | null>) => {
-  const { startDrag, draggedItem, cursorPosition, compensateForScroll } = useCoolDndContext<
-    unknown,
-    DraggableInfo
-  >();
+  const { startDrag, draggedItem, cursorPosition, compensateForScroll } = useCoolDndContext();
 
   const isDraggingMe = computed(() => {
     return draggedItem.value?.id === props.id;

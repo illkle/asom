@@ -13,7 +13,7 @@
         >
           <Input
             v-model:model-value="mainInputValue"
-            placeholder="Filename or API search"
+            :placeholder="hasApi ? 'Filename or API search' : 'Filename'"
             autofocus
             class="focus-visible:ring-0"
             @keydown.down="kb.handleMove($event, 'onDown')"
@@ -35,11 +35,7 @@
         <slot name="extra-controls" />
 
         <ApiSearchRouter
-          v-if="
-            apiConnection.q.data.value &&
-            apiConnection.q.data.value.type !== 'none' &&
-            selectedSchema
-          "
+          v-if="hasApi && apiConnection.q.data.value && selectedSchema"
           :search="mainInputValue"
           :schema="selectedSchema"
           :connection="apiConnection.q.data.value"
@@ -85,4 +81,8 @@ const kb = useKeyboardListManager(wrapperRef);
 provideResultGenericWrapper(KeyboardListItem);
 
 const isMac = useIsMac();
+
+const hasApi = computed(() => {
+  return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';
+});
 </script>

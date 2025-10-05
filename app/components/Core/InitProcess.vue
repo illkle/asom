@@ -87,5 +87,8 @@ const defaultInitMutation = useMutation({
     appFlagsConfigDisk.set(props.query.data.value, { introDone: true });
     return true;
   },
+  onSuccess: () => {
+    emits('unlockFromOnboarding');
+  },
 });
 </script>

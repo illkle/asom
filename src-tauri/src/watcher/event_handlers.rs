@@ -154,24 +154,29 @@ async fn handle_folder_remove(
         Err(e) => Err(e),
         Ok(_) => {
             let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
-            let schema = ctx
-                .schemas_cache
-                .get_schema(&path_relative)
-                .await
-                .ok_or(Box::new(ErrFR::new("Schema not found for folder remove")))?;
+            let schema = ctx.schemas_cache.get_schema(&path_relative).await;
 
-            remove_files_in_folder_from_cache(ctx, &path_relative).await?;
-            ctx.schemas_cache
-                .remove_schemas_with_children(&path_relative)
-                .await?;
+            match schema {
+                Some(schema) => {
+                    remove_files_in_folder_from_cache(ctx, &path_relative).await?;
+                    ctx.schemas_cache
+                        .remove_schemas_with_children(&path_relative)
+                        .await?;
 
-            Ok(vec![
-                IPCEmitEvent::FolderRemove(FolderEventData {
+                    Ok(vec![
+                        IPCEmitEvent::FolderRemove(FolderEventData {
+                            path: path_relative.to_string_lossy().to_string(),
+                            schema: Some(schema.location),
+                        }),
+                        IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
+                    ])
+                }
+
+                None => Ok(vec![IPCEmitEvent::FolderRemove(FolderEventData {
                     path: path_relative.to_string_lossy().to_string(),
-                    schema: schema.location,
-                }),
-                IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
-            ])
+                    schema: None,
+                })]),
+            }
         }
     }
 }
@@ -184,17 +189,26 @@ async fn handle_folder_add(
         Err(e) => Err(e),
         Ok(_) => {
             let path_relative = ctx.absolute_path_to_relative(path_absolute).await?;
-            let schema = match ctx.schemas_cache.get_schema(&path_relative).await {
-                Some(v) => v,
-                None => return Ok(vec![]),
-            };
-            Ok(vec![
-                IPCEmitEvent::FolderAdd(FolderEventData {
-                    path: path_relative.to_string_lossy().to_string(),
-                    schema: schema.location,
-                }),
-                IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
-            ])
+            let schema = ctx.schemas_cache.get_schema(&path_relative).await;
+
+            match schema {
+                Some(schema) => {
+                    return Ok(vec![
+                        IPCEmitEvent::FolderAdd(FolderEventData {
+                            path: path_relative.to_string_lossy().to_string(),
+                            schema: Some(schema.location),
+                        }),
+                        IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
+                    ]);
+                }
+                None => Ok(vec![
+                    IPCEmitEvent::FolderAdd(FolderEventData {
+                        path: path_relative.to_string_lossy().to_string(),
+                        schema: None,
+                    }),
+                    IPCEmitEvent::SchemasUpdated(ctx.schemas_cache.get_schemas_list().await),
+                ]),
+            }
         }
     }
 }
@@ -295,7 +309,7 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
                 ModifyKind::Any => match (path_absolute.extension(), path_absolute.is_dir()) {
                     (Some(ext), false) => handle_file_update(ctx, path_absolute, ext).await,
                     // EXPERIMENTAL: I am 95% sure we don't care about this event for folders, though it's worth more tests
-                    // (None, true) => handle_folder_add(ctx, path_absolute).await,
+                    //(None, true) => handle_folder_add(ctx, path_absolute).await,
                     _ => Ok(vec![]),
                 },
                 _ => Ok(vec![]),

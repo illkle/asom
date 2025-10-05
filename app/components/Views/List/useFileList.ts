@@ -155,7 +155,7 @@ const isExistingEventRelevant = async ({
 }) => {
   return Boolean(
     currentSchema &&
-      event.schema.schema_path === currentSchema.schema_path &&
+      event.schema?.schema_path === currentSchema.schema_path &&
       event.path.startsWith(currentPath),
   );
 };

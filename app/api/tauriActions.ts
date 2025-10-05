@@ -151,3 +151,12 @@ export const c_delete_to_trash = async (path: string) => {
       throw e;
     });
 };
+
+export const c_create_folder_for_default_schema = async (path: string) => {
+  return invoke('c_create_folder_for_default_schema', { path })
+    .then((v) => v as ExtractIpcResponseType<'c_create_folder_for_default_schema'>)
+    .catch((e) => {
+      handleMaybeOurError({ e });
+      throw e;
+    });
+};

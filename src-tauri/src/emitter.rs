@@ -30,7 +30,7 @@ pub struct FileEventDataExisting {
 #[derive(Serialize, TS, Clone, Debug)]
 pub struct FolderEventData {
     pub path: String,
-    pub schema: SchemaLocation,
+    pub schema: Option<SchemaLocation>,
 }
 
 #[derive(Serialize, TS, Clone, Debug)]

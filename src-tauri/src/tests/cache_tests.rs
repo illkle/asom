@@ -485,7 +485,44 @@ async fn test_schema_ops() {
 
     assert!(result, "Schema was not added back to cache after renaming");
 
-    cleanup_test_case(test_dir).await;
+    /* Extra check for using save schema code path */
+
+    let schemas = core.context.schemas_cache.get_schemas_list().await;
+    assert!(schemas.len() == 1, "Schema count is not correct");
+
+    std::fs::create_dir_all(test_dir.clone().join("fast_test")).unwrap();
+
+    let mut sch = core
+        .context
+        .schemas_cache
+        .get_schema_safe(&PathBuf::from("books"))
+        .await
+        .unwrap();
+
+    sch.schema.name = "fast_test".to_string();
+
+    let _ = core
+        .context
+        .schemas_cache
+        .save_schema(&core.context, &PathBuf::from("fast_test"), sch.schema)
+        .await;
+
+    tokio::time::sleep(Duration::from_millis(300)).await;
+
+    let after_add_extra_one = || async {
+        let schemas = core.context.schemas_cache.get_schemas_list().await;
+
+        schemas.len() == 2
+    };
+
+    let schemas = core.context.schemas_cache.get_schemas_list().await;
+    println!("schemas: {:?}", schemas.len());
+
+    let result = wait_for_condition_async(after_add_extra_one, DEFAULT_RETRY_COUNT).await;
+
+    assert!(result, "Schema count is wrong after adding extra one");
+
+    // cleanup_test_case(test_dir).await;
 }
 
 #[tokio::test(flavor = "multi_thread")]

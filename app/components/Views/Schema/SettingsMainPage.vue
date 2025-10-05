@@ -113,11 +113,15 @@ const newFolderName = ref('');
 const folderCreationPath = ref('');
 
 const folderWhereToCreateName = computedAsync(async () => {
+  if (!folderCreationPath.value) return '';
   return await path.basename(folderCreationPath.value);
 });
 
 const createNewFolder = async () => {
-  await mkdir(await path.join(folderCreationPath.value, newFolderName.value));
+  const actualFolderCreationPath =
+    folderCreationPath.value === rootPath.value ? '' : folderCreationPath.value;
+
+  await mkdir(await path.join(rootPath.value, actualFolderCreationPath, newFolderName.value));
   isNewFolderDialogOpen.value = false;
 };
 

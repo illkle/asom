@@ -1,6 +1,9 @@
 <template>
   <PageTemplate :data-pending="!schema" tab-title="Schema editor">
     <template #title> Schema editor </template>
+    <template #title-badge>
+      <button v-if="showCopyButton" @click="() => toClipboard()">Copy</button>
+    </template>
 
     <template #header>
       <div class="flex justify-between items-center gap-2 mt-2"></div>
@@ -146,4 +149,11 @@ const duplicateKeyWarning = computed(() => {
   }
   return false;
 });
+
+const showCopyButton = false;
+
+const toClipboard = () => {
+  if (!schema.value) return;
+  navigator.clipboard.writeText(JSON.stringify(schema.value, null, 2));
+};
 </script>

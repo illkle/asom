@@ -6,6 +6,7 @@
     <template #title> Layout editor </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />
+      <div v-if="showCopyButton" @click="() => toClipboard()">copy</div>
     </template>
 
     <div v-if="editableProxy && schema.data.value && viewLayoutData.q.data.value">
@@ -85,4 +86,11 @@ watch(
   },
   { deep: true, immediate: true },
 );
+
+const showCopyButton = false;
+
+const toClipboard = () => {
+  if (!viewLayoutData.q.data.value) return;
+  navigator.clipboard.writeText(JSON.stringify(viewLayoutData.q.data.value, null, 2));
+};
 </script>

@@ -277,6 +277,10 @@ export const useTabsStoreV2 = defineStore('tabs', {
     },
 
     updateTabContent(data: IOpened, params?: { targetId?: string; scrollPosition?: number }) {
+      if (this.openedItem?._type === data._type && this.openedItem?._path === data._path) {
+        return;
+      }
+
       const target = params?.targetId
         ? this.openedTabs.find((t) => t.id === params.targetId)
         : this.openedTab;
@@ -685,6 +689,7 @@ export const useUpdateCurrentTabTitleFrom = ({
   watch(
     refToUpdate,
     (v) => {
+      console.log('useUpdateCurrentTabTitleFrom', v);
       if (!v && !setEmptyTitle) return;
       store.setCurrentTabTitle(v ?? '');
     },
