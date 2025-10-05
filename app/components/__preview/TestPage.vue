@@ -1,33 +1,26 @@
 <template>
   <PageTemplate tab-title="Test Page">
-    <Input v-model="input" />
-    <TestPageSub />
+    <Button @click="test">Test freeze</Button>
+    <TestPageSub :key="callsMade" :path="currentPath ?? 'gamez'" />
 
-    {{ f.foldersAsTree.value.map((v) => v.name + '_' + v.hasSchema) }}
+    {{ currentPath }}
 
-    <div class="flex">
-      <div class="">
-        <div class="p-4 flex flex-col items-center justify-center gap-8">
-          <div class="text-5xl font-serif font-light">asom</div>
-          <div class="">
-            <LoaderAnimated />
-
-            <LoaderAnimated size="lg" />
-          </div>
-        </div>
-      </div>
-    </div>
+    {{ callsMade }}
   </PageTemplate>
 </template>
 
 <script setup lang="ts">
 const input = ref('Test');
-import LoaderAnimated from '../Modules/LoaderAnimated.vue';
-import Input from '../ui/input/Input.vue';
+import TestPageSub from '~/components/__preview/TestPageSub.vue';
 import PageTemplate from '../Views/Schema/common/PageTemplate.vue';
-import TestPageSub from './TestPageSub.vue';
 
-provide('hello', input);
+const callsMade = ref(0);
 
-const f = useFoldersList();
+const possiblePaths = ['gamez', 'movies', 'books-next', 'test'];
+const currentPath = ref(possiblePaths[0]);
+
+const test = async () => {
+  callsMade.value++;
+  currentPath.value = possiblePaths[callsMade.value % possiblePaths.length];
+};
 </script>

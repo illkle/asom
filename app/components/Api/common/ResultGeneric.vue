@@ -3,6 +3,7 @@
     :is="WrapperInject ?? 'button'"
     v-for="(item, index) in props.query.data.value"
     :key="index"
+    :data-is-loading="saveInProgress === item.id"
     class="flex gap-4 hover:bg-muted py-2 px-2"
     @click="emits('select', item)"
     @select="emits('select', item)"
@@ -19,7 +20,7 @@
 <script setup lang="ts" generic="T extends ExApiSchema">
 import type { UseQueryReturn } from '@pinia/colada';
 import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
-import type { ExApiData, ExApiSchema } from '../base';
+import { useApiSaveInProgress, type ExApiData, type ExApiSchema } from '../base';
 import { useResultGenericWrapper } from './resultGeneric';
 
 const props = defineProps<{
@@ -31,4 +32,6 @@ const emits = defineEmits<{
 }>();
 
 const WrapperInject = useResultGenericWrapper();
+
+const saveInProgress = useApiSaveInProgress();
 </script>

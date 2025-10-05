@@ -9,7 +9,7 @@
   <NuxtLayout>
     <ErrorModal />
   </NuxtLayout>
-  <Toaster :theme="colorMode.value === 'dark' ? 'dark' : 'light'" />
+  <Toaster :theme="colorMode.value === 'dark' ? 'dark' : 'light'" class="pointer-events-auto" />
 
   <NuxtPage />
   <div id="customTeleport" class="absolute top-[-1000px]"></div>
@@ -17,11 +17,11 @@
 
 <script setup lang="ts">
 import 'vue-sonner/style.css';
+import { useHandleErrorsFromRust } from '~/components/Core/Errors/errors';
 import { Toaster } from '~/components/ui/sonner/';
 import { useGlobalInvalidators } from '~/composables/data/queries';
 import ErrorModal from './components/Core/Errors/ErrorModal.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
-import { useHandleErrorsFromRust } from '~/components/Core/Errors/errors';
 
 const colorMode = useColorMode();
 

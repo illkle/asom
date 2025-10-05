@@ -76,8 +76,6 @@
 </template>
 
 <script setup lang="ts">
-import { isOurError, showErrorNotification } from '~/components/Core/Errors/errors';
-
 import { c_load_schema, c_save_schema } from '~/api/tauriActions';
 
 import { TriangleAlert } from 'lucide-vue-next';
@@ -85,7 +83,7 @@ import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
 import SchemaItem from '~/components/Views/Schema/EditSchema/SchemaItem.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
-import type { ErrFR, Schema } from '~/types';
+import type { Schema } from '~/types';
 
 const root = useRootPathInjectSafe();
 
@@ -113,14 +111,8 @@ const save = async () => {
 const schema = ref<Schema | null>(null);
 
 onMounted(async () => {
-  try {
-    const res = await c_load_schema(props.opened._path);
-    schema.value = res;
-  } catch (e) {
-    if (isOurError(e)) {
-      showErrorNotification(e as ErrFR);
-    }
-  }
+  const res = await c_load_schema(props.opened._path);
+  schema.value = res;
 });
 
 const addNew = () => {

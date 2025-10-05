@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { showErrorNotification } from '~/components/Core/Errors/errors';
+import { handleMaybeOurError } from '~/components/Core/Errors/errors';
 import type { ExtractIpcResponseType, RecordFromDb, Schema } from '~/types';
 
 export const c_init = async () => {
@@ -24,7 +24,7 @@ export const c_save_file = async ({
   return invoke('c_save_file', { record, forced, createNew })
     .then((v) => v as ExtractIpcResponseType<'c_save_file'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -33,14 +33,15 @@ export const c_save_file = async ({
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const c_get_files_by_path = async (pathRelative: string) => {
-  console.log(' c_get_files_by_path', pathRelative);
+  console.log('invoke c_get_files_by_path', pathRelative);
   return invoke('c_get_files_by_path', { pathRelative })
     .then((v) => {
       return v as ExtractIpcResponseType<'c_get_files_by_path'>;
     })
     .catch((e) => {
-      showErrorNotification(e);
-      throw e;
+      console.log('catch c_get_files_by_path');
+      handleMaybeOurError({ e });
+      //  throw e;
     });
 };
 
@@ -48,7 +49,7 @@ export const c_get_all_tags = async () => {
   return invoke('c_get_all_tags', {})
     .then((v) => v as ExtractIpcResponseType<'c_get_all_tags'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -59,7 +60,7 @@ export const c_get_all_folders = async () => {
       return v as ExtractIpcResponseType<'c_get_all_folders'>;
     })
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -70,16 +71,22 @@ export const c_get_all_folders_by_schema = async (schemaPath: string) => {
       return v as ExtractIpcResponseType<'c_get_all_folders_by_schema'>;
     })
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
 
 export const c_read_file_by_path = async (path: string) => {
   return invoke('c_read_file_by_path', { path })
-    .then((v) => v as ExtractIpcResponseType<'c_read_file_by_path'>)
+    .then((v) => {
+      const vv = v as ExtractIpcResponseType<'c_read_file_by_path'>;
+      if (vv.record.parsing_error) {
+        handleMaybeOurError({ e: vv.record.parsing_error });
+      }
+      return vv;
+    })
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -89,7 +96,7 @@ export const c_get_schemas_usable = async () => {
   return invoke('c_get_schemas_usable')
     .then((v) => v as ExtractIpcResponseType<'c_get_schemas_usable'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -98,7 +105,7 @@ export const c_get_schemas_all = async () => {
   return invoke('c_get_schemas_all')
     .then((v) => v as ExtractIpcResponseType<'c_get_schemas_all'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -107,7 +114,7 @@ export const c_save_schema = async (path: string, schema: Schema) => {
   return invoke('c_save_schema', { path, schema })
     .then((v) => v as ExtractIpcResponseType<'c_save_schema'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -117,7 +124,7 @@ export const c_load_schema = async (path: string) => {
   return invoke('c_load_schema', { path })
     .then((v) => v as ExtractIpcResponseType<'c_load_schema'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -130,7 +137,7 @@ export const c_resolve_schema_path = async (path: string) => {
   return invoke('c_resolve_schema_path', { path })
     .then((v) => v as ExtractIpcResponseType<'c_resolve_schema_path'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };
@@ -140,7 +147,7 @@ export const c_delete_to_trash = async (path: string) => {
   return invoke('c_delete_to_trash', { path })
     .then((v) => v as ExtractIpcResponseType<'c_delete_to_trash'>)
     .catch((e) => {
-      showErrorNotification(e);
+      handleMaybeOurError({ e });
       throw e;
     });
 };

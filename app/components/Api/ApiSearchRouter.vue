@@ -8,14 +8,12 @@
         async (v) => {
           if (props.connection.type !== 'twitchigdb') return;
           if (!v.name) return;
-          const attrs = await makeFileAttrsFromApi({
+          emit('select', {
             apiSettings: props.connection,
             apiData: v,
             schema: props.schema,
-            context: { rootPath: rootPath, recordName: v.name },
+            recordName: v.name,
           });
-          console.log('attrs', attrs);
-          emit('select', v.name, attrs);
         }
       "
     />
@@ -26,15 +24,13 @@
       @select="
         async (v) => {
           if (props.connection.type !== 'openlibrary') return;
-          if (!v.title || !rootPath) return;
-          const attrs = await makeFileAttrsFromApi({
+          if (!v.title) return;
+          emit('select', {
             apiSettings: props.connection,
             apiData: v,
             schema: props.schema,
-            context: { rootPath: rootPath, recordName: v.title },
+            recordName: v.title,
           });
-          console.log('attrs', attrs);
-          emit('select', v.title, attrs);
         }
       "
     />
@@ -53,8 +49,8 @@ import type { ApiSettings } from '~/components/Api/apis';
 import IGDBSearch from '~/components/Api/IGDB/Results.vue';
 import OpenLibrarySearch from '~/components/Api/OpenLibrary/Results.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
-import type { RecordFromDb, Schema } from '~/types';
-import { makeFileAttrsFromApi } from './makeFileFromApi';
+import type { Schema } from '~/types';
+import { type APIEmitData } from './makeFileFromApi';
 
 const rootPath = useRootPathInjectSafe();
 
@@ -65,7 +61,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select', id: string, record: RecordFromDb['attrs']): void;
+  (e: 'select', data: APIEmitData<ApiSettings>): void;
 }>();
 
 const debouncedSearch = useDebounce(

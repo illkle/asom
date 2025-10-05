@@ -54,6 +54,7 @@
             <KeyIcon /> Api credentials
           </SidebarMenuButton>
           <SidebarMenuButton
+            v-if="isDev"
             @click="tabsStore.openNewThingFast({ _type: 'innerPage/test', _path: '' }, 'last')"
           >
             <ImportIcon /> Test page
@@ -121,4 +122,6 @@ const settingsDialogOpened = ref(false);
 useNavigationBlock(settingsDialogOpened);
 
 const noSchemas = computed(() => schemasArray.value.length === 0);
+
+const isDev = import.meta.dev;
 </script>

@@ -5,7 +5,7 @@
     :selected-schema="selectedSchema[1]"
     :selected-schema-path="selectedSchemaPath"
     @handle-add-empty="handleAddEmpty"
-    @handle-add-from-api="handleAddFromApi"
+    @handle-add-from-api="handleFromApiMutation.mutate"
   >
     <template #default> <slot /> </template>
     <template #extra-controls>
@@ -23,8 +23,13 @@
 <script lang="ts" setup>
 import { path } from '@tauri-apps/api';
 import { computedAsync, useMagicKeys } from '@vueuse/core';
+import type { ApiSettings } from '~/components/Api/apis';
+import { provideApiSaveInProgress } from '~/components/Api/base';
+import { makeFileAttrsFromApi, type APIEmitData } from '~/components/Api/makeFileFromApi';
+import { handleOurErrorWithNotification } from '~/components/Core/Errors/errors';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
-import type { RecordFromDb } from '~/types';
+import type { ErrFR } from '~/types';
 import AddAndSearch from './AddAndSearch.vue';
 import { addThing } from './recordAdder';
 import RecordAdderRadio from './RecordAdderRadio.vue';
@@ -93,25 +98,55 @@ const saveTo = computed(() => {
   return selectedSchemaPath.value;
 });
 
-const handleAddFromApi = async (name: string, attrs: RecordFromDb['attrs']) => {
-  if (!saveTo.value) {
-    return;
-  }
+const rootPath = useRootPathInjectSafe();
 
-  const filePath = await addThing({
-    name,
-    attrsInput: attrs,
-    saveTo: saveTo.value,
-  });
+const saveInProgress = ref<string>('');
 
-  if (!filePath) {
-    console.error('No file path returned');
-    return;
-  }
+provideApiSaveInProgress(saveInProgress);
 
-  tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
-  modalOpened.value = false;
-};
+const handleFromApiMutation = useMutation({
+  onMutate: (data) => {
+    if (!data.apiData.id) return;
+    saveInProgress.value = data.apiData.id;
+  },
+  onSettled() {
+    saveInProgress.value = '';
+  },
+  mutation: async (data: APIEmitData<ApiSettings>) => {
+    const attrs = await makeFileAttrsFromApi({
+      data,
+      rootPath: rootPath.value,
+    });
+
+    if (!saveTo.value) {
+      return;
+    }
+
+    const filePath = await addThing({
+      name: data.recordName,
+      attrsInput: attrs,
+      saveTo: saveTo.value,
+    });
+
+    if (!filePath) {
+      console.error('No file path returned');
+      return;
+    }
+
+    tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
+    modalOpened.value = false;
+  },
+  onError(e) {
+    console.error(e);
+    handleOurErrorWithNotification({
+      title: 'Error adding record',
+      info: 'Please try again',
+      rawError: e.message,
+      isError: true,
+      subErrors: [],
+    } satisfies ErrFR);
+  },
+});
 
 const handleAddEmpty = async (inputValue: string) => {
   if (!saveTo.value) {

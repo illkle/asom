@@ -90,6 +90,7 @@ const getYear = (rootElement: Element) => {
 };
 
 export const goodreadsApiSchema = defineExApiSchema({
+  id: 'Text',
   title: 'Text',
   author: 'Text',
   isbn: 'Text',
@@ -102,6 +103,7 @@ export type GoodreadsParsedBook = ExApiData<typeof goodreadsApiSchema>;
 
 const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBook => {
   const book: GoodreadsParsedBook = {
+    id: grabSimpleValue(rootElement, 'title'),
     title: grabSimpleValue(rootElement, 'title'),
     author: grabSimpleValue(rootElement, 'author'),
     isbn: grabSimpleValue(rootElement, 'isbn13'),

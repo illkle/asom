@@ -44,7 +44,7 @@
           :schema="selectedSchema"
           :connection="apiConnection.q.data.value"
           class="max-h-[300px] overflow-y-auto mt-2"
-          @select="(name, attrs) => emit('handleAddFromApi', name, attrs)"
+          @select="(data) => emit('handleAddFromApi', data)"
         />
 
         <DialogDescription></DialogDescription>
@@ -54,11 +54,13 @@
 </template>
 
 <script lang="ts" setup>
+import type { ApiSettings } from '~/components/Api/apis';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import { provideResultGenericWrapper } from '~/components/Api/common/resultGeneric';
+import type { APIEmitData } from '~/components/Api/makeFileFromApi';
 import KeyboardListItem from '~/components/Modules/KeyboardList/KeyboardListItem.vue';
 import { useKeyboardListManager } from '~/components/Modules/KeyboardList/useKeyboardListManager';
-import type { RecordFromDb, Schema } from '~/types';
+import type { Schema } from '~/types';
 
 const props = defineProps<{
   selectedSchema: Schema;
@@ -66,7 +68,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'handleAddFromApi', name: string, attrs: RecordFromDb['attrs']): void;
+  (e: 'handleAddFromApi', data: APIEmitData<ApiSettings>): void;
   (e: 'handleAddEmpty', inputValue: string): void;
 }>();
 

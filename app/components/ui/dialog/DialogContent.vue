@@ -40,6 +40,12 @@ const contentRef = useTemplateRef<HTMLInputElement>('inputRef');
           props.class,
         )
       "
+      @interact-outside="
+        (event) => {
+          const target = event.target as HTMLElement;
+          if (target?.closest('[data-sonner-toaster]')) return event.preventDefault();
+        }
+      "
     >
       <slot />
 

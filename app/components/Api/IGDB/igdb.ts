@@ -2,7 +2,7 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { z } from 'zod';
 import type { IgdbApiGame } from '~/components/Api/IGDB';
 import { zGame, zToken, type IGDBGame } from '~/components/Api/IGDB/externalSchema';
-import { showErrorNotification } from '~/components/Core/Errors/errors';
+import { handleExternalErrorWithNotification } from '~/components/Core/Errors/errors';
 
 const getToken = async (clientId: string, clientSecret: string) => {
   const res = await fetch(
@@ -103,12 +103,7 @@ export const getGamesFromIGDB = async ({
       c.igdb_accessToken = t.access_token;
       await setApiCredentials(c);
     } catch (e) {
-      showErrorNotification({
-        isError: true,
-        title: 'Failed to get token for IGDB',
-        info: e instanceof Error ? e.message : 'Unknown error',
-        subErrors: [e],
-      });
+      handleExternalErrorWithNotification({ e }, { title: 'Error while getting token for IGDB' });
       return [];
     }
   }
@@ -135,12 +130,7 @@ export const getGamesFromIGDB = async ({
         limit,
       });
     } catch (e) {
-      showErrorNotification({
-        isError: true,
-        title: 'Failed to get games from IGDB',
-        subErrors: [],
-        details: e instanceof Error ? e.message : 'Unknown error',
-      });
+      handleExternalErrorWithNotification({ e }, { title: 'Error while getting games from IGDB' });
       return [];
     }
   }
@@ -148,7 +138,7 @@ export const getGamesFromIGDB = async ({
   return gamesSource.map(
     (game) =>
       ({
-        id: game.id,
+        id: game.id.toString(),
         name: game.name,
         cover: game.cover?.url
           ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${game.cover.image_id}.jpg`
