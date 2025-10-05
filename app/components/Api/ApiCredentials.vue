@@ -29,7 +29,11 @@
 
       <span class="text-xs text-gray-500">
         Login with Twitch and create an application at
-        <a href="https://dev.twitch.tv/console/apps" target="_blank"
+        <a
+          href="https://dev.twitch.tv/console/apps"
+          target="_blank"
+          class="underline"
+          @click.prevent="openUrl('https://dev.twitch.tv/console/apps')"
           >https://dev.twitch.tv/console/apps</a
         >
       </span>
@@ -68,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { openUrl } from '@tauri-apps/plugin-opener';
 import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
 
 const { q, mutateUpdater } = useApiCredentials();

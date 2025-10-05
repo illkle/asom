@@ -9,10 +9,7 @@
       "
     >
       <template #error="{ error }">
-        <div class="p-12 mx-auto text-center w-full h-full bg-background">
-          <p class="text-lg font-bold">Error when rendering UI</p>
-          <p class="text-sm text-muted-foreground">{{ error }}</p>
-        </div>
+        <PageError :message="String(error)" />
       </template>
       <template #default>
         <RecordEditor
@@ -70,7 +67,7 @@
   </template>
 
   <div v-else class="relative h-full w-full px-2 pr-4">
-    <div class="flex flex-col items-center justify-center h-full">
+    <div v-if="tabsStore.initialLoadDone" class="flex flex-col items-center justify-center h-full">
       <div class="text-muted-foreground">You have nothing opened</div>
     </div>
   </div>
@@ -87,6 +84,7 @@ import LayoutEditor from '~/components/Views/Schema/Layout/LayoutEditor.vue';
 import SchemaEditor from '~/components/Views/Schema/SettingsMainPage.vue';
 import { useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import TestPage from './__preview/TestPage.vue';
+import PageError from './Modules/PageError.vue';
 
 const tabsStore = useTabsStoreV2();
 

@@ -29,7 +29,6 @@ import { makeFileAttrsFromApi, type APIEmitData } from '~/components/Api/makeFil
 import { handleOurErrorWithNotification } from '~/components/Core/Errors/errors';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
-import type { ErrFR } from '~/types';
 import AddAndSearch from './AddAndSearch.vue';
 import { addThing } from './recordAdder';
 import RecordAdderRadio from './RecordAdderRadio.vue';
@@ -140,11 +139,10 @@ const handleFromApiMutation = useMutation({
     console.error(e);
     handleOurErrorWithNotification({
       title: 'Error adding record',
-      info: 'Please try again',
       rawError: e.message,
       isError: true,
       subErrors: [],
-    } satisfies ErrFR);
+    });
   },
 });
 

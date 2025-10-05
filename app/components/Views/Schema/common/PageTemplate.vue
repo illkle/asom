@@ -20,15 +20,13 @@
       <div v-if="!dataPending">
         <slot />
       </div>
-      <div v-else class="flex items-center justify-center py-32">
-        <LoaderAnimated class="text-muted-foreground opacity-70" />
-      </div>
+      <LoaderForPage v-else class="flex items-center justify-center py-32" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import LoaderAnimated from '~/components/Modules/LoaderAnimated.vue';
+import LoaderForPage from '~/components/Modules/LoaderForPage.vue';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,

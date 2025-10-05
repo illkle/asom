@@ -1,18 +1,27 @@
 <template>
+  <LoaderForPage
+    v-if="files.files.isPending.value || schema.isPending.value || viewSettings.q.isPending.value"
+  />
+  <PageError
+    v-else-if="files.files.error.value || schema.error.value || viewSettings.q.error.value"
+  />
   <ListView
-    v-if="schema.data.value && viewSettings.q.data.value"
+    v-else
     v-bind="$attrs"
     :opened="opened"
+    :files="files"
     :view-settings="viewSettings.q.data.value"
     :schema="schema.data"
     @update:viewSettings:p="(v) => viewSettings.partialUpdater(v)"
   />
-  <div v-else class="h-full w-full bg-background"></div>
 </template>
 
 <script setup lang="ts">
 import { path } from '@tauri-apps/api';
 import { computedAsync } from '@vueuse/core';
+import LoaderForPage from '~/components/Modules/LoaderForPage.vue';
+import PageError from '~/components/Modules/PageError.vue';
+import { useFilesListV2 } from '~/components/Views/List/useFileList';
 import { useUpdateCurrentTabTitleFrom, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import ListView from './ListView.vue';
 
@@ -21,6 +30,10 @@ const props = defineProps({
     type: Object as PropType<IOpened>,
     required: true,
   },
+});
+
+const files = useFilesListV2({
+  opened: props.opened,
 });
 
 const schemaPath = computed(() => props.opened._path);

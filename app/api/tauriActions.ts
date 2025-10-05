@@ -41,7 +41,7 @@ export const c_get_files_by_path = async (pathRelative: string) => {
     .catch((e) => {
       console.log('catch c_get_files_by_path');
       handleMaybeOurError({ e });
-      //  throw e;
+      throw e;
     });
 };
 

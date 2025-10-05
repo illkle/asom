@@ -129,10 +129,13 @@ export type OpenNewOneParams = {
 
 export const useTabsStoreV2 = defineStore('tabs', {
   state: (): IOpenedTabs & {
+    initialLoadDone: boolean;
     navigationBlocks: Set<string>;
     ignoreDeleteEvents: Set<string>;
   } => {
     return {
+      initialLoadDone: false,
+
       openedTabs: [],
       focusHistory: [],
       /** -1 means no active tab */
@@ -219,6 +222,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
         console.error(e);
         console.error('Encountered an error when trying to load tabs state from disk');
       }
+      this.initialLoadDone = true;
     },
 
     /** Internal helpers */
