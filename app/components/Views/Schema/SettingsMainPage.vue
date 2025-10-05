@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="isPending">
+  <PageTemplate :data-pending="isPending" tab-title="Root path & Schema">
     <template #title> Root path & Schema </template>
 
     <div class="flex items-stretch justify-between">
@@ -113,19 +113,21 @@ const newFolderName = ref('');
 const folderCreationPath = ref('');
 
 const folderWhereToCreateName = computedAsync(async () => {
+  if (!folderCreationPath.value) return '';
   return await path.basename(folderCreationPath.value);
 });
 
 const createNewFolder = async () => {
-  await mkdir(await path.join(folderCreationPath.value, newFolderName.value));
+  const actualFolderCreationPath =
+    folderCreationPath.value === rootPath.value ? '' : folderCreationPath.value;
+
+  await mkdir(await path.join(rootPath.value, actualFolderCreationPath, newFolderName.value));
   isNewFolderDialogOpen.value = false;
 };
 
 const qc = useQueryCache();
 
 const { folders, isPending, foldersAsTree } = useFoldersList();
-
-const existingSchemas = useExistingSchemas();
 
 const allFolderIds = computed(() => {
   return folders.value?.folders.map((v) => v.path) ?? [];

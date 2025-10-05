@@ -11,16 +11,16 @@
     class="flex items-center gap-1 text-xs"
     @click="handleButtonClick"
   >
-    <template v-if="updateQ.data.value">
-      {{ currentVersion }} <MoveRightIcon /> {{ updateQ.data.value.version }}
-    </template>
-    <template v-else>{{ currentVersion }}</template>
+    <template v-if="updateM.isLoading.value"> Updating... </template>
+    <template v-else>
+      <template v-if="updateQ.data.value">
+        {{ currentVersion }} <MoveRightIcon /> {{ updateQ.data.value.version }}
+      </template>
+      <template v-else>{{ currentVersion }}</template>
 
-    <TriangleAlert v-if="updateQ.error.value" />
-    <CircleX v-else-if="updateM.error.value" />
-    <div v-else-if="updateM.isLoading.value" class="">
-      <LoaderCircle :size="16" class="animate-spin" />
-    </div>
+      <TriangleAlert v-if="updateQ.error.value" />
+      <CircleX v-else-if="updateM.error.value" />
+    </template>
   </Button>
 </template>
 
@@ -28,7 +28,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check } from '@tauri-apps/plugin-updater';
-import { CircleX, LoaderCircle, MoveRightIcon, TriangleAlert } from 'lucide-vue-next';
+import { CircleX, MoveRightIcon, TriangleAlert } from 'lucide-vue-next';
 import { Button } from '~/components/ui/button';
 import { useMainStore } from '~/composables/stores/useMainStore';
 

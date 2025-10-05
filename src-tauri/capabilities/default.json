@@ -68,6 +68,23 @@
       ]
     },
     {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "https://**"
+        },
+        {
+          "url": "https://github.com/illkle/asom"
+        },
+        {
+          "url": "https://github.com/illkle/asom/*"
+        },
+        {
+          "url": "https://dev.twitch.tv/console/apps"
+        }
+      ]
+    },
+    {
       "identifier": "opener:allow-reveal-item-in-dir",
       "allow": [
         {

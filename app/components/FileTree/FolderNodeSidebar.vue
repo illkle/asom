@@ -59,9 +59,9 @@
         <ContextMenuItem @click="startCreating"> Create Folder </ContextMenuItem>
 
         <ContextMenuItem
-          @click="async () => await openPath(await path.join(rootPath, item.value.rawPath))"
+          @click="showInFileManager({ rootPath, targetPath: item.value.rawPath, reveal: true })"
         >
-          Show in {{ fileManagerName }}
+          Reveal in {{ fileManagerName }}
         </ContextMenuItem>
 
         <ContextMenuItem
@@ -98,7 +98,6 @@
 </template>
 
 <script setup lang="ts">
-import { openPath } from '@tauri-apps/plugin-opener';
 import { ChevronDown, FolderIcon, PlusIcon } from 'lucide-vue-next';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 

@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="isError" @update:open="() => (store.errorModal = null)">
-    <DialogContent>
+    <DialogContent class="z-100">
       <DialogTitle>
         {{ err?.title }}
       </DialogTitle>

@@ -14,7 +14,8 @@ use crate::utils::errorhandling::ErrFR;
 pub struct RecordFromDb {
     /* Relative path to root path */
     pub path: Option<String>,
-    pub modified: Option<String>,
+    #[ts(type = "number")]
+    pub modified: Option<i64>, // UNIX milliseconds
     pub markdown: Option<String>,
 
     pub attrs: HashMap<String, AttrValue>,

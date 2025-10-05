@@ -1,8 +1,4 @@
-import {
-  useCoolDndContext,
-  type DraggableInfo,
-  type DropTargetInfo,
-} from '~/components/Modules/NestedDrag/common';
+import { useCoolDndContext, type DropTargetInfo } from '~/components/Modules/NestedDrag/common';
 
 export type DropTargetProps = {
   id: DropTargetInfo['id'];
@@ -22,10 +18,10 @@ export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement | n
     draggedItem,
     hoveredItem,
     registerDropTarget,
-    updateDropTargetPositon,
+    updateDropTargetPositon: updateDropTargetPosition,
     unregisterDropTarget,
     updateDropTargetInfo,
-  } = useCoolDndContext<unknown, DraggableInfo>();
+  } = useCoolDndContext();
 
   const isOver = computed(() => {
     return hasDraggedItem.value && hoveredItem.value?.id === props.id;
@@ -59,7 +55,7 @@ export const useDropTarget = (props: DropTargetProps, el: Ref<HTMLDivElement | n
   const computeIfTracking = () => {
     if (trackSizeChanges.value) {
       const sd = computeSizeData();
-      updateDropTargetPositon(props.id, regKey.value, sd);
+      updateDropTargetPosition(props.id, regKey.value, sd);
       backup.value = sd;
     }
   };

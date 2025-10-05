@@ -34,6 +34,7 @@ pub struct SchemaResult {
 const INTERNAL_FOLDER_NAME: &str = ".asom";
 const SCHEMA_FILE_NAME: &str = "schema.yaml";
 
+/** Takes either schema owner folder path, internal config path(folder/.asom) or schema file path and return both paths */
 fn locate_schema_and_folder(path_absolute: &Path) -> Result<(PathBuf, PathBuf), Box<ErrFR>> {
     let is_dir_safe_for_deleted = match path_absolute.exists() {
         true => path_absolute.is_dir(),
@@ -86,8 +87,9 @@ impl SchemasInMemoryCache {
         self.map.write().await.clear();
     }
 
-    async fn insert(&self, path: PathBuf, value: Schema) {
-        self.map.write().await.insert(path, value);
+    async fn insert(&self, relative_folder_path: PathBuf, value: Schema) {
+        println!("INSERT TO MAP: {:?}", relative_folder_path);
+        self.map.write().await.insert(relative_folder_path, value);
     }
 
     fn get_schema_internal(
@@ -251,35 +253,104 @@ impl SchemasInMemoryCache {
 
     pub async fn save_schema(
         &self,
-        schema_or_folder_path: &Path,
+        ctx: &AppContext,
+        relative_path_schema_or_folder: &Path,
         mut schema: Schema,
     ) -> Result<Schema, Box<ErrFR>> {
         schema.version = SCHEMA_VERSION.to_string();
+
+        schema = schema.remove_empty_and_duplicates();
+
         let serialized = serde_yml::to_string(&schema)
             .map_err(|e| ErrFR::new("Error serializing schema").raw(e))?;
 
-        let (schema_path, folder_path) = locate_schema_and_folder(schema_or_folder_path)?;
+        let absolute_path_schema_or_folder = ctx
+            .relative_path_to_absolute(relative_path_schema_or_folder)
+            .await?;
 
-        let asom_folder_path = folder_path.join(INTERNAL_FOLDER_NAME);
+        let (absolute_schema_path, absolute_folder_path) =
+            locate_schema_and_folder(&absolute_path_schema_or_folder)?;
+
+        let asom_folder_path = absolute_folder_path.join(INTERNAL_FOLDER_NAME);
 
         if !asom_folder_path.exists() {
             create_dir_all(&asom_folder_path).map_err(|e| {
                 ErrFR::new("Error creating directory")
-                    .info("Could not create schema folder")
+                    .info(&format!(
+                        "Could not create schema folder {}",
+                        &asom_folder_path.to_string_lossy()
+                    ))
                     .raw(e)
             })?;
         }
 
-        println!("schema_path {:?}", schema_path);
-
-        write(schema_path.clone(), serialized).map_err(|e| {
+        write(absolute_schema_path.clone(), serialized).map_err(|e| {
             ErrFR::new("Error writing to disk")
                 .info("Schema was not saved")
                 .raw(e)
         })?;
 
-        self.insert(folder_path.clone(), schema.clone()).await;
+        let relative_folder_path = ctx.absolute_path_to_relative(&absolute_folder_path).await?;
+
+        self.insert(relative_folder_path.clone(), schema.clone())
+            .await;
 
         Ok(schema)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::schema::types::{SchemaAttrType, SchemaItem, TextSettings};
+
+    use super::*;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_double_insert() {
+        let cache = SchemasInMemoryCache::new();
+        let schema1 = Schema {
+            fill_api_search_from: None,
+            fill_from_filename: None,
+            name: "test".to_string(),
+            items: vec![SchemaItem {
+                name: "test".to_string(),
+                value: SchemaAttrType::Text(TextSettings::default()),
+            }],
+            version: "1.0.0".to_string(),
+        };
+        cache.insert(PathBuf::from("test"), schema1).await;
+        let schema2 = Schema {
+            fill_api_search_from: None,
+            fill_from_filename: None,
+            name: "test222".to_string(),
+            items: vec![SchemaItem {
+                name: "test".to_string(),
+                value: SchemaAttrType::Text(TextSettings::default()),
+            }],
+            version: "1.0.0".to_string(),
+        };
+        cache.insert(PathBuf::from("test"), schema2).await;
+
+        let schemas = cache.get_schemas_list().await;
+        assert_eq!(schemas.len(), 1);
+        let s1 = schemas.get("test").unwrap();
+        assert_eq!(s1.name, "test222");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_locate_schema_and_folder() {
+        let mock_path = PathBuf::from("test");
+        let mock_path_with_internal_folder = mock_path.join(".asom");
+        let mock_path_with_schema_file = mock_path_with_internal_folder.join("schema.yaml");
+
+        let (f_1, p_1) = locate_schema_and_folder(&mock_path).unwrap();
+        let (f_2, p_2) = locate_schema_and_folder(&mock_path_with_internal_folder).unwrap();
+        let (f_3, p_3) = locate_schema_and_folder(&mock_path_with_schema_file).unwrap();
+        assert_eq!(f_1, mock_path_with_schema_file);
+        assert_eq!(p_1, mock_path);
+        assert_eq!(f_2, mock_path_with_schema_file);
+        assert_eq!(p_2, mock_path);
+        assert_eq!(f_3, mock_path_with_schema_file);
+        assert_eq!(p_3, mock_path);
     }
 }

@@ -1,6 +1,9 @@
 <template>
-  <PageTemplate :data-pending="!schema">
+  <PageTemplate :data-pending="!schema" tab-title="Schema editor">
     <template #title> Schema editor </template>
+    <template #title-badge>
+      <button v-if="showCopyButton" @click="() => toClipboard()">Copy</button>
+    </template>
 
     <template #header>
       <div class="flex justify-between items-center gap-2 mt-2"></div>
@@ -20,7 +23,22 @@
       </div>
     </template>
     <template v-if="schema">
-      <div class="gap-2 w-full grid grid-cols-2">
+      <div
+        v-if="emptyKeyWarning || duplicateKeyWarning"
+        class="mb-2 border border-destructive rounded-md p-2 text-destructive text-xs flex items-center gap-2"
+      >
+        <TriangleAlert />
+        <div>
+          <div v-if="emptyKeyWarning" class="">
+            You have empty key, those items will be deleted on save
+          </div>
+          <div v-if="duplicateKeyWarning" class="">
+            You have items with duplicate keys, duplicate one will be deleted on save
+          </div>
+        </div>
+      </div>
+
+      <div class="gap-2 w-full grid grid-cols-2" v-if="onlyTextItems && onlyTextItems.length > 0">
         <h5 class="text-xs text-muted-foreground">Fill from filename</h5>
 
         <h5 class="text-xs text-muted-foreground">Fill api search from</h5>
@@ -61,15 +79,14 @@
 </template>
 
 <script setup lang="ts">
-import { isOurError, useRustErrorNotification } from '~/composables/useRustErrorNotifcation';
+import { c_load_schema, c_save_schema } from '~/api/tauriActions';
 
-import { c_load_schema, c_save_schema, returnErrorHandler } from '~/api/tauriActions';
-
+import { TriangleAlert } from 'lucide-vue-next';
+import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
+import SchemaItem from '~/components/Views/Schema/EditSchema/SchemaItem.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
-import type { ErrFR, Schema } from '~/types';
-import PageTemplate from './common/PageTemplate.vue';
-import SchemaItem from './SchemaItem.vue';
+import type { Schema } from '~/types';
 
 const root = useRootPathInjectSafe();
 
@@ -82,41 +99,23 @@ const props = defineProps({
   },
 });
 
-const shortPath = computed(() => {
-  return props.opened._path.replace(root.value ?? '', '');
-});
-
-const emit = defineEmits<{
-  (e: 'back'): void;
-}>();
-
 const selectedItemIndex = ref<number | null>(null);
 
 const goBack = () => {
-  tabsStore.moveBack();
+  tabsStore.openNewThingFast({ _type: 'settings', _path: '' });
 };
 
 const save = async () => {
   if (!schema.value) return;
-  const r = await c_save_schema(props.opened._path, schema.value).catch(returnErrorHandler);
-  if ('isError' in r) {
-    useRustErrorNotification(r);
-    return;
-  }
+  await c_save_schema(props.opened._path, schema.value);
   goBack();
 };
 
 const schema = ref<Schema | null>(null);
 
 onMounted(async () => {
-  try {
-    const res = await c_load_schema(props.opened._path);
-    schema.value = res;
-  } catch (e) {
-    if (isOurError(e)) {
-      useRustErrorNotification(e as ErrFR);
-    }
-  }
+  const res = await c_load_schema(props.opened._path);
+  schema.value = res;
 });
 
 const addNew = () => {
@@ -126,12 +125,35 @@ const addNew = () => {
     value: { type: 'Text', settings: { settingsType: 'Text' } },
   });
 };
+
 const deleteItem = (index: number) => {
   if (!schema.value) return;
   schema.value.items.splice(index, 1);
 };
 
 const onlyTextItems = computed(() => {
-  return schema.value?.items.filter((v) => v.value.type == 'Text');
+  return schema.value?.items.filter((v) => v.value.type == 'Text' && v.name.length > 0);
 });
+
+const emptyKeyWarning = computed(() => {
+  return schema.value?.items.some((v) => v.name.length === 0);
+});
+
+const duplicateKeyWarning = computed(() => {
+  const keys = new Set<string>();
+  for (const item of schema.value?.items ?? []) {
+    if (keys.has(item.name)) {
+      return true;
+    }
+    keys.add(item.name);
+  }
+  return false;
+});
+
+const showCopyButton = false;
+
+const toClipboard = () => {
+  if (!schema.value) return;
+  navigator.clipboard.writeText(JSON.stringify(schema.value, null, 2));
+};
 </script>

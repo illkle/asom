@@ -155,7 +155,8 @@ pub fn parse_metadata(front_matter: &str, schema: &Schema) -> MetaDataParseResul
 #[cfg(test)]
 mod tests {
     use crate::schema::types::{
-        EmptySettings, NumberSettings, Schema, SchemaItem, TextCollectionSettings, TextSettings,
+        DatesPairCollectionSettings, NumberSettings, Schema, SchemaItem, TextCollectionSettings,
+        TextSettings,
     };
 
     use super::*;
@@ -220,7 +221,9 @@ tags: 555
                 },
                 SchemaItem {
                     name: "read".to_owned(),
-                    value: SchemaAttrType::DatesPairCollection(EmptySettings {}),
+                    value: SchemaAttrType::DatesPairCollection(DatesPairCollectionSettings {
+                        ..DatesPairCollectionSettings::default()
+                    }),
                 },
                 SchemaItem {
                     name: "tags".to_owned(),

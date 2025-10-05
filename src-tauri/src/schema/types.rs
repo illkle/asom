@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -72,16 +73,16 @@ pub enum SchemaAttrType {
     Text(TextSettings),
     TextCollection(TextCollectionSettings),
     Number(NumberSettings),
-    Date(EmptySettings),
-    DateCollection(EmptySettings),
-    DatesPairCollection(EmptySettings),
+    Date(DateSettings),
+    DateCollection(DateCollectionSettings),
+    DatesPairCollection(DatesPairCollectionSettings),
     Image(ImageSettings),
 }
 
 /*
     These types are not needed in rust, but useful in typescript
-    Typescript confuses types with common fields unless they have unuique identificator:
-    The proper way in TS is extends, but rust has no inheritance and we rely on typegen
+    Typescript confuses types with common fields unless they have unique identifier:
+    The proper way in TS is extends, but rust has no inheritance and we rely on type generation
 */
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -115,12 +116,37 @@ pub enum SettingsTypeImage {
     Image,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[derive(Default)]
+pub enum SettingsTypeDate {
+    #[default]
+    Date,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[derive(Default)]
+pub enum SettingsTypeDateCollection {
+    #[default]
+    DateCollection,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[derive(Default)]
+pub enum SettingsTypeDatesPairCollection {
+    #[default]
+    DatesPairCollection,
+}
+
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 #[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
+#[serde(default = "TextSettings::default")]
 pub struct TextSettings {
     pub settings_type: SettingsTypeText,
 
@@ -146,11 +172,11 @@ impl Default for TextSettings {
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 #[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
-#[serde(rename_all = "camelCase")]
-#[serde_with::skip_serializing_none]
+#[serde(default = "NumberSettings::default")]
 pub struct NumberSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeNumber,
@@ -187,6 +213,7 @@ impl Default for NumberSettings {
 #[ts(export)]
 #[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
+#[serde(default = "TextCollectionSettings::default")]
 pub struct TextCollectionSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeTextCollection,
@@ -215,6 +242,7 @@ impl Default for TextCollectionSettings {
 #[ts(export)]
 #[ts(optional_fields)]
 #[serde_with::skip_serializing_none]
+#[serde(default = "ImageSettings::default")]
 pub struct ImageSettings {
     #[serde(default)]
     pub settings_type: SettingsTypeImage,
@@ -233,9 +261,63 @@ impl Default for ImageSettings {
 
 #[skip_serializing_none]
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
-pub struct EmptySettings {}
+#[ts(optional_fields)]
+#[serde_with::skip_serializing_none]
+#[serde(default = "DateSettings::default")]
+pub struct DateSettings {
+    pub settings_type: SettingsTypeDate,
+    pub display_name: Option<String>,
+}
 
+impl Default for DateSettings {
+    fn default() -> DateSettings {
+        DateSettings {
+            settings_type: SettingsTypeDate::Date,
+            display_name: None,
+        }
+    }
+}
+#[skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+#[ts(optional_fields)]
+#[serde_with::skip_serializing_none]
+#[serde(default = "DateCollectionSettings::default")]
+pub struct DateCollectionSettings {
+    pub settings_type: SettingsTypeDateCollection,
+    pub display_name: Option<String>,
+}
+
+impl Default for DateCollectionSettings {
+    fn default() -> DateCollectionSettings {
+        DateCollectionSettings {
+            settings_type: SettingsTypeDateCollection::DateCollection,
+            display_name: None,
+        }
+    }
+}
+#[skip_serializing_none]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+#[ts(optional_fields)]
+#[serde(default = "DatesPairCollectionSettings::default")]
+pub struct DatesPairCollectionSettings {
+    pub settings_type: SettingsTypeDatesPairCollection,
+    pub display_name: Option<String>,
+}
+
+impl Default for DatesPairCollectionSettings {
+    fn default() -> DatesPairCollectionSettings {
+        DatesPairCollectionSettings {
+            settings_type: SettingsTypeDatesPairCollection::DatesPairCollection,
+            display_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum InputSize {
@@ -288,6 +370,30 @@ pub struct Schema {
     pub fill_api_search_from: Option<String>,
 
     pub items: SchemaItems,
+}
+
+impl Schema {
+    pub fn remove_empty_and_duplicates(self) -> Self {
+        let mut seen_names = HashSet::new();
+        let cleaned_items = self
+            .items
+            .into_iter()
+            .filter(|item| {
+                if item.name.trim().is_empty() {
+                    return false;
+                }
+                seen_names.insert(item.name.clone())
+            })
+            .collect();
+
+        Schema {
+            name: self.name,
+            version: self.version,
+            fill_from_filename: self.fill_from_filename,
+            fill_api_search_from: self.fill_api_search_from,
+            items: cleaned_items,
+        }
+    }
 }
 
 pub const SCHEMA_VERSION: &str = "1.0";

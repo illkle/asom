@@ -88,10 +88,9 @@
             <InfoIcon class="w-4 h-4" />
           </TooltipTrigger>
           <TooltipContent class="max-w-xs">
-            For example, min=0, max=5, stars=5 will display 5 stars and make two and a a half star
-            equal to 2.5 in frontmatter.<br /><br />
-            While min=10, max=20, stars=10 will display 10 stars and make five Stars equal to 15 in
-            frontmatter.
+            Min and value are used for stars too. For example min=0, max=5, stars=5, you will see 5
+            stars, but wont be able to select «two and a half», while doing min=0, max=10, stars=5
+            will let you do that.
           </TooltipContent>
         </Tooltip>
       </div>

@@ -60,7 +60,7 @@ async fn test_quick_file_creation() {
             attrs: HashMap::new(),
         };
 
-        let save_result = save_file(&core.context, record, true).await;
+        let save_result = save_file(&core.context, record, true, true).await;
 
         assert!(
             save_result.is_ok(),

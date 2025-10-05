@@ -33,7 +33,7 @@ type ApiKey = ApiSettings['type'];
 export const ApiDataMap = {
   twitchigdb: igdbAPISchema,
   openlibrary: openLibraryAPISchema,
-  none: defineExApiSchema({}),
+  none: defineExApiSchema({ id: 'Text' }),
 } satisfies Record<ApiKey, ExApiSchema>;
 
 export type ApiDataMapping = typeof ApiDataMap;

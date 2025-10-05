@@ -90,6 +90,7 @@ const getYear = (rootElement: Element) => {
 };
 
 export const goodreadsApiSchema = defineExApiSchema({
+  id: 'Text',
   title: 'Text',
   author: 'Text',
   isbn: 'Text',
@@ -102,6 +103,7 @@ export type GoodreadsParsedBook = ExApiData<typeof goodreadsApiSchema>;
 
 const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBook => {
   const book: GoodreadsParsedBook = {
+    id: grabSimpleValue(rootElement, 'title'),
     title: grabSimpleValue(rootElement, 'title'),
     author: grabSimpleValue(rootElement, 'author'),
     isbn: grabSimpleValue(rootElement, 'isbn13'),
@@ -115,7 +117,7 @@ const parseBook = (rootElement: Element, dateFormat: string): GoodreadsParsedBoo
   return book;
 };
 
-export const extractDataFromGoodreadsHTML = async (event: Event, rootPath: string) => {
+export const extractDataFromGoodreadsHTML = async (event: Event) => {
   if (!event.target) return;
   const target = event.target as HTMLInputElement;
 

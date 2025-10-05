@@ -197,7 +197,7 @@ export const getCoversionModes = (
   );
 };
 
-export type ExApiSchema = Record<string, SchemaAttrType['type']>;
+export type ExApiSchema = { id: 'Text' } & Record<string, SchemaAttrType['type']>;
 
 export type ExApiData<T extends ExApiSchema> = {
   [K in keyof T]: ExApiValueFor[T[K]] | undefined;
@@ -223,3 +223,13 @@ export type ApiToSchemaMapping = z.infer<typeof zApiToSchemaMapping>;
 export const zApiSettingsBase = z.object({
   mapping: zApiToSchemaMapping,
 });
+
+const API_SAVE_STATUS_PROVIDE = 'API_SAVE_STATUS_PROVIDE';
+
+export const provideApiSaveInProgress = (status: Ref<string>) => {
+  provide(API_SAVE_STATUS_PROVIDE, status);
+};
+
+export const useApiSaveInProgress = () => {
+  return inject<Ref<string>>(API_SAVE_STATUS_PROVIDE);
+};

@@ -34,14 +34,16 @@
       <SchemaItemParams v-model:model-value="item" />
     </div>
 
-    <div class="p-4 border rounded-lg flex items-center justify-center rounded-t-none">
+    <div
+      class="p-4 border rounded-lg flex items-center justify-center rounded-t-none"
+      :class="{ 'max-w-xs': item.value.type === 'Image' }"
+    >
       <AttributesRouter
         v-model:model-value="value"
         :schema-item="item"
         :disabled="item.value.type === 'Image'"
         hide-label
         class="mt-2 w-full"
-        :class="{ 'max-w-xs': item.value.type === 'Image' }"
       />
     </div>
   </div>
@@ -49,11 +51,11 @@
 
 <script setup lang="ts">
 import { TrashIcon } from 'lucide-vue-next';
+import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
+import SchemaItemParams from '~/components/Views/Schema/EditSchema/SchemaItemParams.vue';
+import { getValByType } from '~/components/Views/Schema/mocks';
 import type { AttrValue, SchemaItem } from '~/types';
 import { SchemaItemKeys } from '~/types';
-import AttributesRouter from '../Editor/AttributesRouter.vue';
-import { getValByType } from './mocks';
-import SchemaItemParams from './SchemaItemParams.vue';
 
 const item = defineModel<SchemaItem>({ required: true });
 
@@ -69,7 +71,6 @@ watch(
 
     if (lastType.value !== newVal.type) {
       lastType.value = newVal.type;
-      item.value.value.settings = {};
     }
   },
   { deep: true, immediate: true },

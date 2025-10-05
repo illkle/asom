@@ -75,6 +75,7 @@ const zCore = z.object({
     'settings/apiCredentials',
   ]),
   _path: z.string(),
+  _tabTitle: z.string().optional(),
 });
 
 const zPathV2 = zCore.extend({
@@ -92,7 +93,6 @@ export const zTabEntry = z.object({
   id: z.string(),
   /** History is state. Tab without history is just an array of 1 item */
   history: z.array(zOpened).min(1),
-
   historyPointer: z.number(),
 });
 
@@ -129,10 +129,13 @@ export type OpenNewOneParams = {
 
 export const useTabsStoreV2 = defineStore('tabs', {
   state: (): IOpenedTabs & {
+    initialLoadDone: boolean;
     navigationBlocks: Set<string>;
     ignoreDeleteEvents: Set<string>;
   } => {
     return {
+      initialLoadDone: false,
+
       openedTabs: [],
       focusHistory: [],
       /** -1 means no active tab */
@@ -198,7 +201,6 @@ export const useTabsStoreV2 = defineStore('tabs', {
         focusHistory: this.focusHistory,
         focusHistoryPointer: this.focusHistoryPointer,
       });
-      console.log('saving tabs', tabs);
 
       const root = await c_get_root_path();
       if (!root) {
@@ -217,8 +219,10 @@ export const useTabsStoreV2 = defineStore('tabs', {
         this.focusHistory = res.focusHistory;
         this.focusHistoryPointer = res.focusHistoryPointer;
       } catch (e) {
+        console.error(e);
         console.error('Encountered an error when trying to load tabs state from disk');
       }
+      this.initialLoadDone = true;
     },
 
     /** Internal helpers */
@@ -273,6 +277,10 @@ export const useTabsStoreV2 = defineStore('tabs', {
     },
 
     updateTabContent(data: IOpened, params?: { targetId?: string; scrollPosition?: number }) {
+      if (this.openedItem?._type === data._type && this.openedItem?._path === data._path) {
+        return;
+      }
+
       const target = params?.targetId
         ? this.openedTabs.find((t) => t.id === params.targetId)
         : this.openedTab;
@@ -361,6 +369,11 @@ export const useTabsStoreV2 = defineStore('tabs', {
         throw new Error(`indexToSet is undefined ${indexToSet}`);
       }
       this.focusTab(id);
+    },
+
+    setCurrentTabTitle(title: string) {
+      if (!this.openedItem) return;
+      this.openedItem._tabTitle = title;
     },
 
     /**
@@ -663,4 +676,23 @@ export const setupTabsHotkeys = () => {
     window.removeEventListener('keydown', hotkeyHandler);
     window.removeEventListener('mousedown', mouseHandler);
   });
+};
+
+export const useUpdateCurrentTabTitleFrom = ({
+  target: refToUpdate,
+  setEmptyTitle = false,
+}: {
+  target: Ref<string | undefined>;
+  setEmptyTitle?: boolean;
+}) => {
+  const store = useTabsStoreV2();
+  watch(
+    refToUpdate,
+    (v) => {
+      console.log('useUpdateCurrentTabTitleFrom', v);
+      if (!v && !setEmptyTitle) return;
+      store.setCurrentTabTitle(v ?? '');
+    },
+    { immediate: true },
+  );
 };

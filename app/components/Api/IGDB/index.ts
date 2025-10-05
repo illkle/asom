@@ -21,7 +21,7 @@ export const zAPIIGDB = zApiSettingsBase.extend({
 export type ApiSettingsIGDB = z.infer<typeof zAPIIGDB>;
 
 export const igdbAPISchema = defineExApiSchema({
-  id: 'Number',
+  id: 'Text',
   name: 'Text',
   cover: 'Image',
   first_release_date: 'Date',

@@ -1,5 +1,5 @@
 <template>
-  <PageTemplate :data-pending="apiConnectionData.q.isPending.value">
+  <PageTemplate :data-pending="apiConnectionData.q.isPending.value" tab-title="Api Connection">
     <template #title> Api Connection </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />
@@ -49,9 +49,9 @@ import type { ApiSettings } from '~/components/Api/apis';
 import { API_Types } from '~/components/Api/apis';
 import IGDBSettings from '~/components/Api/IGDB/Settings.vue';
 import OpenLibrarySettings from '~/components/Api/OpenLibrary/Settings.vue';
+import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
+import TitleSchemaBadge from '~/components/Views/Schema/common/TitleSchemaBadge.vue';
 import type { IOpened } from '~/composables/stores/useTabsStoreV2';
-import PageTemplate from './common/PageTemplate.vue';
-import TitleSchemaBadge from './common/TitleSchemaBadge.vue';
 
 const props = defineProps({
   opened: {

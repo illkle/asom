@@ -1,3 +1,6 @@
+import { path } from '@tauri-apps/api';
+import { openPath, revealItemInDir } from '@tauri-apps/plugin-opener';
+
 export const FILENAME_REGEX = /[\\/:"*?<>|]+/g;
 export const DOTFILE_REGEX = /(?:^|[\\/])(\.(?!\.)[^\\/]+)$/;
 export const DOTDIR_REGEX = /(?:^|[\\/])(\.(?!\.)[^\\/]+)[\\/]/;
@@ -24,3 +27,21 @@ export const ISBN10to13 = (isbn: number) => {
 };
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const showInFileManager = async ({
+  rootPath,
+  targetPath,
+  reveal,
+}: {
+  rootPath: string;
+  targetPath: string;
+  reveal: boolean;
+}) => {
+  const pathToOpen = await path.join(rootPath, targetPath);
+
+  if (reveal) {
+    await revealItemInDir(pathToOpen);
+  } else {
+    await openPath(pathToOpen);
+  }
+};

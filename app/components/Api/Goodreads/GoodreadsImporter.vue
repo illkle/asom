@@ -1,121 +1,118 @@
 <template>
-  <div class="bg-background h-full overflow-y-auto gutter-stable scrollbarMod">
-    <div class="p-4 max-w-3xl mx-auto flex flex-col gap-4">
-      <h2 class="text-3xl font-serif col-span-2">Goodreads importer</h2>
+  <PageTemplate tab-title="Goodreads importer">
+    <template #title>Goodreads importer</template>
+    <div class="mt-2">
+      <h3 class="font-mono text-xl">Source</h3>
 
-      <div class="mt-2">
-        <h3 class="font-mono text-xl">Source</h3>
-
-        <div class="text-sm opacity-50">
-          <ol class="list-decimal pl-4">
-            <li>Login into Goodreads on the web</li>
-            <li>Open «My Boooks» section</li>
-            <li>Click «Print» in the top right corner</li>
-            <li>Increase «per page» value to maximum(100) in the bottom left corner.</li>
-            <li>Right click anywhere on the page and select «Save as».</li>
-            <li>Save each page as a separate file somewhere on your computer</li>
-          </ol>
-        </div>
-
-        <input type="file" id="file-input" class="opacity-0" @change="handleFileChange" />
-
-        <Button variant="outline" size="lg" class="w-full" as-child>
-          <label for="file-input" :data-empty="selectedFileInfo.fileName === ''" class="">
-            <template v-if="selectedFileInfo.fileName">
-              {{ selectedFileInfo.fileName }}
-            </template>
-            <template v-else> Select saved file </template>
-          </label>
-        </Button>
+      <div class="text-sm opacity-50">
+        <ol class="list-decimal pl-4">
+          <li>Login into Goodreads on the web</li>
+          <li>Open «My Boooks» section</li>
+          <li>Click «Print» in the top right corner</li>
+          <li>Increase «per page» value to maximum(100) in the bottom left corner.</li>
+          <li>Right click anywhere on the page and select «Save as».</li>
+          <li>Save each page as a separate file somewhere on your computer</li>
+        </ol>
       </div>
 
-      <div>
-        <h3 class="font-mono text-xl">Destination</h3>
+      <input type="file" id="file-input" class="opacity-0" @change="handleFileChange" />
 
-        <div class="mt-2 items-center flex flex-col rounded-md overflow-hidden bg-accent/10">
-          <div class="grid grid-cols-2 w-full odd:bg-accent/20 p-2 items-center">
-            <div :class="{ 'opacity-0': currentSchema === null }">Goodreads</div>
-            <div>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="w-full">
-                    <template v-if="selectedSchemaIndex !== null">
-                      Schema: {{ schemasArray[selectedSchemaIndex]![1].name }}
-                    </template>
-                    <template v-else> Select schema </template>
-
-                    <ChevronDown class="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    v-for="([schemaPath, schema], index) in schemasArray"
-                    :key="schemaPath"
-                    @click="selectedSchemaIndex = index"
-                  >
-                    {{ schema.name }}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-          <MappingSelector
-            v-if="currentSchema"
-            :api-schema="goodreadsApiSchema"
-            :schema="currentSchema"
-            :mapping="mappings"
-            @setByKey="
-              (key, mapping) => {
-                mappings[key] = mapping;
-              }
-            "
-            @deleteByKey="
-              (key) => {
-                delete mappings[key];
-              }
-            "
-            @updateModeByKey="
-              (key, v) => {
-                mappings[key]!.mode = v;
-              }
-            "
-          />
-        </div>
-      </div>
-
-      <div
-        :class="{
-          'opacity-50 cursor-not-allowed':
-            books.length === 0 || !currentSchemaPath || !selectedFileInfo.fileName,
-        }"
-      >
-        <h3 class="font-mono text-xl">Import</h3>
-
-        <div
-          v-if="books.length > 0"
-          class="max-h-64 overflow-y-auto scrollbarMod border rounded-md text-xs text-muted-foreground"
-        >
-          <ol>
-            <li v-for="book in books" :key="book.title" class="p-1 odd:bg-accent/20">
-              {{ book.title }}
-            </li>
-          </ol>
-        </div>
-        <Button
-          @click="importBooks"
-          variant="outline"
-          :disabled="books.length === 0"
-          class="mt-2 w-full"
-        >
-          <template v-if="selectedFileInfo.importDone">
-            <Check class="w-4 h-4" />
-            Import done
+      <Button variant="outline" size="lg" class="w-full" as-child>
+        <label for="file-input" :data-empty="selectedFileInfo.fileName === ''" class="">
+          <template v-if="selectedFileInfo.fileName">
+            {{ selectedFileInfo.fileName }}
           </template>
-          <template v-else> Import {{ books.length }} books </template>
-        </Button>
+          <template v-else> Select saved file </template>
+        </label>
+      </Button>
+    </div>
+
+    <div>
+      <h3 class="font-mono text-xl">Destination</h3>
+
+      <div class="mt-2 items-center flex flex-col rounded-md overflow-hidden bg-accent/10">
+        <div class="grid grid-cols-2 w-full odd:bg-accent/20 p-2 items-center">
+          <div :class="{ 'opacity-0': currentSchema === null }">Goodreads</div>
+          <div>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="outline" class="w-full">
+                  <template v-if="selectedSchemaIndex !== null">
+                    Schema: {{ schemasArray[selectedSchemaIndex]![1].name }}
+                  </template>
+                  <template v-else> Select schema </template>
+
+                  <ChevronDown class="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  v-for="([schemaPath, schema], index) in schemasArray"
+                  :key="schemaPath"
+                  @click="selectedSchemaIndex = index"
+                >
+                  {{ schema.name }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <MappingSelector
+          v-if="currentSchema"
+          :api-schema="goodreadsApiSchema"
+          :schema="currentSchema"
+          :mapping="mappings"
+          @setByKey="
+            (key, mapping) => {
+              mappings[key] = mapping;
+            }
+          "
+          @deleteByKey="
+            (key) => {
+              delete mappings[key];
+            }
+          "
+          @updateModeByKey="
+            (key, v) => {
+              mappings[key]!.mode = v;
+            }
+          "
+        />
       </div>
     </div>
-  </div>
+
+    <div
+      :class="{
+        'opacity-50 cursor-not-allowed':
+          books.length === 0 || !currentSchemaPath || !selectedFileInfo.fileName,
+      }"
+    >
+      <h3 class="font-mono text-xl">Import</h3>
+
+      <div
+        v-if="books.length > 0"
+        class="max-h-64 overflow-y-auto scrollbarMod border rounded-md text-xs text-muted-foreground"
+      >
+        <ol>
+          <li v-for="book in books" :key="book.title" class="p-1 odd:bg-accent/20">
+            {{ book.title }}
+          </li>
+        </ol>
+      </div>
+      <Button
+        @click="importBooks"
+        variant="outline"
+        :disabled="books.length === 0"
+        class="mt-2 w-full"
+      >
+        <template v-if="selectedFileInfo.importDone">
+          <Check class="w-4 h-4" />
+          Import done
+        </template>
+        <template v-else> Import {{ books.length }} books </template>
+      </Button>
+    </div>
+  </PageTemplate>
 </template>
 
 <script setup lang="ts">
@@ -130,6 +127,7 @@ import {
   type GoodreadsParsedBook,
 } from '~/components/Api/Goodreads/goodreadsHTMLParser';
 import MappingSelector from '~/components/Api/common/MappingSelector.vue';
+import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
 import type { AttrValue, RecordFromDb } from '~/types';
 import type { ApiToSchemaMapping } from '../base';
 
@@ -179,7 +177,7 @@ const handleFileChange = async (event: Event) => {
 
   selectedFileInfo.value.fileName = file.name;
   selectedFileInfo.value.importDone = false;
-  const result = await extractDataFromGoodreadsHTML(event, '');
+  const result = await extractDataFromGoodreadsHTML(event);
   if (!result) return;
   books.value = result;
   selectedFileInfo.value.bookCount = result.length;
@@ -244,21 +242,12 @@ const importBooks = async () => {
 
     const bookFile: RecordFromDb = {
       path: await path.join(pathToSave, `${book.title}.md`),
-      modified: null,
+      modified: 0,
       markdown: '',
       attrs,
     };
 
-    try {
-      await c_save_file(bookFile, true);
-    } catch (e) {
-      if (isOurError(e)) {
-        console.log('our error', e);
-        useRustErrorNotification(e);
-      } else {
-        console.error(e);
-      }
-    }
+    await c_save_file({ record: bookFile, createNew: true });
 
     selectedFileInfo.value.importDone = true;
   }

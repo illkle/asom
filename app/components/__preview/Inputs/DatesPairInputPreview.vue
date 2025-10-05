@@ -11,8 +11,8 @@
 </template>
 
 <script setup lang="ts">
+import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
 import type { AttrValue, SchemaItem } from '~/types';
-import AttributesRouter from '../Views/Editor/AttributesRouter.vue';
 
 onBeforeMount(() => {});
 
@@ -28,7 +28,12 @@ const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
     label: 'basic',
     schema: {
       name: 'test',
-      value: { type: 'DatesPairCollection', settings: {} },
+      value: {
+        type: 'DatesPairCollection',
+        settings: {
+          settingsType: 'DatesPairCollection',
+        },
+      },
     },
   },
   {
@@ -36,7 +41,12 @@ const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
     label: 'empty ',
     schema: {
       name: 'test',
-      value: { type: 'DatesPairCollection', settings: {} },
+      value: {
+        type: 'DatesPairCollection',
+        settings: {
+          settingsType: 'DatesPairCollection',
+        },
+      },
     },
   },
 ]);

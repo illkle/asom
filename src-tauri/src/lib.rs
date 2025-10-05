@@ -23,10 +23,12 @@ use schema::types::Schema;
 use serde::Serialize;
 use tauri::test::{mock_builder, MockRuntime};
 use tauri::{AppHandle, Manager};
+use tokio::fs::create_dir;
 use tokio::runtime::Runtime;
 use ts_rs::TS;
 use utils::errorhandling::ErrFR;
 
+use crate::files::utils::get_unique_path;
 use crate::utils::helpers::{get_breadcrumb_items, normalize_path_to_os, FileBreadCrumbs};
 
 /*
@@ -53,6 +55,7 @@ type IPCSaveSchema = Result<Schema, Box<ErrFR>>;
 type IPCSaveFile = Result<RecordSaveResult, Box<ErrFR>>;
 type IPCResolveSchemaPath = Result<Option<SchemaResult>, Box<ErrFR>>;
 type IPCDeleteFile = Result<(), Box<ErrFR>>;
+type IPCCreateFolderForDefaultSchema = Result<PathBuf, Box<ErrFR>>;
 #[derive(TS)]
 #[ts(export)]
 #[allow(dead_code)]
@@ -72,6 +75,7 @@ struct IPCResponces {
     c_save_file: IPCSaveFile,
     c_resolve_schema_path: IPCResolveSchemaPath,
     c_delete_to_trash: IPCDeleteFile,
+    c_create_folder_for_default_schema: IPCCreateFolderForDefaultSchema,
 }
 
 #[tauri::command]
@@ -183,9 +187,11 @@ async fn c_save_schema<T: tauri::Runtime>(
     schema: Schema,
 ) -> IPCSaveSchema {
     let core = app.state::<CoreStateManager>();
+    let ctx = &core.context;
+    let normalized_path = normalize_path_to_os(&path);
     core.context
         .schemas_cache
-        .save_schema(&PathBuf::from(path), schema)
+        .save_schema(ctx, &normalized_path, schema)
         .await
 }
 
@@ -194,9 +200,10 @@ async fn c_save_file<T: tauri::Runtime>(
     app: AppHandle<T>,
     record: RecordFromDb,
     forced: bool,
+    create_new: bool,
 ) -> IPCSaveFile {
     let core = app.state::<CoreStateManager>();
-    save_file(&core.context, record, forced).await
+    save_file(&core.context, record, forced, create_new).await
 }
 
 #[tauri::command]
@@ -213,8 +220,37 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
 }
 
 #[tauri::command]
-async fn c_delete_to_trash<T: tauri::Runtime>(_: AppHandle<T>, path: String) -> IPCDeleteFile {
-    trash::delete(&path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
+async fn c_delete_to_trash<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCDeleteFile {
+    let core = app.state::<CoreStateManager>();
+    let absolute_path = core
+        .context
+        .relative_path_to_absolute(&PathBuf::from(path))
+        .await?;
+    trash::delete(&absolute_path).map_err(|e| Box::new(ErrFR::new("Failed to delete file").raw(e)))
+}
+
+#[tauri::command]
+async fn c_create_folder_for_default_schema<T: tauri::Runtime>(
+    app: AppHandle<T>,
+    path: String,
+) -> IPCCreateFolderForDefaultSchema {
+    let core = app.state::<CoreStateManager>();
+    let path_absolute = core
+        .context
+        .relative_path_to_absolute(&PathBuf::from(path))
+        .await?;
+
+    let not_existing = get_unique_path(&path_absolute);
+
+    create_dir(&not_existing)
+        .await
+        .map_err(|e| Box::new(ErrFR::new("Failed to create folder").raw(e)))?;
+
+    let relative_path = core
+        .context
+        .absolute_path_to_relative(&not_existing)
+        .await?;
+    Ok(relative_path)
 }
 
 pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T> {
@@ -238,6 +274,7 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_get_schemas_all,
             c_resolve_schema_path,
             c_delete_to_trash,
+            c_create_folder_for_default_schema
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -251,7 +288,14 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             let mut state = CoreStateManager::new();
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
-                state.context.database_conn.init_in_folder().await;
+                #[cfg(debug_assertions)]
+                {
+                    state.context.database_conn.init_in_folder().await;
+                }
+                #[cfg(not(debug_assertions))]
+                {
+                    state.context.database_conn.init_in_memory().await;
+                }
             });
 
             app.manage(state);

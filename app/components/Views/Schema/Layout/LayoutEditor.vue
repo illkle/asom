@@ -1,8 +1,12 @@
 <template>
-  <PageTemplate :data-pending="!viewLayoutData.q.data.value || viewSettingsQ.isPending.value">
+  <PageTemplate
+    :data-pending="!viewLayoutData.q.data.value || viewSettingsQ.isPending.value"
+    tab-title="Layout editor"
+  >
     <template #title> Layout editor </template>
     <template #title-badge>
       <TitleSchemaBadge :schema="schema.data.value?.schema" />
+      <div v-if="showCopyButton" @click="() => toClipboard()">copy</div>
     </template>
 
     <div v-if="editableProxy && schema.data.value && viewLayoutData.q.data.value">
@@ -13,7 +17,7 @@
         :schema="schema.data.value.schema"
       >
         <template #item="{ item }">
-          <div class="pointer-events-none p-1">
+          <div class="pointer-events-none">
             <AttributesRouter
               v-if="attributesByKey?.[item.id]"
               v-model:model-value="editableProxy.attrs[item.id]"
@@ -30,17 +34,17 @@
 <script setup lang="ts">
 import DynamicConfiguration from '~/components/Modules/DynamicView/DynamicConfiguration.vue';
 import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
+import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
+import TitleSchemaBadge from '~/components/Views/Schema/common/TitleSchemaBadge.vue';
+import { getValByType } from '~/components/Views/Schema/mocks';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
 import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
-import PageTemplate from './common/PageTemplate.vue';
-import TitleSchemaBadge from './common/TitleSchemaBadge.vue';
-import { getValByType } from './mocks';
 
 const tabsStore = useTabsStoreV2();
 
 const editableProxy = ref<RecordFromDb>({
   path: null,
-  modified: null,
+  modified: 0,
   markdown: 'null',
   attrs: {},
 });
@@ -82,4 +86,11 @@ watch(
   },
   { deep: true, immediate: true },
 );
+
+const showCopyButton = false;
+
+const toClipboard = () => {
+  if (!viewLayoutData.q.data.value) return;
+  navigator.clipboard.writeText(JSON.stringify(viewLayoutData.q.data.value, null, 2));
+};
 </script>

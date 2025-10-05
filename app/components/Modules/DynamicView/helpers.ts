@@ -1,3 +1,4 @@
+import type { StyleValue } from 'vue';
 import z from 'zod/v4';
 import type { ItemInfoCore, PointQuadrant } from '~/components/Modules/NestedDrag/common';
 
@@ -47,7 +48,7 @@ export const mapJustify: Record<IDynamicViewGroup['style']['justify'], string> =
   evenly: 'space-evenly',
 };
 
-export const getStyleWrapper = (group: IDynamicItem) => {
+export const getStyleWrapper = (group: IDynamicItem): StyleValue => {
   if (group.type === 'item') {
     return {};
   }
@@ -59,6 +60,7 @@ export const getStyleWrapper = (group: IDynamicItem) => {
     alignItems: mapAlign[group.style.align],
     justifyContent: mapJustify[group.style.justify],
     flex: `${group.style.sizeUnits} 1 0`,
+    position: 'relative',
   };
 };
 
@@ -74,7 +76,7 @@ export const getStyleGroup = (group: IDynamicItem) => {
   };
 };
 
-const locateParent = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicViewGroup => {
+export const locateParent = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicViewGroup => {
   let parent = data;
   while (info.parentIds.length > 0) {
     const parentId = info.parentIds.shift();
@@ -95,6 +97,16 @@ const locateParent = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicView
   return parent;
 };
 
+export const locateItem = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicItem => {
+  let parent = locateParent(data, info);
+
+  if (parent.id === info.id) {
+    return parent;
+  }
+
+  return parent.content.find((item) => item.id === info.id)!;
+};
+
 export const findAndRemoveItem = (
   data: IDynamicViewGroup,
   info: ItemInfoCore,
@@ -108,11 +120,11 @@ export const findAndRemoveItem = (
   return removedItem;
 };
 
-export const insertItemIntoGroup = (
+export const insertItemIntoGroupTargeted = (
   data: IDynamicViewGroup,
   itemToInsert: IDynamicItem,
   info: ItemInfoCore,
-  quadrant: PointQuadrant,
+  quadrant: PointQuadrant = { x: 'left', y: 'top' },
 ): boolean => {
   let parent = locateParent(data, info);
 
@@ -123,6 +135,15 @@ export const insertItemIntoGroup = (
 
   parent.content.splice(pointerToUpdated, 0, itemToInsert);
   return true;
+};
+
+export const insertItemIntoGroup = (
+  data: IDynamicViewGroup,
+  itemToInsert: IDynamicItem,
+  info: ItemInfoCore,
+) => {
+  let parent = locateParent(data, info);
+  parent.content.push(itemToInsert);
 };
 
 export const swapItems = (

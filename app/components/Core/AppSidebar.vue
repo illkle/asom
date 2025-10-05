@@ -54,6 +54,7 @@
             <KeyIcon /> Api credentials
           </SidebarMenuButton>
           <SidebarMenuButton
+            v-if="isDev"
             @click="tabsStore.openNewThingFast({ _type: 'innerPage/test', _path: '' }, 'last')"
           >
             <ImportIcon /> Test page
@@ -105,7 +106,6 @@ import {
   WrenchIcon,
 } from 'lucide-vue-next';
 import RecordAdder from '~/components/Views/Add/RecordAdder.vue';
-import { useMainStore } from '~/composables/stores/useMainStore';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import { useIsMac } from '~/composables/useTools';
 import FileTree from '../FileTree/FileTree.vue';
@@ -116,13 +116,12 @@ const { schemasArray } = useUsableSchemas();
 
 const tabsStore = useTabsStoreV2();
 
-const colorMode = useColorMode();
-const store = useMainStore();
-
 const isMac = useIsMac();
 
 const settingsDialogOpened = ref(false);
 useNavigationBlock(settingsDialogOpened);
 
 const noSchemas = computed(() => schemasArray.value.length === 0);
+
+const isDev = import.meta.dev;
 </script>

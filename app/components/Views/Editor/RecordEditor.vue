@@ -3,7 +3,8 @@
     ref="scrollElement"
     class="h-full flex flex-col w-full pb-4 bg-background overflow-y-auto scrollbarMod gutter-stable px-4"
   >
-    <div class="max-w-3xl mx-auto w-full">
+    <LoaderForPage v-if="somethingPending" />
+    <div v-else class="max-w-3xl mx-auto w-full">
       <div
         class="grid grid-cols-[4fr_min-content] w-full gap-2 py-2 rounded-b-md z-10 sticky top-0 bg-background"
       >
@@ -21,11 +22,16 @@
           <DropdownMenuContent>
             <DropdownMenuItem @click="openEditMode"> <EditIcon /> Edit Layout </DropdownMenuItem>
             <DropdownMenuItem @click="startRename"> <PencilIcon /> Rename </DropdownMenuItem>
+            <DropdownMenuItem
+              @click="showInFileManager({ rootPath, targetPath: props.opened._path, reveal: true })"
+            >
+              <FolderIcon /> Reveal in {{ fileManager }}
+            </DropdownMenuItem>
             <DropdownMenuItem @click="deleteDialog = true">
               <Trash2Icon /> Delete
             </DropdownMenuItem>
 
-            <DropdownMenuItem @click="fillFromApiDialog = true">
+            <DropdownMenuItem v-if="hasApi" @click="fillFromApiDialog = true">
               <CloudDownload /> Fill from API
             </DropdownMenuItem>
 
@@ -59,16 +65,7 @@
         v-model:opened="fillFromApiDialog"
         :selected-schema="schema.schema"
         :selected-schema-path="schema.location.schema_owner_folder"
-        @handle-add-from-api="
-          (_, attrs) => {
-            if (!editableProxy) return;
-            editableProxy.record.record.attrs = {
-              ...editableProxy.record.record.attrs,
-              ...attrs,
-            };
-            fillFromApiDialog = false;
-          }
-        "
+        @handle-add-from-api="handleFillFromApiMutation.mutate"
       />
 
       <Dialog v-model:open="renameDialog">
@@ -106,7 +103,9 @@
       </Dialog>
 
       <div v-if="showLayoutWarning" class="text-xs text-muted-foreground p-1 flex">
-        You have {{ inviSchemaItms.length }} item{{ inviSchemaItms.length === 1 ? '' : 's' }}
+        You have {{ invisibleSchemaItems.length }} item{{
+          invisibleSchemaItems.length === 1 ? '' : 's'
+        }}
         in schema that are not visible in the view:
         <br />
         <span class="cursor-pointer underline ml-4" @click="openEditMode">Edit Layout</span>
@@ -142,26 +141,33 @@ import {
   EditIcon,
   EllipsisVerticalIcon,
   EyeIcon,
+  FolderIcon,
   PencilIcon,
   Trash2Icon,
 } from 'lucide-vue-next';
 
 import type { PropType } from 'vue';
 
-import { path as tauriPath } from '@tauri-apps/api';
+import { path, path as tauriPath } from '@tauri-apps/api';
+import { computedAsync } from '@vueuse/core';
 import { c_delete_to_trash } from '~/api/tauriActions';
+import type { ApiSettings } from '~/components/Api/apis';
+import { provideApiSaveInProgress } from '~/components/Api/base';
+import { makeFileAttrsFromApi, type APIEmitData } from '~/components/Api/makeFileFromApi';
+import { handleOurErrorWithNotification } from '~/components/Core/Errors/errors';
+import LoaderForPage from '~/components/Modules/LoaderForPage.vue';
+import { useRootPathInjectSafe } from '~/composables/data/providers';
 import {
   useScrollRestorationOnMount,
   useScrollWatcher,
   useTabsStoreV2,
+  useUpdateCurrentTabTitleFrom,
   type IOpened,
 } from '~/composables/stores/useTabsStoreV2';
 import type { IDynamicItem } from '../../Modules/DynamicView/helpers';
 import AddAndSearch from '../Add/AddAndSearch.vue';
 import BreadCrumbsList from './BreadCrumbsList.vue';
 import MetaEditor from './MetaEditor.vue';
-
-const separator = tauriPath.sep();
 
 const props = defineProps({
   opened: {
@@ -170,10 +176,13 @@ const props = defineProps({
   },
 });
 
-const roughBasename = (p: string) => {
-  const splitted = p.split(separator);
-  return splitted[splitted.length - 1];
-};
+const title = computedAsync(async () => {
+  return await path.basename(props.opened._path, '.md');
+});
+
+useUpdateCurrentTabTitleFrom({
+  target: title,
+});
 
 const editorWrapper = useTemplateRef('editorWrapper');
 
@@ -191,8 +200,15 @@ const startRename = async () => {
   );
 };
 
-const { fileQ, editableProxy, viewSettingsQ, viewLayoutQ, onRename, viewSettingsUpdaterPartial } =
-  useFileEditorV2(props.opened, editorWrapper);
+const {
+  fileQ,
+  editableProxy,
+  viewSettingsQ,
+  viewLayoutQ,
+  onRename,
+  viewSettingsUpdaterPartial,
+  somethingPending,
+} = useFileEditorV2(props.opened, editorWrapper);
 
 const schema = computed(() => fileQ.data.value?.record.schema);
 
@@ -227,7 +243,7 @@ const viewLayoutKeys = computed(() => {
   return hasKey;
 });
 
-const inviSchemaItms = computed(() => {
+const invisibleSchemaItems = computed(() => {
   if (!schema.value) return [];
   return (
     schema.value?.schema.items
@@ -236,7 +252,7 @@ const inviSchemaItms = computed(() => {
   );
 });
 const showLayoutWarning = computed(() => {
-  return !viewSettingsQ.data.value?.layoutWarningsHidden && inviSchemaItms.value.length;
+  return !viewSettingsQ.data.value?.layoutWarningsHidden && invisibleSchemaItems.value.length;
 });
 
 const apiConnection = useApiConnection(
@@ -255,6 +271,49 @@ const openEditMode = () => {
     'last',
   );
 };
+
+const fileManager = useFileManagerName();
+const rootPath = useRootPathInjectSafe();
+
+const saveInProgress = ref<string>('');
+
+provideApiSaveInProgress(saveInProgress);
+const handleFillFromApiMutation = useMutation({
+  mutation: async (data: APIEmitData<ApiSettings>) => {
+    if (!editableProxy.value) {
+      throw new Error('Fill from API: No editable proxy');
+    }
+    const attrs = await makeFileAttrsFromApi({
+      data,
+      rootPath: rootPath.value,
+    });
+
+    editableProxy.value.record.record.attrs = {
+      ...editableProxy.value.record.record.attrs,
+      ...attrs,
+    };
+  },
+  onMutate: (data) => {
+    if (!data.apiData.id) return;
+    saveInProgress.value = data.apiData.id;
+  },
+  onSettled() {
+    saveInProgress.value = '';
+  },
+  onSuccess() {
+    fillFromApiDialog.value = false;
+  },
+
+  onError(e) {
+    console.error(e);
+    handleOurErrorWithNotification({
+      title: 'Error filling from API',
+      rawError: e.message,
+      isError: true,
+      subErrors: [],
+    });
+  },
+});
 </script>
 
 <style>

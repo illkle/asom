@@ -29,5 +29,5 @@ const props = defineProps<DraggableProps>();
 const constraintsRef = useDomRef() as Ref<HTMLDivElement>;
 const measureRef = useTemplateRef('measureRef');
 
-const { isDraggingMe, offset, pointerDown } = useDraggable(props, constraintsRef, measureRef);
+const { isDraggingMe, offset, pointerDown } = useDraggable(props, constraintsRef);
 </script>

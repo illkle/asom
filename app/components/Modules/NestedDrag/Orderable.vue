@@ -1,5 +1,4 @@
 <template>
-  <div ref="measureRef"></div>
   <motion.div
     ref="constraintsRef"
     v-bind="$attrs"
@@ -13,7 +12,12 @@
     }"
     :layout-id="props.id"
     :data-is-dragging-me="isDraggingMe"
-    :class="[props.disabled ? 'pointer-events-none' : 'cursor-grab', isDraggingMyChild && ' z-50']"
+    :class="[
+      {
+        'z-50': isDraggingMyChild,
+      },
+      props.disabled ? 'pointer-events-none' : 'cursor-grab',
+    ]"
     :data-can-drop="isOver"
     :data-is-over="isOver"
     :data-quadrant="hoveredItem?.quadrant"
@@ -40,16 +44,15 @@ const props = defineProps<{
   acceptedTypes?: DropTargetInfo['acceptedTypes'];
 }>();
 
-const { draggedItem } = useCoolDndContext<unknown, DraggableInfo>();
+const { draggedItem } = useCoolDndContext();
 
 const constraintsRef = useDomRef() as Ref<HTMLDivElement>;
-const measureRef = useTemplateRef('measureRef');
 
 const isDraggingMyChild = computed(() => {
   return draggedItem.value?.parentIds.includes(props.id);
 });
 
-const { isDraggingMe, offset, pointerDown } = useDraggable(props, constraintsRef, measureRef);
+const { isDraggingMe, offset, pointerDown } = useDraggable(props, constraintsRef);
 
 const { isOver, hoveredItem } = useDropTarget(props, constraintsRef);
 </script>

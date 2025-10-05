@@ -9,34 +9,36 @@
 </template>
 
 <script setup lang="ts">
+import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
 import type { AttrValue, SchemaItem } from '~/types';
-import AttributesRouter from '../Views/Editor/AttributesRouter.vue';
 
 onBeforeMount(() => {});
 
 const extras = ref<{ value: AttrValue; label: string; schema: SchemaItem }[]>([
   {
-    value: { type: 'String', value: '2025-09-01' },
+    value: { type: 'StringVec', value: ['2025-01-01', '2025-01-02', '2025-09-02'] },
     label: 'basic',
     schema: {
       name: 'test',
-      value: { type: 'Date', settings: {} },
+      value: {
+        type: 'DateCollection',
+        settings: {
+          settingsType: 'DateCollection',
+        },
+      },
     },
   },
   {
-    value: { type: 'String', value: '2025-05-01' },
-    label: 'basic',
-    schema: {
-      name: 'test',
-      value: { type: 'Date', settings: {} },
-    },
-  },
-  {
-    value: { type: 'String', value: null },
+    value: { type: 'StringVec', value: [] },
     label: 'empty ',
     schema: {
       name: 'test',
-      value: { type: 'Date', settings: {} },
+      value: {
+        type: 'DateCollection',
+        settings: {
+          settingsType: 'DateCollection',
+        },
+      },
     },
   },
 ]);

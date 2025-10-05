@@ -35,7 +35,7 @@ type ExtractIPCEmitEventData<T extends IPCEmitEvent['type']> = Extract<
   { type: T }
 >['data'];
 
-type ExtractIpcResponcesType<K extends keyof IPCResponces> = Extract<
+type ExtractIpcResponseType<K extends keyof IPCResponces> = Extract<
   IPCResponces[K],
   { Ok: any }
 >['Ok'];
@@ -66,7 +66,7 @@ export type {
   ErrFR,
   ErrFRActionCode,
   ExtractIPCEmitEventData,
-  ExtractIpcResponcesType,
+  ExtractIpcResponseType,
   FileBreadCrumbs,
   FileEventDataExisting,
   FileEventDataRemoved,

@@ -2,23 +2,24 @@ import { ApiDataMap, type ApiSettings, type InferApiData } from '~/components/Ap
 import { getConverter } from '~/components/Api/base';
 import type { RecordFromDb, Schema } from '~/types';
 
-export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
-  apiSettings,
-  apiData,
-  schema,
-  context,
-}: {
+export type APIEmitData<ApiConfig extends ApiSettings> = {
   apiSettings: ApiConfig;
   apiData: InferApiData<ApiConfig['type']>;
   schema: Schema;
-  context: {
-    rootPath: string;
-    recordName: string;
-  };
+  recordName: string;
+};
+
+export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
+  data,
+  rootPath,
+}: {
+  data: APIEmitData<ApiConfig>;
+  rootPath: string;
 }): Promise<RecordFromDb['attrs']> => {
-  if (!context.rootPath) {
+  if (!rootPath) {
     throw new Error('Root path is required');
   }
+  const { apiSettings, apiData, schema } = data;
 
   const result: RecordFromDb['attrs'] = {};
 
@@ -29,13 +30,11 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
   for (const [key, apiType] of Object.entries(apiSchema)) {
     const mapping = apiSettings.mapping[key];
     if (!mapping) {
-      console.log('no mapping for', key);
       continue;
     }
 
     const schemaItem = namedSchemaItems[mapping.schemaName];
     if (!schemaItem) {
-      console.log('no schema item for', key);
       continue;
     }
 
@@ -44,7 +43,6 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
     const apiValue = apiData[key as keyof typeof apiData];
 
     if (!apiValue) {
-      console.log('no api value for', key);
       continue;
     }
 
@@ -56,7 +54,7 @@ export const makeFileAttrsFromApi = async <ApiConfig extends ApiSettings>({
 
     const resultValue = await c({
       apiValue: apiValue as never,
-      context,
+      context: { rootPath, recordName: data.recordName },
     });
 
     if (resultValue) {

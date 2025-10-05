@@ -1,7 +1,6 @@
 import { toast } from 'vue-sonner';
 
 import { path as tauriPath } from '@tauri-apps/api';
-import { exists } from '@tauri-apps/plugin-fs';
 import { c_save_file } from '~/api/tauriActions';
 import type { RecordFromDb } from '~/types';
 
@@ -31,19 +30,15 @@ export const addThing = async ({
 
   console.log('finalPath', finalPath);
 
-  const ex = await exists(finalPath);
-  if (ex) {
-    console.log('file exists', finalPath);
-    toast.error('File with this name already exists');
-    return;
-  }
-
-  await c_save_file({
-    path: finalPath,
-    attrs: attrsInput ?? {},
-    markdown: '',
-    modified: null,
+  const res = await c_save_file({
+    record: {
+      path: finalPath,
+      attrs: attrsInput ?? {},
+      markdown: '',
+      modified: 0,
+    },
+    createNew: true,
   });
 
-  return finalPath;
+  return res.path;
 };

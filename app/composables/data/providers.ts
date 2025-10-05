@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue';
 import type { useRootPathFromQuery } from '~/composables/data/queries';
 
-const ROOT_PATH_PROVIDE = 'PROVIDE_ROOT_PATH';
+export const ROOT_PATH_PROVIDE = 'PROVIDE_ROOT_PATH';
 
 export const useProvideRootPath = (q: ReturnType<typeof useRootPathFromQuery>) => {
   provide(ROOT_PATH_PROVIDE, readonly(q.data));

@@ -14,7 +14,6 @@
 
 <script setup lang="ts">
 import { useDropTarget, type DropTargetProps } from '~/components/Modules/NestedDrag/useDropTarget';
-import { type DropTargetInfo } from './common';
 
 const props = defineProps<DropTargetProps>();
 

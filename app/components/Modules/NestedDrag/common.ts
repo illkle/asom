@@ -33,13 +33,52 @@ export type RegisteredTarget = {
 
 export const useProvideDNDContext = ({
   onMove,
+  emptyDivForScrollCompensation,
 }: {
   onMove: (
     draggedItem: DraggableInfo,
     hoveredItem: DropTargetInfo,
     quadrant: PointQuadrant,
   ) => void;
+  emptyDivForScrollCompensation?: Ref<HTMLElement | null>;
 }) => {
+  /** Scroll compensation. This is hard case where we can have another scroll container on page */
+  const scrollCompensation = ref({
+    leftStart: 0,
+    topStart: 0,
+    leftCurrent: 0,
+    topCurrent: 0,
+  });
+
+  const compensateForScroll = computed(() => {
+    return {
+      x: scrollCompensation.value.leftCurrent - scrollCompensation.value.leftStart,
+      y: scrollCompensation.value.topCurrent - scrollCompensation.value.topStart,
+    };
+  });
+
+  const scrollAnywhere = () => {
+    if (!emptyDivForScrollCompensation?.value) return;
+
+    const rect = emptyDivForScrollCompensation.value.getBoundingClientRect();
+    scrollCompensation.value.leftCurrent = rect.left;
+    scrollCompensation.value.topCurrent = rect.top;
+  };
+
+  const startScrollCompensation = () => {
+    if (!emptyDivForScrollCompensation?.value) return;
+    const rect = emptyDivForScrollCompensation.value.getBoundingClientRect();
+    scrollCompensation.value.leftStart = rect.left;
+    scrollCompensation.value.topStart = rect.top;
+    scrollCompensation.value.leftCurrent = rect.left;
+    scrollCompensation.value.topCurrent = rect.top;
+    document.addEventListener('scroll', scrollAnywhere, { capture: true });
+  };
+
+  const stopScrollCompensation = () => {
+    document.removeEventListener('scroll', scrollAnywhere, { capture: true });
+  };
+
   /** Dragged item */
   const draggedItem = ref<DraggableInfo | null>(null);
 
@@ -67,6 +106,7 @@ export const useProvideDNDContext = ({
     document.addEventListener('pointerup', finishDrag, { once: true });
     document.addEventListener('pointercancel', finishDrag, { once: true });
     document.addEventListener('lostpointercapture', finishDrag, { once: true });
+    startScrollCompensation();
   };
 
   /** Target Registration */
@@ -168,6 +208,7 @@ export const useProvideDNDContext = ({
 
     draggedItem.value = null;
     document.removeEventListener('pointermove', moveDrag);
+    stopScrollCompensation();
   };
 
   const ctx = {
@@ -180,6 +221,7 @@ export const useProvideDNDContext = ({
     updateDropTargetPositon,
     updateDropTargetInfo,
     cursorPosition,
+    compensateForScroll,
   };
 
   provide('dndContext', ctx);
@@ -189,7 +231,7 @@ export const useProvideDNDContext = ({
 
 export type DNDContext = ReturnType<typeof useProvideDNDContext>;
 
-export const useCoolDndContext = <ItemShape, TargetShape>() => {
+export const useCoolDndContext = () => {
   const dndContext = inject<DNDContext>('dndContext');
   if (!dndContext) {
     throw new Error('DND context is not provided');
@@ -203,8 +245,16 @@ export type PointQuadrant = { y: 'top' | 'bottom'; x: 'left' | 'right' };
 export const checkPointInsideRect = (
   rect: TargetPositionData,
   point: { x: number; y: number },
+  padding: number = 0,
 ): PointQuadrant | null => {
-  const { left, top, width, height } = rect;
+  const rectWithPadding = {
+    left: rect.left - padding,
+    top: rect.top - padding,
+    width: rect.width + padding * 2,
+    height: rect.height + padding * 2,
+  };
+
+  const { left, top, width, height } = rectWithPadding;
   const { x, y } = point;
 
   const isInside = x >= left && x <= left + width && y >= top && y <= top + height;

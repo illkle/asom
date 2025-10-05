@@ -24,8 +24,6 @@ export const useCodeMirror = ({
   editorTemplateRef: Readonly<ShallowRef<HTMLDivElement | null>>;
   onChange: () => void;
 }) => {
-  const blockUpdate = ref(false);
-
   const internalUpdateMarker = Annotation.define();
 
   const onUpdate = (update: ViewUpdate) => {
@@ -44,14 +42,26 @@ export const useCodeMirror = ({
 
   const editor = ref<EditorView | null>(null);
 
+  /** First request to create editor is usually made before editor template ref is available(because dom is still in loading state). So we store pending value here */
+  const pendingCreation = ref<null | string>(null);
+
   const createEditor = (initialValue: string) => {
+    if (!editorTemplateRef.value) {
+      if (initialValue) {
+        pendingCreation.value = initialValue;
+      }
+      return;
+    }
+
+    let doc = initialValue ? initialValue : (pendingCreation.value ?? '');
+
     if (editor.value) {
+      doc = getEditorState();
       editor.value.destroy();
     }
-    if (!editorTemplateRef.value) return;
 
     editor.value = new EditorView({
-      doc: initialValue,
+      doc,
 
       extensions: [
         highlightActiveLineGutter(),
@@ -72,8 +82,18 @@ export const useCodeMirror = ({
     });
   };
 
+  watch(editorTemplateRef, (v) => {
+    if (!v) return;
+    console.log('watch(editorTemplateRef): creating editor', v);
+    createEditor('');
+  });
+
   const updateEditorState = (v: string) => {
-    if (!editor.value) return;
+    if (!editor.value) {
+      console.error('updateEditorState: editor is null');
+      return;
+    }
+    console.log('updateEditorState: updating editor state', v.length);
 
     editor.value.dispatch({
       changes: { from: 0, to: editor.value.state.doc.length, insert: v },
@@ -87,15 +107,11 @@ export const useCodeMirror = ({
   };
 
   const createOrUpdateEditor = (value: string) => {
-    blockUpdate.value = true;
     if (!editor.value) {
       createEditor(value);
     } else {
       updateEditorState(value);
     }
-    setTimeout(() => {
-      blockUpdate.value = false;
-    }, 100);
   };
 
   return { editor, createEditor, getEditorState, updateEditorState, createOrUpdateEditor };

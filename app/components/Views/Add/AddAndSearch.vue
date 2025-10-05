@@ -13,7 +13,7 @@
         >
           <Input
             v-model:model-value="mainInputValue"
-            placeholder="Filename or API search"
+            :placeholder="hasApi ? 'Filename or API search' : 'Filename'"
             autofocus
             class="focus-visible:ring-0"
             @keydown.down="kb.handleMove($event, 'onDown')"
@@ -35,16 +35,12 @@
         <slot name="extra-controls" />
 
         <ApiSearchRouter
-          v-if="
-            apiConnection.q.data.value &&
-            apiConnection.q.data.value.type !== 'none' &&
-            selectedSchema
-          "
+          v-if="hasApi && apiConnection.q.data.value && selectedSchema"
           :search="mainInputValue"
           :schema="selectedSchema"
           :connection="apiConnection.q.data.value"
           class="max-h-[300px] overflow-y-auto mt-2"
-          @select="(name, attrs) => emit('handleAddFromApi', name, attrs)"
+          @select="(data) => emit('handleAddFromApi', data)"
         />
 
         <DialogDescription></DialogDescription>
@@ -54,11 +50,13 @@
 </template>
 
 <script lang="ts" setup>
+import type { ApiSettings } from '~/components/Api/apis';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import { provideResultGenericWrapper } from '~/components/Api/common/resultGeneric';
+import type { APIEmitData } from '~/components/Api/makeFileFromApi';
 import KeyboardListItem from '~/components/Modules/KeyboardList/KeyboardListItem.vue';
 import { useKeyboardListManager } from '~/components/Modules/KeyboardList/useKeyboardListManager';
-import type { RecordFromDb, Schema } from '~/types';
+import type { Schema } from '~/types';
 
 const props = defineProps<{
   selectedSchema: Schema;
@@ -66,7 +64,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'handleAddFromApi', name: string, attrs: RecordFromDb['attrs']): void;
+  (e: 'handleAddFromApi', data: APIEmitData<ApiSettings>): void;
   (e: 'handleAddEmpty', inputValue: string): void;
 }>();
 
@@ -83,4 +81,8 @@ const kb = useKeyboardListManager(wrapperRef);
 provideResultGenericWrapper(KeyboardListItem);
 
 const isMac = useIsMac();
+
+const hasApi = computed(() => {
+  return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';
+});
 </script>

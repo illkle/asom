@@ -60,12 +60,16 @@
             }"
             @mousedown="() => header.column.toggleSorting()"
           >
-            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" />
-            <ArrowUp :size="16" v-else-if="header.column.getIsSorted() === 'asc'" />
+            <ArrowDown :size="16" v-if="header.column.getIsSorted() === 'desc'" class="shrink-0" />
+            <ArrowUp
+              :size="16"
+              v-else-if="header.column.getIsSorted() === 'asc'"
+              class="shrink-0"
+            />
 
             <div
               v-if="!header.isPlaceholder"
-              class="overflow-hidden text-ellipsis flex gap-2 items-center"
+              class="overflow-hidden truncate flex gap-2 items-center"
             >
               <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
             </div>
@@ -198,6 +202,10 @@ const props = defineProps({
     type: Object as PropType<ShallowRef<SchemaResult | null | undefined>>,
     required: true,
   },
+  files: {
+    type: Object as PropType<ReturnType<typeof useFilesListV2>>,
+    required: true,
+  },
 });
 
 const emits = defineEmits<{
@@ -217,10 +225,6 @@ watch(
     props.opened.details.searchQuery = searchQuery.value ?? '';
   }, 100),
 );
-
-const { files: q } = useFilesListV2({
-  opened: props.opened,
-});
 
 const visibleSchemaItems = computed(
   () => props.schema.value?.schema.items.filter((v) => v.value.type !== 'Image') ?? [],
@@ -278,7 +282,7 @@ const rowSelectionUpdater = (updaterOrValue: Updater<typeof rowSelection.value>)
 
 const table = useVueTable({
   get data() {
-    return q.data.value?.records ?? [];
+    return props.files.files.data.value?.records ?? [];
   },
   get columns() {
     return cols.value;
@@ -308,55 +312,55 @@ const table = useVueTable({
     searchQuery.value =
       typeof updaterOrValue === 'function' ? updaterOrValue(searchQuery.value) : updaterOrValue;
   },
-
   state: {
     get globalFilter() {
-      return searchQuery.value;
+      return searchQuery.value ?? '';
     },
 
     get columnSizing() {
-      return props.viewSettings?.columnSizing;
+      return props.viewSettings?.columnSizing ?? {};
     },
 
     get sorting() {
-      return props.viewSettings?.sorting;
+      return props.viewSettings?.sorting ?? [];
     },
 
     get columnVisibility() {
-      return props.viewSettings?.columnVisibility;
+      return props.viewSettings?.columnVisibility ?? {};
     },
 
     get columnOrder() {
-      return props.viewSettings?.columnOrder;
+      return props.viewSettings?.columnOrder ?? [];
     },
     get rowSelection() {
-      return rowSelection.value;
+      return rowSelection.value ?? {};
     },
   },
 });
 
 const rows = computed(() => table.getRowModel().rows);
+const rowCount = computed(() => table.getRowCount());
 
 const scrollElementRef = ref<HTMLDivElement | null>(null);
 useScrollWatcher(scrollElementRef);
 useScrollRestorationOnMount(
   scrollElementRef,
-  computed(() => !!scrollElementRef.value && !!q.data.value?.records),
+  computed(() => !!scrollElementRef.value && !!props.files.files.data.value?.records),
 );
 
 /**
  * Virtual
  */
 
-const rowVirtualizerOptions = computed(() => {
-  return {
-    count: rows.value.length,
-    estimateSize: () => 37,
-    getScrollElement: () => scrollElementRef.value as HTMLDivElement,
-    overscan: 10,
-  };
-});
-const rowVirtualizer = useVirtualizer(rowVirtualizerOptions);
+const virtualizerOptions = computed(() => ({
+  count: rows.value.length,
+  estimateSize: () => 37,
+  getScrollElement: () => scrollElementRef.value as HTMLDivElement,
+  overscan: 10,
+}));
+
+const rowVirtualizer = useVirtualizer(virtualizerOptions.value);
+
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
 
