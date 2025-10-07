@@ -36,7 +36,7 @@
             "
           >
             <PlusIcon :size="12" class="mr-2" />
-            Create folder
+            Create Folder
           </Button>
 
           <TreeRoot
@@ -103,9 +103,10 @@ import PageTemplate from './common/PageTemplate.vue';
 
 const rootPath = useRootPathInjectSafe();
 const tabsStore = useTabsStoreV2();
+const qc = useQueryCache();
 
 const changeRootPathHandler = async () => {
-  await selectAndSetRootPath();
+  await selectAndSetRootPath(qc);
 };
 
 const isNewFolderDialogOpen = ref(false);
@@ -124,8 +125,6 @@ const createNewFolder = async () => {
   await mkdir(await path.join(rootPath.value, actualFolderCreationPath, newFolderName.value));
   isNewFolderDialogOpen.value = false;
 };
-
-const qc = useQueryCache();
 
 const { folders, isPending, foldersAsTree } = useFoldersList();
 

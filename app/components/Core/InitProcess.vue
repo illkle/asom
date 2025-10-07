@@ -62,9 +62,11 @@ watch(
   { immediate: true },
 );
 
+const qc = useQueryCache();
+
 const pathMutation = useMutation({
   mutation: async () => {
-    const setPath = await selectAndSetRootPath();
+    const setPath = await selectAndSetRootPath(qc);
     if (!setPath) throw new Error('No root path was selected');
     return setPath;
   },
@@ -91,4 +93,6 @@ const defaultInitMutation = useMutation({
     emits('unlockFromOnboarding');
   },
 });
+
+const isE2E = import.meta.env['TAURI_E2E_TESTING'];
 </script>

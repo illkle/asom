@@ -1,22 +1,14 @@
+import type { QueryCache } from '@pinia/colada';
 import { open } from '@tauri-apps/plugin-dialog';
 
 const KEY = 'ROOT_PATH';
 
-import { load, Store } from '@tauri-apps/plugin-store';
-import { c_init } from '~/api/tauriActions';
-
-let tauriStore: Store | null = null;
-
-const getStore = async () => {
-  if (!tauriStore) {
-    tauriStore = await load('root_path.txt');
-  }
-  return tauriStore;
-};
+import { c_set_root_path_and_reinit } from '~/api/tauriActions';
 
 const getPathFromUser = async () => {
-  if (process.env['FAKE_SET_ROOT_DIR']) {
-    return process.env['FAKE_SET_ROOT_DIR'];
+  if (import.meta.env['TAURI_E2E_TESTING']) {
+    const input = (await document.querySelector('input#rootPathE2E')) as HTMLInputElement;
+    return input?.value;
   }
 
   return await open({
@@ -25,17 +17,13 @@ const getPathFromUser = async () => {
   });
 };
 
-export const selectAndSetRootPath = async () => {
+export const selectAndSetRootPath = async (qc: QueryCache) => {
   const result = await getPathFromUser();
+  console.log('result', result);
   if (!result) return;
 
-  const store = await getStore();
-  await store.set(KEY, result);
-  await store.save();
+  await c_set_root_path_and_reinit(result);
 
-  await c_init();
-
-  const qc = useQueryCache();
   await qc.invalidateQueries({ key: ['rooPath'] });
 
   return result;

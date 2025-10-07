@@ -28,7 +28,7 @@
               >
                 <FileIcon :size="12" />
 
-                Schema owner
+                Schema Owner
               </div>
             </div>
             <div v-if="item.value.ownSchema" class="w-full flex">
@@ -81,17 +81,17 @@
           v-if="item.value.hasSchema && item.value.schemaFilePath"
           @click="$emit('editSchema', item.value.schemaFilePath)"
         >
-          Edit schema
+          Edit Schema
         </ContextMenuItem>
         <ContextMenuItem
           v-if="!item.value.ownSchema"
           @click="$emit('addNewSchema', item.value.name, item.value.rawPath)"
         >
-          Create schema
+          Create Schema
         </ContextMenuItem>
 
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Create from template </ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>Create From Template </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuItem
               v-for="schema in DefaultSchemaPacks"
@@ -110,7 +110,7 @@
               await c_delete_to_trash(await path.join(item.value.rawPath, '.asom', 'schema.yaml'))
           "
         >
-          Delete schema
+          Delete Schema
         </ContextMenuItem>
 
         <ContextMenuSeparator />

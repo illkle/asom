@@ -10,6 +10,15 @@ export const c_get_root_path = async () => {
   return invoke('c_get_root_path').then((v) => v as ExtractIpcResponseType<'c_get_root_path'>);
 };
 
+export const c_set_root_path_and_reinit = async (path: string) => {
+  return invoke('c_set_root_path_and_reinit', { path })
+    .then((v) => v as ExtractIpcResponseType<'c_set_root_path_and_reinit'>)
+    .catch((e) => {
+      handleMaybeOurError({ e });
+      throw e;
+    });
+};
+
 export const c_save_file = async ({
   record,
   forced = false,

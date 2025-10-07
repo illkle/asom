@@ -5,4 +5,5 @@ module.exports = {
   semi: true,
   singleQuote: true,
   plugins: ['prettier-plugin-tailwindcss', 'prettier-plugin-organize-imports'],
+  organizeImportsSkipDestructiveCodeActions: true,
 };

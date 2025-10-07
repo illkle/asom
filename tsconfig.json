@@ -25,6 +25,7 @@
       "@app/lib/utils": ["./app/lib/utils"],
       "@app/components/ui": ["./app/components/ui"],
       "@app/lib": ["./app/lib"]
-    }
+    },
+    "types": ["@wdio/globals/types", "@wdio/mocha-framework", "expect-webdriverio"]
   }
 }

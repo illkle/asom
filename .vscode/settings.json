@@ -4,5 +4,8 @@
   "tailwindCSS.experimental.classRegex": [["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]],
   "cSpell.words": ["Goodreads", "igdb", "lucide"],
   "typescript.preferences.importModuleSpecifier": "non-relative",
-  "typescript.preferences.autoImportFileExcludePatterns": ["$src-tauri$"]
+  "typescript.preferences.autoImportFileExcludePatterns": ["$src-tauri$"],
+  "editor.codeActionsOnSave": {
+  
+  }
 }

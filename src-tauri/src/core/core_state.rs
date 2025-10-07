@@ -4,15 +4,14 @@ use governor::{
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,
 };
-use serde_json::Value;
 use tauri::AppHandle;
-use tauri_plugin_store::StoreExt;
 
 use crate::{
     cache::{
         cache_thing::cache_files_folders_schemas, create_tables::create_db_tables,
         dbconn::DatabaseConnection,
     },
+    core::root_storage::{get_root_path_from_storage, set_root_path_to_storage},
     schema::schema_cache::SchemasInMemoryCache,
     utils::errorhandling::{send_err_to_frontend, ErrFR},
     watcher::{
@@ -29,8 +28,6 @@ use std::{
     sync::Arc,
     time::{Duration, SystemTime},
 };
-
-pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
 #[derive(Debug)]
 pub struct AppContext {
@@ -115,30 +112,36 @@ impl CoreStateManager {
         *root_path = Some(path);
     }
 
+    pub async fn set_root_path_and_reinit<T: tauri::Runtime>(
+        &self,
+        app: &AppHandle<T>,
+        path: String,
+    ) -> Result<String, Box<ErrFR>> {
+        set_root_path_to_storage(app, path.clone()).await?;
+
+        let mut root_path = self.context.root_path.write().await;
+        *root_path = Some(path.clone());
+        drop(root_path);
+
+        self.init_cache_on_root(app).await?;
+
+        Ok(path.clone())
+    }
+
     pub async fn load_root_path_from_store<T: tauri::Runtime>(
         &self,
         app: &AppHandle<T>,
     ) -> Result<Option<String>, Box<ErrFR>> {
-        let store = match app.store("root_path.txt") {
-            Ok(store) => store,
-            Err(e) => {
-                return Err(Box::new(
-                    ErrFR::new("Error getting store").raw(e.to_string()),
-                ));
-            }
-        };
-
-        match store.get(ROOT_PATH_KEY) {
-            Some(Value::String(path)) => {
-                if !Path::new(&path).exists() {
-                    return Ok(None);
-                }
-                let _ = self.context.root_path.write().await.insert(path.clone());
-
-                Ok(Some(path))
-            }
-            _ => Ok(None),
+        let rp = get_root_path_from_storage(app).await?;
+        if rp.is_some() {
+            let _ = self
+                .context
+                .root_path
+                .write()
+                .await
+                .insert(rp.clone().unwrap());
         }
+        Ok(rp)
     }
 
     pub async fn init<T: tauri::Runtime>(&self, app: &AppHandle<T>) -> Result<(), Box<ErrFR>> {
@@ -230,6 +233,7 @@ impl CoreStateManager {
         println!("Watching path: {}", rp);
 
         let mut watcher = self.watcher.lock().await;
+
         watcher.watch_path(&rp).await.map_err(|e| {
             Box::new(
                 ErrFR::new("Error starting watcher")

@@ -13,6 +13,8 @@
 
   <NuxtPage />
   <div id="customTeleport" class="absolute top-[-1000px]"></div>
+
+  <input v-if="E2E" id="rootPathE2E" type="text" class="absolute bottom-0 right-0" />
 </template>
 
 <script setup lang="ts">
@@ -23,6 +25,7 @@ import { useGlobalInvalidators } from '~/composables/data/queries';
 import ErrorModal from './components/Core/Errors/ErrorModal.vue';
 import { useGlobalTabHooks } from './composables/stores/useTabsStoreV2';
 
+const E2E = import.meta.env['TAURI_E2E_TESTING'];
 const colorMode = useColorMode();
 
 const runtimeConfig = useRuntimeConfig();
