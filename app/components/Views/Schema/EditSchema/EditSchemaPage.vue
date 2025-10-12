@@ -107,6 +107,7 @@ const goBack = () => {
 
 const save = async () => {
   if (!schema.value) return;
+  console.log(schema.value);
   await c_save_schema(props.opened._path, schema.value);
   goBack();
 };

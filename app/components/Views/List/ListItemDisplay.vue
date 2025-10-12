@@ -66,6 +66,7 @@ const props = defineProps({
 });
 
 const mapDate = (v: string) => {
+  if (!v) return '';
   try {
     return format(parse(v, 'yyyy-MM-dd', new Date()), 'dd MMM yyyy');
   } catch (e) {

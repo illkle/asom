@@ -11,6 +11,11 @@ use crate::utils::errorhandling::ErrFR;
 pub static ROOT_IN_MEMORY: Lazy<RwLock<Option<String>>> = Lazy::new(|| RwLock::new(None));
 pub const ROOT_PATH_KEY: &str = "ROOT_PATH";
 
+#[cfg(debug_assertions)]
+pub const ROOT_PATH_FILE_NAME: &str = "root_path_debug.txt";
+#[cfg(not(debug_assertions))]
+pub const ROOT_PATH_FILE_NAME: &str = "root_path.txt";
+
 pub async fn get_root_path_from_storage<T: tauri::Runtime>(
     app: &AppHandle<T>,
 ) -> Result<Option<String>, Box<ErrFR>> {
@@ -22,9 +27,7 @@ pub async fn get_root_path_from_storage<T: tauri::Runtime>(
     }
     /*---------------------------------*/
 
-    println!("Getting root path from storage");
-
-    let store = match app.store("root_path.txt") {
+    let store = match app.store(ROOT_PATH_FILE_NAME) {
         Ok(store) => store,
         Err(e) => {
             return Err(Box::new(
@@ -33,16 +36,12 @@ pub async fn get_root_path_from_storage<T: tauri::Runtime>(
         }
     };
 
-    println!("RECEIVED STORE");
-
     match store.get(ROOT_PATH_KEY) {
         Some(Value::String(path)) => {
             if !Path::new(&path).exists() {
                 println!("PATH DOES NOT EXIST");
                 return Ok(None);
             }
-
-            println!("RECEIVED PATH");
 
             Ok(Some(path))
         }
@@ -63,7 +62,7 @@ pub async fn set_root_path_to_storage<T: tauri::Runtime>(
     }
     /*---------------------------------*/
 
-    let store = match app.store("root_path.txt") {
+    let store = match app.store(ROOT_PATH_FILE_NAME) {
         Ok(store) => store,
         Err(e) => {
             return Err(Box::new(

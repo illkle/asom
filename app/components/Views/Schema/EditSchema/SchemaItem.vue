@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full">
+  <article class="w-full" data-schema-item>
     <div class="gap-2 w-full grid grid-cols-4 px-2 py-4 border rounded-t-md">
       <h5 class="text-xs text-muted-foreground">Key</h5>
       <h5 class="text-xs text-muted-foreground">Label</h5>
@@ -16,8 +16,16 @@
 
       <Input v-model="item.value.settings.displayName" />
 
-      <Select v-model:model-value="item.value.type">
-        <SelectTrigger class="w-full">
+      <Select
+        :model-value="item.value.type"
+        @update:model-value="
+          (v) => {
+            item.value.type = v as SchemaItem['value']['type'];
+            item.value.settings.settingsType = v as SchemaItem['value']['type'];
+          }
+        "
+      >
+        <SelectTrigger class="w-full" data-select-type>
           {{ item.value.type }}
         </SelectTrigger>
         <SelectContent>
@@ -46,7 +54,7 @@
         class="mt-2 w-full"
       />
     </div>
-  </div>
+  </article>
 </template>
 
 <script setup lang="ts">

@@ -339,7 +339,6 @@ const table = useVueTable({
 });
 
 const rows = computed(() => table.getRowModel().rows);
-const rowCount = computed(() => table.getRowCount());
 
 const scrollElementRef = ref<HTMLDivElement | null>(null);
 useScrollWatcher(scrollElementRef);
@@ -359,7 +358,7 @@ const virtualizerOptions = computed(() => ({
   overscan: 10,
 }));
 
-const rowVirtualizer = useVirtualizer(virtualizerOptions.value);
+const rowVirtualizer = useVirtualizer(virtualizerOptions);
 
 const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
 const totalSize = computed(() => rowVirtualizer.value.getTotalSize());

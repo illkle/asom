@@ -1,8 +1,5 @@
 import type { QueryCache } from '@pinia/colada';
 import { open } from '@tauri-apps/plugin-dialog';
-
-const KEY = 'ROOT_PATH';
-
 import { c_set_root_path_and_reinit } from '~/api/tauriActions';
 
 const getPathFromUser = async () => {

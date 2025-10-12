@@ -23,14 +23,14 @@ items:
     value:
       type: Number
       settings:
-        settingsType: Num
+        settingsType: Number
         size: S
         min: 0.0
   - name: myRating
     value:
       type: Number
       settings:
-        settingsType: Num
+        settingsType: Number
         min: 0.0
         max: 5.0
         style: Stars

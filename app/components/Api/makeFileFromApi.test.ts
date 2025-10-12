@@ -117,7 +117,7 @@ describe('makeFileAttrsFromApi', () => {
               name: 'text_collection_s',
               value: { type: 'TextCollection', settings: { settingsType: 'TextCollection' } },
             },
-            { name: 'number_s', value: { type: 'Number', settings: { settingsType: 'Num' } } },
+            { name: 'number_s', value: { type: 'Number', settings: { settingsType: 'Number' } } },
           ],
         },
         apiSettings: {

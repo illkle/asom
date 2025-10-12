@@ -92,7 +92,7 @@ pub async fn save_file(
     forced: bool,
     create_new: bool,
 ) -> Result<RecordSaveResult, Box<ErrFR>> {
-    let path = match record.path {
+    let mut path = match record.path {
         Some(v) => v,
         None => {
             return Err(Box::new(ErrFR::new("No path in record").info(
@@ -105,6 +105,11 @@ pub async fn save_file(
 
     if create_new {
         path_absolute = get_unique_path(&path_absolute);
+        path = ctx
+            .absolute_path_to_relative(&path_absolute)
+            .await?
+            .to_string_lossy()
+            .to_string();
     } else if !forced {
         if let Some(v) = record.modified {
             let modified_before = match get_file_modified_time(&path_absolute) {

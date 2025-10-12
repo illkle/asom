@@ -3,9 +3,8 @@ import { expect } from 'expect-webdriverio';
 import fs from 'fs/promises';
 import path from 'path';
 import ShortUniqueId from 'short-unique-id';
-const uid = new ShortUniqueId({ length: 10 });
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const uid = new ShortUniqueId({ length: 10 });
 
 const waitForPageToLoad = async () => {
   await browser.waitUntil(
@@ -40,8 +39,6 @@ const checkTextOnPage = async (text: string) => {
 describe('Essential flow', () => {
   it('Complete onboarding', async () => {
     await waitForPageToLoad();
-
-    await sleep(10000);
 
     const directory = await createDirectoryForTest();
     await pasteToRootInput(directory);
@@ -131,6 +128,67 @@ describe('Essential flow', () => {
 
     await expect(main).toHaveText(expect.stringContaining('Schema editor'));
 
-    // TODO
+    for (let i = 0; i < 7; i++) {
+      await (await $('button*=Add')).click();
+    }
+
+    const schemaItems = await $$('[data-schema-item]');
+
+    await expect(schemaItems.length).toBe(7);
+
+    const itemsToSet = [
+      'Text',
+      'TextCollection',
+      'Number',
+      'Date',
+      'DateCollection',
+      'DatesPairCollection',
+      'Image',
+    ];
+
+    for (let i = 0; i < itemsToSet.length; i++) {
+      const t = schemaItems[i];
+
+      // target input by placeholder "Key"
+      const nameinput = await t.$('input[placeholder="Name"]');
+      await nameinput.setValue(itemsToSet[i]);
+
+      const typeSelect = await t.$('[data-select-type]');
+
+      await expect(typeSelect).toBeExisting();
+      await typeSelect.click();
+
+      //data-slot="select-trigger"
+      const typeSelectTrigger = await t.$('[data-slot="select-trigger"]');
+
+      // data-slot="select-item"
+      const buttonInPopper = await popperWrapper.$('[data-slot="select-item"]*=' + itemsToSet[i]);
+      await buttonInPopper.click();
+
+      await expect(typeSelectTrigger).toHaveText(itemsToSet[i]);
+    }
+
+    await (await $('button*=Save')).click();
+  });
+
+  it('Create file in newly created schema', async () => {
+    const sidebar = await $('[data-sidebar="content"]');
+
+    await (await sidebar.$('button*=Create')).click();
+
+    const modal = await $('[data-dismissable-layer]');
+
+    const input = await modal.$('input');
+    await expect(input).toBeExisting();
+    await input.setValue('testFile');
+
+    const createButton = await modal.$('button[data-button-create]');
+    await expect(createButton).toBeExisting();
+
+    await createButton.click();
+
+    const main = await $('main');
+
+    await expect(main).toHaveText(expect.stringContaining('testFile.md'));
   });
 });

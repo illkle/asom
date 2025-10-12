@@ -23,6 +23,7 @@ export const useFilesListV2 = ({ opened }: { opened: IOpened }) => {
     },
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const qc = useQueryCache();

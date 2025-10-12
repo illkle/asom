@@ -301,15 +301,9 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             let mut state = CoreStateManager::new();
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
-                #[cfg(debug_assertions)]
-                {
-                    state.context.database_conn.init_in_memory().await;
-                    // state.context.database_conn.init_in_folder().await;
-                }
-                #[cfg(not(debug_assertions))]
-                {
-                    state.context.database_conn.init_in_memory().await;
-                }
+                // Can be used to debug, but does not work with e2e testing
+                // state.context.database_conn.init_in_folder().await;
+                state.context.database_conn.init_in_memory().await;
             });
 
             app.manage(state);

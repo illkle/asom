@@ -44,7 +44,7 @@ const defaultNumberSettings: NumberSettings = {
   displayName: 'Test',
   size: 'M',
   style: 'Default',
-  settingsType: 'Num',
+  settingsType: 'Number',
 };
 
 const possibleValues: SettingsOptions<NumberSettings> = {

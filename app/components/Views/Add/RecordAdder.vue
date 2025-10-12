@@ -4,7 +4,7 @@
     v-model:opened="modalOpened"
     :selected-schema="selectedSchema[1]"
     :selected-schema-path="selectedSchemaPath"
-    @handle-add-empty="handleAddEmpty"
+    @handle-add-empty="handleAddEmptyMutation.mutate"
     @handle-add-from-api="handleFromApiMutation.mutate"
   >
     <template #default> <slot /> </template>
@@ -91,9 +91,6 @@ watch(modalOpened, (v) => {
 });
 
 const saveTo = computed(() => {
-  if (userSelectedSchemaIndex.value === schemaFromActiveTabIndex.value) {
-    return pathFromTab.value;
-  }
   return selectedSchemaPath.value;
 });
 
@@ -128,7 +125,7 @@ const handleFromApiMutation = useMutation({
     });
 
     if (!filePath) {
-      console.error('No file path returned');
+      throw new Error('No file path returned');
       return;
     }
 
@@ -146,27 +143,38 @@ const handleFromApiMutation = useMutation({
   },
 });
 
-const handleAddEmpty = async (inputValue: string) => {
-  if (!saveTo.value) {
-    return;
-  }
+const handleAddEmptyMutation = useMutation({
+  mutation: async (inputValue: string) => {
+    if (!saveTo.value) {
+      throw new Error('No saveTo');
+    }
 
-  const fillFromFilename = selectedSchema.value?.[1].fill_from_filename;
+    const fillFromFilename = selectedSchema.value?.[1].fill_from_filename;
 
-  const filePath = await addThing({
-    name: inputValue,
-    attrsInput: fillFromFilename
-      ? { [fillFromFilename]: { type: 'String', value: inputValue } }
-      : {},
-    saveTo: saveTo.value,
-  });
+    const filePath = await addThing({
+      name: inputValue,
+      attrsInput: fillFromFilename
+        ? { [fillFromFilename]: { type: 'String', value: inputValue } }
+        : {},
+      saveTo: saveTo.value,
+    });
 
-  if (!filePath) {
-    console.error('No file path returned');
-    return;
-  }
+    if (!filePath) {
+      throw new Error('No file path returned');
+      return;
+    }
 
-  tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
-  modalOpened.value = false;
-};
+    tabsStore.openNewThingFast({ _type: 'file', _path: filePath }, 'last');
+    modalOpened.value = false;
+  },
+  onError(e) {
+    console.error(e);
+    handleOurErrorWithNotification({
+      title: 'Error adding record',
+      rawError: e.message,
+      isError: true,
+      subErrors: [],
+    });
+  },
+});
 </script>

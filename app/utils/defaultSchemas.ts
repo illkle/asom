@@ -40,7 +40,7 @@ export const DefaultBookSchema: Schema = {
       value: {
         type: 'Number',
         settings: {
-          settingsType: 'Num',
+          settingsType: 'Number',
           displayName: 'Year',
           size: 'S',
           min: 0,
@@ -52,7 +52,7 @@ export const DefaultBookSchema: Schema = {
       value: {
         type: 'Number',
         settings: {
-          settingsType: 'Num',
+          settingsType: 'Number',
           displayName: 'Rating',
           min: 0,
           max: 5,
@@ -98,7 +98,7 @@ export const DefaultBookSchema: Schema = {
       value: {
         type: 'Number',
         settings: {
-          settingsType: 'Num',
+          settingsType: 'Number',
           displayName: 'ISBN13',
           size: 'S',
           min: 0,
@@ -239,7 +239,7 @@ export const DefaultMovieSchema: Schema = {
       value: {
         type: 'Number',
         settings: {
-          settingsType: 'Num',
+          settingsType: 'Number',
           displayName: 'Rating',
           size: 'S',
           min: 0,
@@ -412,7 +412,7 @@ export const DefaultGameSchema: Schema = {
       value: {
         type: 'Number',
         settings: {
-          settingsType: 'Num',
+          settingsType: 'Number',
           displayName: 'Rating',
           min: 0,
           max: 10,

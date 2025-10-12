@@ -97,7 +97,7 @@ pub enum SettingsTypeText {
 #[derive(Default)]
 pub enum SettingsTypeNumber {
     #[default]
-    Num,
+    Number,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
@@ -195,7 +195,7 @@ pub struct NumberSettings {
 impl Default for NumberSettings {
     fn default() -> NumberSettings {
         NumberSettings {
-            settings_type: SettingsTypeNumber::Num,
+            settings_type: SettingsTypeNumber::Number,
             display_name: None,
             size: None,
             min: None,

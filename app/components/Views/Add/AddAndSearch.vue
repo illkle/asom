@@ -9,27 +9,27 @@
       <div ref="wrapperRef">
         <KeyboardListItem
           is-default
-          class="data-[list-selected=true]:bg-transparent data-[list-selected=true]:border-ring data-[list-selected=true]:ring-ring/50 data-[list-selected=true]:ring-[3px] rounded-md"
+          class="data-[list-selected=true]:bg-transparent data-[list-selected=true]:border-ring data-[list-selected=true]:ring-ring/50 data-[list-selected=true]:ring-[3px] rounded-md flex"
         >
           <Input
             v-model:model-value="mainInputValue"
             :placeholder="hasApi ? 'Filename or API search' : 'Filename'"
             autofocus
-            class="focus-visible:ring-0"
+            class="focus-visible:ring-0 rounded-r-none border-r-0 focus:border-0"
             @keydown.down="kb.handleMove($event, 'onDown')"
             @keydown.up="kb.handleMove($event, 'onUp')"
             @keydown.left="kb.handleMove($event, 'onLeft')"
             @keydown.right="kb.handleMove($event, 'onRight')"
-            @keydown.enter="
-              () => {
-                const res = kb.handleConfirm();
-
-                if (!res) {
-                  emit('handleAddEmpty', mainInputValue);
-                }
-              }
-            "
+            @keydown.enter="handleAdd"
           />
+
+          <Button
+            data-button-create
+            variant="outline"
+            class="rounded-l-none border-0 focus:border-0 border-l"
+            @click="handleAdd"
+            ><ArrowRight class="w-4"
+          /></Button>
         </KeyboardListItem>
 
         <slot name="extra-controls" />
@@ -50,6 +50,7 @@
 </template>
 
 <script lang="ts" setup>
+import { ArrowRight } from 'lucide-vue-next';
 import type { ApiSettings } from '~/components/Api/apis';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import { provideResultGenericWrapper } from '~/components/Api/common/resultGeneric';
@@ -85,4 +86,13 @@ const isMac = useIsMac();
 const hasApi = computed(() => {
   return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';
 });
+
+const handleAdd = () => {
+  const res = kb.handleConfirm();
+
+  if (!res) {
+    console.log('handleAddEmpty', mainInputValue.value);
+    emit('handleAddEmpty', mainInputValue.value);
+  }
+};
 </script>
