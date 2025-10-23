@@ -13,6 +13,24 @@ use crate::emitter::{FileEventDataExisting, FileEventDataRemoved, FolderEventDat
 
 use crate::utils::errorhandling::ErrFR;
 
+fn get_double_parent_path(path_absolute: &Path) -> Result<&Path, Box<ErrFR>> {
+    let path_parent = match path_absolute.parent() {
+        Some(v) => v,
+        None => return Err(Box::new(ErrFR::new("Failed to get parent of path"))),
+    };
+
+    let path_parent = match path_parent.parent() {
+        Some(v) => v,
+        None => {
+            return Err(Box::new(ErrFR::new(
+                "Failed to get parent of parent of path",
+            )))
+        }
+    };
+
+    Ok(path_parent)
+}
+
 async fn handle_file_remove(
     ctx: &AppContext,
     path_absolute: &Path,
@@ -83,13 +101,23 @@ async fn handle_file_add(
             }
         }
         Some("yaml") => {
-            match ctx
-                .schemas_cache
-                .cache_schema_absolute_path(ctx, path_absolute.to_path_buf())
-                .await
-            {
-                Ok(_) => (),
-                Err(e) => return Err(e),
+            let file_name = match path_absolute.file_name() {
+                Some(v) => v,
+                None => return Err(Box::new(ErrFR::new("Failed to get filename of yaml file"))),
+            };
+
+            println!("file_name: {:?}", file_name);
+
+            if file_name != "schema.yaml" {
+                return Ok(vec![]);
+            }
+
+            let path_parent = get_double_parent_path(path_absolute)?;
+
+            if let Err(e) = cache_files_folders_schemas(ctx, path_parent).await {
+                return Err(Box::new(
+                    ErrFR::new("Error when caching stuff after schema.yaml changed").sub(*e),
+                ));
             }
 
             Ok(vec![IPCEmitEvent::SchemasUpdated(
@@ -127,17 +155,26 @@ async fn handle_file_update(
             }
         }
         Some("yaml") => {
-            match ctx
-                .schemas_cache
-                .cache_schema_absolute_path(ctx, path_absolute.to_path_buf())
-                .await
-            {
-                Ok(Some(_)) => Ok(vec![IPCEmitEvent::SchemasUpdated(
-                    ctx.schemas_cache.get_schemas_list().await,
-                )]),
-                Ok(None) => Ok(vec![]),
-                Err(e) => Err(e),
+            let file_name = match path_absolute.file_name() {
+                Some(v) => v,
+                None => return Err(Box::new(ErrFR::new("Failed to get filename of yaml file"))),
+            };
+
+            if file_name != "schema.yaml" {
+                return Ok(vec![]);
             }
+
+            let path_parent = get_double_parent_path(path_absolute)?;
+
+            if let Err(e) = cache_files_folders_schemas(ctx, path_parent).await {
+                return Err(Box::new(
+                    ErrFR::new("Error when caching stuff after schema.yaml changed").sub(*e),
+                ));
+            }
+
+            Ok(vec![IPCEmitEvent::SchemasUpdated(
+                ctx.schemas_cache.get_schemas_list().await,
+            )])
         }
         _ => Ok(vec![]),
     }
