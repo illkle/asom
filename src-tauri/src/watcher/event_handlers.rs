@@ -106,8 +106,6 @@ async fn handle_file_add(
                 None => return Err(Box::new(ErrFR::new("Failed to get filename of yaml file"))),
             };
 
-            println!("file_name: {:?}", file_name);
-
             if file_name != "schema.yaml" {
                 return Ok(vec![]);
             }
@@ -278,7 +276,7 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
                         handle_file_add(ctx, path_absolute, ext).await
                     }
                     k => {
-                        println!("unknown create event {:?}", k);
+                        log::warn!("unknown create event {:?}", k);
                         Ok(vec![])
                     }
                 }
@@ -329,9 +327,14 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
                         handle_file_add(ctx, path_absolute, ext).await
                     }
                     (a, b, c, d, e, f) => {
-                        println!(
+                        log::warn!(
                             "unknown rename event {:?} {:?} {:?} {} {} {}",
-                            a, b, c, d, e, f
+                            a,
+                            b,
+                            c,
+                            d,
+                            e,
+                            f
                         );
                         Ok(vec![])
                     }
@@ -369,7 +372,7 @@ pub async fn handle_event(ctx: &AppContext, event: Event) -> HandleEventResult {
     }
 
     if !events.is_empty() {
-        println!("processed event: {:?} {:?}", event.kind, event.paths);
+        log::info!("processed event: {:?} {:?}", event.kind, event.paths);
     }
 
     HandleEventResult { events, errors }

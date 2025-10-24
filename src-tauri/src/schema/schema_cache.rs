@@ -9,6 +9,7 @@ use std::{
     str,
 };
 
+use log::info;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{RwLock, RwLockReadGuard};
 use ts_rs::TS;
@@ -88,7 +89,7 @@ impl SchemasInMemoryCache {
     }
 
     async fn insert(&self, relative_folder_path: PathBuf, value: Schema) {
-        println!("INSERT TO MAP: {:?}", relative_folder_path);
+        info!("schema_cache: insert to map: {:?}", relative_folder_path);
         self.map.write().await.insert(relative_folder_path, value);
     }
 

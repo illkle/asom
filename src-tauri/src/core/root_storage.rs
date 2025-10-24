@@ -1,5 +1,6 @@
 use std::{env, path::Path};
 
+use log::error;
 use once_cell::sync::Lazy;
 use serde_json::Value;
 use tauri::AppHandle;
@@ -39,7 +40,7 @@ pub async fn get_root_path_from_storage<T: tauri::Runtime>(
     match store.get(ROOT_PATH_KEY) {
         Some(Value::String(path)) => {
             if !Path::new(&path).exists() {
-                println!("PATH DOES NOT EXIST");
+                error!("root_storage: path does not exist: {:?}", path);
                 return Ok(None);
             }
 

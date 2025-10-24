@@ -1,7 +1,7 @@
 use tauri::AppHandle;
 use ts_rs::TS;
 
-use crate::emitter::{emit_event, IPCEmitEvent};
+use crate::emitter::{emit_event_to_frontend, IPCEmitEvent};
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, TS)]
 #[ts(export)]
@@ -74,6 +74,6 @@ pub fn send_err_to_frontend<T: tauri::Runtime>(app: &AppHandle<T>, e: &ErrFR) {
     let app_clone = app.clone();
     let e_clone = e.clone();
     tokio::task::spawn(async move {
-        emit_event(&app_clone, IPCEmitEvent::ErrorHappened(e_clone)).await;
+        emit_event_to_frontend(&app_clone, IPCEmitEvent::ErrorHappened(e_clone)).await;
     });
 }

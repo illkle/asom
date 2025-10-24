@@ -1,3 +1,4 @@
+use log::{error, warn};
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -20,19 +21,20 @@ impl GlobalWatcher {
         let dropped_events = Arc::new(AtomicU64::new(0));
         let dropped_events_clone = dropped_events.clone();
 
-        let watcher = notify::recommended_watcher(move |res: notify::Result<Event>| {
-            if let Ok(event) = res {
-                match sender_clone.send(event) {
-                    Ok(_) => (),
-                    Err(err) => {
-                        println!("Error sending event: {:?}", err);
-                        dropped_events_clone.fetch_add(1, Ordering::SeqCst);
-                        println!(
-                            "Dropped event due to full channel. Total dropped: {}",
-                            dropped_events_clone.load(Ordering::SeqCst)
-                        );
-                    }
+        let watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {
+            Ok(event) => match sender_clone.send(event) {
+                Ok(_) => (),
+                Err(err) => {
+                    error!("watcher error sending event: {:?}", err);
+                    dropped_events_clone.fetch_add(1, Ordering::SeqCst);
+                    warn!(
+                        "watcher dropped event due to full channel. Total dropped: {}",
+                        dropped_events_clone.load(Ordering::SeqCst)
+                    );
                 }
+            },
+            Err(err) => {
+                error!("watcher error receiving event: {:?}", err);
             }
         })?;
 

@@ -8,7 +8,7 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
 
 use crate::core::core_state::CoreStateManager;
-use crate::emitter::emit_event;
+use crate::emitter::emit_event_to_frontend;
 use crate::utils::errorhandling::send_err_to_frontend;
 use crate::watcher::event_handlers::handle_event;
 
@@ -17,13 +17,11 @@ pub enum MonitorCommand {
     Shutdown,
 }
 
-/// Configuration for the monitor
 pub struct MonitorConfig<T: tauri::Runtime> {
     pub command_buffer_size: usize,
     pub app: AppHandle<T>,
 }
 
-/// Runs a monitor that processes file events indefinitely
 pub async fn run_monitor<T: tauri::Runtime>(
     mut event_rx: broadcast::Receiver<Event>,
     config: MonitorConfig<T>,
@@ -36,12 +34,12 @@ pub async fn run_monitor<T: tauri::Runtime>(
             loop {
                 select! {
                     Ok(event) = event_rx.recv() => {
+                        log::info!("received event {:?}", event);
                         let app_clone = app.clone();
                         let st = app_clone.state::<CoreStateManager>();
                         let res = handle_event(&st.context, event).await;
                         for event in res.events {
-                            println!("{:?}", event.print_event());
-                            emit_event(&app, event).await;
+                            emit_event_to_frontend(&app, event).await;
                         }
                         for error in res.errors {
                             send_err_to_frontend(&app, &error);
@@ -49,7 +47,7 @@ pub async fn run_monitor<T: tauri::Runtime>(
                     }
 
                     Some(MonitorCommand::Shutdown) = cmd_rx.recv() => {
-                        println!("Shutting down monitor...");
+                        log::warn!("Shutting down monitor...");
                         break;
                     }
                     _ = sleep(Duration::from_millis(50)) => (),

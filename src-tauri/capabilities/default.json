@@ -9,6 +9,7 @@
     "core:default",
     "process:default",
     "dialog:default",
+    "log:default",
     "fs:allow-home-read-recursive",
     "fs:allow-home-meta",
     "fs:allow-home-meta-recursive",

@@ -80,9 +80,11 @@ impl IPCEmitEvent {
 
 const OVERFLOW_IGNORE_MS: u32 = 200;
 
-pub async fn emit_event<T: tauri::Runtime>(app: &AppHandle<T>, data: IPCEmitEvent) {
+pub async fn emit_event_to_frontend<T: tauri::Runtime>(app: &AppHandle<T>, data: IPCEmitEvent) {
     let state = app.state::<CoreStateManager>();
     let can_emit = state.emit_rate_limit.check();
+
+    log::info!("Emit event to frontend {:?}", data.print_event());
 
     match can_emit {
         Ok(_) => {

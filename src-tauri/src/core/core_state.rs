@@ -4,6 +4,7 @@ use governor::{
     state::{InMemoryState, NotKeyed},
     Quota, RateLimiter,
 };
+use log::info;
 use tauri::AppHandle;
 
 use crate::{
@@ -230,7 +231,7 @@ impl CoreStateManager {
     pub async fn watch_path(&self) -> Result<(), Box<ErrFR>> {
         let rp = self.context.root_path_safe().await?;
 
-        println!("Watching path: {}", rp);
+        info!("Watching path: {}", rp);
 
         let mut watcher = self.watcher.lock().await;
 

@@ -82,6 +82,7 @@ struct IPCResponces {
 
 #[tauri::command]
 async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
+    log::info!("c_init invoked");
     let core = app.state::<CoreStateManager>();
     core.init(&app).await?;
     core.init_cache_on_root(&app).await?;
@@ -90,6 +91,7 @@ async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
 
 #[tauri::command]
 async fn c_get_root_path<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetRootPath {
+    log::info!("c_get_root_path invoked");
     let core = app.state::<CoreStateManager>();
     core.load_root_path_from_store(&app).await
 }
@@ -99,6 +101,7 @@ async fn c_set_root_path_and_reinit<T: tauri::Runtime>(
     app: AppHandle<T>,
     path: String,
 ) -> IPCSetRootPath {
+    log::info!("c_set_root_path_and_reinit invoked");
     let core = app.state::<CoreStateManager>();
     let res = core.set_root_path_and_reinit(&app, path).await?;
     Ok(res)
@@ -109,6 +112,7 @@ async fn c_get_files_by_path<T: tauri::Runtime>(
     app: AppHandle<T>,
     path_relative: String,
 ) -> IPCGetFilesPath {
+    log::info!("c_get_files_by_path invoked");
     let core = app.state::<CoreStateManager>();
     let normalized_path = normalize_path_to_os(&path_relative);
     get_files_by_path(&core.context, &normalized_path).await
@@ -116,6 +120,7 @@ async fn c_get_files_by_path<T: tauri::Runtime>(
 
 #[tauri::command]
 async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
+    log::info!("c_get_all_tags invoked");
     let core = app.state::<CoreStateManager>();
     get_all_tags(&core.context)
         .await
@@ -124,6 +129,7 @@ async fn c_get_all_tags<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllTags {
 
 #[tauri::command]
 async fn c_get_all_folders<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetAllFolders {
+    log::info!("c_get_all_folders invoked");
     let core = app.state::<CoreStateManager>();
     get_all_folders(&core.context).await
 }
@@ -134,6 +140,7 @@ async fn c_get_all_folders_by_schema<T: tauri::Runtime>(
     schema_path: String,
 ) -> IPCGetAllFoldersBySchema {
     let core = app.state::<CoreStateManager>();
+    log::info!("c_get_all_folders_by_schema invoked");
     let normalized_path = normalize_path_to_os(&schema_path);
     get_all_folders_by_schema(&core.context, &normalized_path).await
 }
@@ -143,6 +150,7 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
     app: AppHandle<T>,
     path: String,
 ) -> IPCReadFileByPath {
+    log::info!("c_read_file_by_path invoked");
     let core = app.state::<CoreStateManager>();
     let normalized_path = normalize_path_to_os(&path);
     let file = read_file_by_path(&core.context, &normalized_path, FileReadMode::FullFile).await?;
@@ -155,6 +163,7 @@ async fn c_read_file_by_path<T: tauri::Runtime>(
 
 #[tauri::command]
 async fn c_get_schemas_all<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
+    log::info!("c_get_schemas_all invoked");
     let core = app.state::<CoreStateManager>();
     let schemas = core
         .context
@@ -167,6 +176,7 @@ async fn c_get_schemas_all<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchema
 // This one returns only schemas with items
 #[tauri::command]
 async fn c_get_schemas_usable<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSchemas {
+    log::info!("c_get_schemas_usable invoked");
     let core = app.state::<CoreStateManager>();
     let schemas = core.context.schemas_cache.get_schemas_list().await;
     Ok(schemas)
@@ -174,6 +184,7 @@ async fn c_get_schemas_usable<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetSch
 
 #[tauri::command]
 async fn c_load_schema<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCLoadSchema {
+    log::info!("c_load_schema invoked");
     let core = app.state::<CoreStateManager>();
     let ctx = &core.context;
 
@@ -198,6 +209,7 @@ async fn c_save_schema<T: tauri::Runtime>(
     path: String,
     schema: Schema,
 ) -> IPCSaveSchema {
+    log::info!("c_save_schema invoked");
     let core = app.state::<CoreStateManager>();
     let ctx = &core.context;
     let normalized_path = normalize_path_to_os(&path);
@@ -214,6 +226,7 @@ async fn c_save_file<T: tauri::Runtime>(
     forced: bool,
     create_new: bool,
 ) -> IPCSaveFile {
+    log::info!("c_save_file invoked");
     let core = app.state::<CoreStateManager>();
     save_file(&core.context, record, forced, create_new).await
 }
@@ -223,6 +236,7 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
     app: AppHandle<T>,
     path: String,
 ) -> IPCResolveSchemaPath {
+    log::info!("c_resolve_schema_path invoked");
     let core = app.state::<CoreStateManager>();
     Ok(core
         .context
@@ -233,6 +247,7 @@ async fn c_resolve_schema_path<T: tauri::Runtime>(
 
 #[tauri::command]
 async fn c_delete_to_trash<T: tauri::Runtime>(app: AppHandle<T>, path: String) -> IPCDeleteFile {
+    log::info!("c_delete_to_trash invoked");
     let core = app.state::<CoreStateManager>();
     let absolute_path = core
         .context
@@ -246,6 +261,7 @@ async fn c_create_folder_for_default_schema<T: tauri::Runtime>(
     app: AppHandle<T>,
     path: String,
 ) -> IPCCreateFolderForDefaultSchema {
+    log::info!("c_create_folder_for_default_schema invoked");
     let core = app.state::<CoreStateManager>();
     let path_absolute = core
         .context
@@ -290,13 +306,21 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_create_folder_for_default_schema
         ])
         .setup(|app| {
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            app.handle().plugin(
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::Stdout,
+                    ))
+                    .target(tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir {
+                            file_name: Some("logs".to_string()),
+                        },
+                    ))
+                    .max_file_size(5 * 1024 * 1024) // 5MB
+                    .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3))
+                    .build(),
+            )?;
 
             let mut state = CoreStateManager::new();
             let rt = Runtime::new().unwrap();
