@@ -39,6 +39,7 @@ import CustomWindowButtons from './Core/CustomWindowButtons.vue';
 import InitProcess from './Core/InitProcess.vue';
 import TabsSelector from './Core/Tabs/TabsSelector.vue';
 import RouterMain from './RouterMain.vue';
+import { useSidebar } from './ui/sidebar';
 
 const rootPath = useRootPathFromQuery();
 useProvideRootPath(rootPath);

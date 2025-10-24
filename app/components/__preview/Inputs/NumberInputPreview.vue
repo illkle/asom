@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import Number from '~/components/Views/Editor/Inputs/Number.vue';
+import Number from '~/components/Views/Editor/Meta/Inputs/Number.vue';
 import type { NumberSettings } from '~/types';
 import type { SettingsOptions } from '../helpers';
 

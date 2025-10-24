@@ -35,6 +35,8 @@ const formattedDateSM = computed(() => {
 
   return format(new Date(dateModel.value.toString()), 'dd.MM.yy');
 });
+
+const isOpened = ref(false);
 </script>
 
 <template>

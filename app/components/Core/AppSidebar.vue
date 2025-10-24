@@ -1,5 +1,5 @@
 <template>
-  <Sidebar variant="floating" collapsible="icon">
+  <Sidebar variant="floating" collapsible="offcanvas">
     <SidebarContent class="">
       <SidebarGroup v-if="!noSchemas" class="">
         <div class="flex flex-row gap-1 w-full mb-4" :class="{ 'pl-16': isMac }">

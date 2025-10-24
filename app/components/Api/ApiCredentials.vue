@@ -19,7 +19,7 @@
               })
           "
         />
-        <span class="text-xs text-gray-500">
+        <span class="text-xs text-muted-foreground">
           This email is sent directly to Open Library API. They will contact you if you use it too
           much(unlikely to ever happen).
         </span>
@@ -27,7 +27,7 @@
 
       <h2 class="text-lg font-serif mt-4">IGDB</h2>
 
-      <span class="text-xs text-gray-500">
+      <span class="text-xs text-muted-foreground">
         Login with Twitch and create an application at
         <a
           href="https://dev.twitch.tv/console/apps"

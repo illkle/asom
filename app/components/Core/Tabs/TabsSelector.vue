@@ -2,6 +2,7 @@
   <div
     ref="widgetDiv"
     class="relative h-10 overflow-hidden z-30"
+    :class="{ 'ml-24': extraLeftPaddingForMacButtons }"
     @drop="onDrop($event)"
     @dragenter.prevent="dragEnter"
     @dragleave.prevent="dragLeave"
@@ -80,8 +81,15 @@ import {
   useTabsStoreV2,
   type ITabEntry,
 } from '~/composables/stores/useTabsStoreV2';
+import { useSidebar } from '~/components/ui/sidebar';
 
 const store = useTabsStoreV2();
+
+const isMac = useIsMac();
+const sidebar = useSidebar();
+const extraLeftPaddingForMacButtons = computed(
+  () => isMac.value && sidebar.state.value === 'collapsed',
+);
 
 //
 // Style helpers

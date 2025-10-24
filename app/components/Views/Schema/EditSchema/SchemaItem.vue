@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { TrashIcon } from 'lucide-vue-next';
-import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
+import AttributesRouter from '~/components/Views/Editor/Meta/AttributesRouter.vue';
 import SchemaItemParams from '~/components/Views/Schema/EditSchema/SchemaItemParams.vue';
 import { getValByType } from '~/components/Views/Schema/mocks';
 import type { AttrValue, SchemaItem } from '~/types';

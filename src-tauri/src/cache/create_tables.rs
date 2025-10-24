@@ -3,6 +3,8 @@ use crate::cache::dbconn::DatabaseConnection;
 pub async fn create_db_tables(db: &DatabaseConnection) -> Result<(), sqlx::Error> {
     let conn = db.get_conn().await;
 
+    log::warn!("Recreating tables in cache db");
+
     sqlx::query("DROP TABLE IF EXISTS files;")
         .execute(&conn)
         .await?;

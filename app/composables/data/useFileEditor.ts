@@ -5,8 +5,8 @@ import { cloneDeep, throttle } from 'lodash-es';
 import type { ShallowRef } from 'vue';
 
 import { c_read_file_by_path, c_save_file } from '~/api/tauriActions';
-import { useCodeMirror } from '~/composables/CodeMirror/useCodeMirror';
 import { useTabsStoreV2, type IOpened } from '~/composables/stores/useTabsStoreV2';
+import { useTipTap } from '~/composables/useTipTap';
 
 /** Creates editable ref from query data. Allows for two way sync using remote(file) write timestamp to resolve conflicts.
  * Important notes:
@@ -115,7 +115,11 @@ export const useFileEditorV2 = (
 
   const changesTracker = ref(0);
 
-  const { getEditorState, createOrUpdateEditor } = useCodeMirror({
+  const {
+    getEditorState,
+    createOrUpdateEditor,
+    editor: tiptapEditor,
+  } = useTipTap({
     editorTemplateRef,
     onChange: () => {
       changesTracker.value++;
@@ -138,7 +142,7 @@ export const useFileEditorV2 = (
       if (!v) throw new Error('No value to save');
 
       const data = v.record;
-      data.record.markdown = getEditorState();
+      data.record.markdown = getEditorState() ?? '';
       const res = await c_save_file({ record: data.record });
       return new Date(Number(res.modified));
     },
@@ -192,5 +196,6 @@ export const useFileEditorV2 = (
     lastSyncedTimestamp,
     onRename,
     somethingPending,
+    tiptapEditor,
   };
 };

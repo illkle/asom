@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
 import DynamicConfiguration from '~/components/Modules/DynamicView/DynamicConfiguration.vue';
-import AttributesRouter from '~/components/Views/Editor/AttributesRouter.vue';
+import AttributesRouter from '~/components/Views/Editor/Meta/AttributesRouter.vue';
 import { ROOT_PATH_PROVIDE } from '~/composables/data/providers';
 import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
 import { getValByType } from '../Views/Schema/mocks';

@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'url';
 
 export default defineNuxtConfig({
-  components: {},
+  components: [],
 
   alias: {
     types: fileURLToPath(new URL('app/types', import.meta.url)),
@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     componentDir: './app/components/ui',
   },
 
-  css: ['~/assets/css/tailwind.css', '~/assets/css/app.css'],
+  css: ['~/assets/css/app.css', '~/assets/css/tiptap.css'],
 
   typescript: {},
 

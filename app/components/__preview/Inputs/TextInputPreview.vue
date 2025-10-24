@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import Text from '~/components/Views/Editor/Inputs/Text.vue';
+import Text from '~/components/Views/Editor/Meta/Inputs/Text.vue';
 import type { TextSettings } from '~/types';
 import type { SettingsOptions } from '../helpers';
 
