@@ -42,7 +42,6 @@ export const c_save_file = async ({
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const c_get_files_by_path = async (pathRelative: string) => {
-  console.log('invoke c_get_files_by_path', pathRelative);
   return invoke('c_get_files_by_path', { pathRelative })
     .then((v) => {
       return v as ExtractIpcResponseType<'c_get_files_by_path'>;

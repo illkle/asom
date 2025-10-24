@@ -15,40 +15,40 @@ name = "app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-chrono = "0.4.42"
-fs_extra = "1.3.0"
-governor = "0.10.1"
+chrono = "0.4"
+fs_extra = "1.3"
+governor = "0.10"
 log = "0.4"
-notify = "8.0.0"
-once_cell = "1.21.3"
-pathdiff = "0.2.3"
-pretty_assertions = "1.4.1"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_with = "3.12.0"
-serde_yml = "0.0.12"
+notify = "8"
+once_cell = "1"
+pathdiff = "0.2"
+pretty_assertions = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_with = "3"
+serde_yml = "0"
 sqlx = { version = "0.8", features = [ "runtime-tokio", "sqlite", "macros", ] }
-tauri = { version = "2.8.5", features = ["protocol-asset", "test"] }
-tauri-plugin-dialog = "2.4.0"
-tauri-plugin-fs = { version = "2.4.2", features = ["watch"] }
-tauri-plugin-http = "2.5.2"
-tauri-plugin-log = "2.7.0"
-tauri-plugin-opener = "2.5.0"
-tauri-plugin-os = "2.3.1"
+tauri = { version = "2", features = ["protocol-asset", "test"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = { version = "2", features = ["watch"] }
+tauri-plugin-http = "2"
+tauri-plugin-log = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-os = "2"
 tauri-plugin-process = "2"
-tauri-plugin-sql = { version = "2.3.0", features = ["sqlite"] }
-tauri-plugin-store = "2.4.0"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-store = "2"
 tokio = { version = "1", features = ["sync"] }
-trash = "5.2.3"
-ts-rs = { version = "11.0.1", features = ["serde-compat", "serde-json-impl"] }
-uuid = { version = "1.18.1", features = ["v4"] }
-walkdir = "2.5.0"
+trash = "5"
+ts-rs = { version = "11", features = ["serde-compat", "serde-json-impl"] }
+uuid = { version = "1", features = ["v4"] }
+walkdir = "2"
 
 [build-dependencies]
-tauri-build = { version = "2.4.1", features = [] }
+tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]
-tempfile = "3.22"
+tempfile = "3.23"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
