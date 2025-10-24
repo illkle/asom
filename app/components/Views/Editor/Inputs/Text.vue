@@ -15,6 +15,7 @@
         weight: settings.weight,
       }),
     ]"
+    v-bind="$attrs"
     @update:model-value="(v) => $emit('update:modelValue', String(v))"
   />
   <!-- prettier-ignore-attribute v-bind:model-value -->
@@ -33,6 +34,7 @@
         weight: settings.weight,
       }),
     ]"
+    v-bind="$attrs"
     auto-resize
     @update:model-value="(v) => $emit('update:modelValue', String(v))"
   />

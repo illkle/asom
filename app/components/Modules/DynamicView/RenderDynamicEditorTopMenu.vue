@@ -9,6 +9,7 @@
         variant="outline"
         size="sm"
         class="rounded-none border-t-0 border-b-0"
+        data-group-add-subgroup-button
         @click.stop="
           () => {
             emit('addItem');
@@ -24,6 +25,7 @@
             size="sm"
             variant="outline"
             class="rounded-none border-0 border-r-0 rounded-tr-md"
+            data-group-config-button
             @click.stop
             @pointerdown.stop
           >

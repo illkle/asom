@@ -36,6 +36,16 @@ const checkTextOnPage = async (text: string) => {
   await expect($('body')).toHaveText(expect.stringContaining(text));
 };
 
+const inputTypes = [
+  'Text',
+  'TextCollection',
+  'Number',
+  'Date',
+  'DateCollection',
+  'DatesPairCollection',
+  'Image',
+];
+
 describe('Essential flow', () => {
   it('Complete onboarding', async () => {
     await waitForPageToLoad();
@@ -132,26 +142,16 @@ describe('Essential flow', () => {
       await (await $('button*=Add')).click();
     }
 
-    const schemaItems = await $$('[data-schema-item]');
+    const schemaItems = await main.$$('[data-schema-item]');
 
     await expect(schemaItems.length).toBe(7);
 
-    const itemsToSet = [
-      'Text',
-      'TextCollection',
-      'Number',
-      'Date',
-      'DateCollection',
-      'DatesPairCollection',
-      'Image',
-    ];
-
-    for (let i = 0; i < itemsToSet.length; i++) {
+    for (let i = 0; i < inputTypes.length; i++) {
       const t = schemaItems[i];
 
       // target input by placeholder "Key"
       const nameinput = await t.$('input[placeholder="Name"]');
-      await nameinput.setValue(itemsToSet[i]);
+      await nameinput.setValue('testfield-' + inputTypes[i]);
 
       const typeSelect = await t.$('[data-select-type]');
 
@@ -162,10 +162,10 @@ describe('Essential flow', () => {
       const typeSelectTrigger = await t.$('[data-slot="select-trigger"]');
 
       // data-slot="select-item"
-      const buttonInPopper = await popperWrapper.$('[data-slot="select-item"]*=' + itemsToSet[i]);
+      const buttonInPopper = await popperWrapper.$('[data-slot="select-item"]*=' + inputTypes[i]);
       await buttonInPopper.click();
 
-      await expect(typeSelectTrigger).toHaveText(itemsToSet[i]);
+      await expect(typeSelectTrigger).toHaveText(inputTypes[i]);
     }
 
     await (await $('button*=Save')).click();
@@ -177,6 +177,10 @@ describe('Essential flow', () => {
     await (await sidebar.$('button*=Create')).click();
 
     const modal = await $('[data-dismissable-layer]');
+
+    const ultimaSchemaButton = await modal.$('button*=ultimateSchema');
+    await expect(ultimaSchemaButton).toBeExisting();
+    await ultimaSchemaButton.click();
 
     const input = await modal.$('input');
     await expect(input).toBeExisting();
@@ -190,5 +194,109 @@ describe('Essential flow', () => {
     const main = await $('main');
 
     await expect(main).toHaveText(expect.stringContaining('testFile.md'));
+
+    await expect(main).toHaveText(
+      expect.stringContaining('All schema items are hidden in current layout'),
+    );
+  });
+
+  it('Add schema items to layout', async () => {
+    const main = await $('main');
+
+    await (await main.$('button*=Edit Layout')).click();
+
+    await expect(main).toHaveText(expect.stringContaining('Layout editor'));
+
+    const configButton = await $('[data-group-config-button]');
+    await expect(configButton).toBeExisting();
+    await configButton.click();
+
+    const modal = await $('[data-dismissable-layer]');
+    await expect(modal).toBeExisting();
+
+    const directionSelect = await modal.$('div*=Direction');
+    await expect(directionSelect).toBeExisting();
+    await directionSelect.moveTo({ xOffset: 5, yOffset: 5 });
+    await directionSelect.click();
+
+    const clmn = await modal.$('div*=Column');
+    await expect(clmn).toBeExisting();
+    await clmn.moveTo({ xOffset: 5, yOffset: 5 });
+    await clmn.click();
+
+    const dropTargetFirst = await $('[data-drop-target]');
+    const dropTargetSecond = await $('[data-orderable]');
+    let isFirst = true;
+
+    for (const t of inputTypes) {
+      await browser.pause(250); // animations
+      const item = await main.$(`[data-input-for="testfield-${t}"]`);
+      await expect(item).toBeExisting();
+
+      if (isFirst) {
+        await expect(dropTargetFirst).toBeExisting();
+      } else {
+        await expect(dropTargetSecond).toBeExisting();
+      }
+
+      const sourceLocation = await item.getLocation();
+      const targetLocation = isFirst
+        ? await dropTargetFirst.getLocation()
+        : await dropTargetSecond.getLocation();
+
+      await browser.performActions([
+        {
+          type: 'pointer',
+          id: 'mouse1',
+          parameters: { pointerType: 'mouse' },
+          actions: [
+            {
+              type: 'pointerMove',
+              duration: 0,
+              x: Math.floor(sourceLocation.x + 10),
+              y: Math.floor(sourceLocation.y + 10),
+            },
+            { type: 'pointerDown', button: 0 },
+            {
+              type: 'pointerMove',
+              duration: 100,
+              x: Math.floor(targetLocation.x + 10),
+              y: Math.floor(targetLocation.y + 10),
+            },
+            { type: 'pointerUp', button: 0 },
+          ],
+        },
+      ]);
+
+      if (isFirst) {
+        isFirst = false;
+      }
+    }
+
+    await expect(main).toHaveText(expect.stringContaining('Unused items: 0'));
+
+    const backButton = await $('[data-button-back]');
+    await expect(backButton).toBeExisting();
+    await backButton.click();
+
+    await expect(main).toHaveText(expect.stringContaining('testFile.md'));
+
+    const textField = await main.$('[data-input-for="testfield-Text"]');
+    const numberField = await main.$('[data-input-for="testfield-Number"]');
+    const textCollectionField = await main.$('[data-input-for="testfield-TextCollection"]');
+    const dateField = await main.$('[data-input-for="testfield-Date"]');
+    const dateCollectionField = await main.$('[data-input-for="testfield-DateCollection"]');
+    const datesPairCollectionField = await main.$(
+      '[data-input-for="testfield-DatesPairCollection"]',
+    );
+    const imageField = await main.$('[data-input-for="testfield-Image"]');
+
+    await expect(textField).toBeExisting();
+    await expect(numberField).toBeExisting();
+    await expect(textCollectionField).toBeExisting();
+    await expect(dateField).toBeExisting();
+    await expect(dateCollectionField).toBeExisting();
+    await expect(datesPairCollectionField).toBeExisting();
+    await expect(imageField).toBeExisting();
   });
 });

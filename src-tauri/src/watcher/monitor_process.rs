@@ -34,7 +34,7 @@ pub async fn run_monitor<T: tauri::Runtime>(
             loop {
                 select! {
                     Ok(event) = event_rx.recv() => {
-                        log::info!("received event {:?}", event);
+                        log::trace!("received event {:?}", event);
                         let app_clone = app.clone();
                         let st = app_clone.state::<CoreStateManager>();
                         let res = handle_event(&st.context, event).await;

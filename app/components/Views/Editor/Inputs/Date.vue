@@ -35,13 +35,15 @@ const formattedDateSM = computed(() => {
 
   return format(new Date(dateModel.value.toString()), 'dd.MM.yy');
 });
-
-const isOpened = ref(false);
 </script>
 
 <template>
   <Popover class="">
-    <PopoverTrigger as="div" class="flex flex-col justify-start w-full overflow-hidden @container">
+    <PopoverTrigger
+      as="div"
+      class="flex flex-col justify-start w-full overflow-hidden @container"
+      v-bind="$attrs"
+    >
       <CommonLabel v-if="!hideLabel" class="block mb-0.5">{{ name }}</CommonLabel>
 
       <div class="flex w-full">

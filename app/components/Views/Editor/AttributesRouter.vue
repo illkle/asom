@@ -7,6 +7,7 @@
       :name="name"
       :hide-label="hideLabel"
       :disabled="disabled"
+      :data-input-for="schemaItem.name"
     />
 
     <!-- prettier-ignore-attribute  v-model -->
@@ -19,6 +20,7 @@
       :name="name"
       :hide-label="hideLabel"
       :disabled="disabled"
+      :data-input-for="schemaItem.name"
     />
 
     <TagsInput
@@ -28,6 +30,7 @@
       :name="name"
       :disabled="disabled"
       :hide-label="hideLabel"
+      :data-input-for="schemaItem.name"
     />
 
     <DateInput
@@ -37,6 +40,7 @@
       :disabled="disabled"
       :hide-label="hideLabel"
       :deletable="true"
+      :data-input-for="schemaItem.name"
     />
 
     <DateCollection
@@ -45,6 +49,7 @@
       :name="name"
       :disabled="disabled"
       :hide-label="hideLabel"
+      :data-input-for="schemaItem.name"
     />
 
     <DateRangeInput
@@ -53,6 +58,7 @@
       :name="name"
       :disabled="disabled"
       :hide-label="hideLabel"
+      :data-input-for="schemaItem.name"
     />
     <ImageInput
       v-else-if="schemaItem.value.type === 'Image' && attr.type === 'String'"
@@ -61,6 +67,7 @@
       :settings="schemaItem.value.settings"
       :disabled="disabled"
       :hide-label="hideLabel"
+      :data-input-for="schemaItem.name"
     />
     <div v-else class="flex flex-col gap-1 border border-red-500 rounded-md py-1 px-2 text-sm">
       Unsupported attribute type or type mismatch:

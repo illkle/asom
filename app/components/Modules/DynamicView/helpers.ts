@@ -77,6 +77,7 @@ export const getStyleGroup = (group: IDynamicItem) => {
 };
 
 export const locateParent = (data: IDynamicViewGroup, info: ItemInfoCore): IDynamicViewGroup => {
+  console.log('locateParent', data, info);
   let parent = data;
   while (info.parentIds.length > 0) {
     const parentId = info.parentIds.shift();

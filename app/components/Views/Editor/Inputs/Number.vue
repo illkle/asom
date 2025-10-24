@@ -8,9 +8,14 @@
     :min="settings.min"
     :max="settings.max"
     :disabled="disabled"
+    v-bind="$attrs"
     @update:model-value="(v) => $emit('update:modelValue', v)"
   />
-  <div v-else-if="settings.style === 'Slider'" class="flex items-center gap-2 w-full">
+  <div
+    v-else-if="settings.style === 'Slider'"
+    class="flex items-center gap-2 w-full"
+    v-bind="$attrs"
+  >
     <Slider
       :model-value="[modelValue ?? settings.min ?? 0]"
       :min="settings.min"
@@ -38,6 +43,7 @@
     }"
     :disabled="disabled"
     :disable-wheel-change="true"
+    v-bind="$attrs"
     @update:model-value="(v) => $emit('update:modelValue', v)"
   >
     <NumberFieldContent>

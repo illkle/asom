@@ -252,7 +252,11 @@ const invisibleSchemaItems = computed(() => {
   );
 });
 const showLayoutWarning = computed(() => {
-  return !viewSettingsQ.data.value?.layoutWarningsHidden && invisibleSchemaItems.value.length;
+  return (
+    !viewSettingsQ.data.value?.layoutWarningsHidden &&
+    invisibleSchemaItems.value.length &&
+    invisibleSchemaItems.value.length !== schema.value?.schema.items.length
+  );
 });
 
 const apiConnection = useApiConnection(

@@ -31,7 +31,9 @@
         </span>
       </DropTarget>
 
-      <div class="flex flex-col gap-2 w-fit">
+      <h3 class="text-xl font-serif mt-4">Unused items: {{ availableItems.length }}</h3>
+
+      <div class="grid grid-cols-2 gap-x-8 gap-y-4 items-center justify-center w-full mt-2">
         <Draggable
           v-for="(value, index) in availableItems"
           :key="value.id"

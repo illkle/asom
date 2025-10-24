@@ -18,6 +18,7 @@
       },
       props.disabled ? 'pointer-events-none' : 'cursor-grab',
     ]"
+    data-orderable
     :data-can-drop="isOver"
     :data-is-over="isOver"
     :data-quadrant="hoveredItem?.quadrant"

@@ -3,7 +3,7 @@
     <div v-if="viewLayout.content.length === 0" class="mx-auto mb-8 mt-4 w-fit flex flex-col gap-2">
       <div class="text-sm text-muted-foreground">All schema items are hidden in current layout</div>
 
-      <Button variant="outline" @click="emit('openEditMode')">Edit layout</Button>
+      <Button variant="outline" @click="emit('openEditMode')">Edit Layout</Button>
     </div>
 
     <RenderDynamic v-else :group="viewLayout">
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import { computed, type PropType } from 'vue';
 
 import { type IDynamicViewGroup } from '~/components/Modules/DynamicView/helpers';
 import RenderDynamic from '~/components/Modules/DynamicView/RenderDynamic.vue';

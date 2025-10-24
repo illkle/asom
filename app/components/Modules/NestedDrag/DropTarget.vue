@@ -3,6 +3,7 @@
     ref="el"
     v-bind="$attrs"
     :class="[props.disabled && 'pointer-events-none', '']"
+    data-drop-target
     :data-can-drop="isOver"
     :data-is-over="isOver"
     :data-quadrant="hoveredItem?.quadrant"

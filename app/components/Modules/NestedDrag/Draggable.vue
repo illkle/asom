@@ -1,5 +1,4 @@
 <template>
-  <div v-if="isDraggingMe" ref="measureRef"></div>
   <motion.div
     ref="constraintsRef"
     v-bind="$attrs"
@@ -27,7 +26,6 @@ import { useDraggable, type DraggableProps } from '~/components/Modules/NestedDr
 const props = defineProps<DraggableProps>();
 
 const constraintsRef = useDomRef() as Ref<HTMLDivElement>;
-const measureRef = useTemplateRef('measureRef');
 
 const { isDraggingMe, offset, pointerDown } = useDraggable(props, constraintsRef);
 </script>

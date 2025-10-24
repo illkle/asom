@@ -5,6 +5,7 @@
         <div class="flex flex-row gap-1 w-full mb-4" :class="{ 'pl-16': isMac }">
           <Button
             :disabled="!tabsStore.canGoBack"
+            data-button-back
             variant="ghost"
             size="sm"
             class="flex-1 text-xs h-6"
@@ -14,6 +15,7 @@
           </Button>
           <Button
             :disabled="!tabsStore.canGoForward"
+            data-button-forward
             variant="ghost"
             size="sm"
             class="flex-1 h-6 text-xs"
