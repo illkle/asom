@@ -33,6 +33,11 @@
     @apply my-3;
   }
 
+  p {
+    /* When adding new items to task list by pressing enter you can't see cursor because it makes p with zero width */
+    @apply min-w-1;
+  }
+
   h1,
   h2,
   h3,
@@ -84,5 +89,31 @@
 
   hr {
     @apply my-4;
+  }
+
+  td,
+  th {
+    @apply border-border border p-2;
+  }
+
+  input[type='checkbox'] {
+    @apply size-4;
+  }
+  input[type='checkbox']::before {
+    content: unset;
+  }
+
+  ul[data-type='taskList'] {
+    @apply list-none pl-0;
+  }
+
+  ul[data-type='taskList'] > li {
+    @apply flex gap-2;
+  }
+
+  hr {
+    &.ProseMirror-selectednode {
+      @apply border-primary/80 animate-pulse duration-300;
+    }
   }
 }

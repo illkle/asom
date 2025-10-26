@@ -85,6 +85,7 @@ impl SchemasInMemoryCache {
     }
 
     pub async fn clear_cache(&self) {
+        log::info!("schema_cache: clearing cache");
         self.map.write().await.clear();
     }
 

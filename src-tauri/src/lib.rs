@@ -307,28 +307,42 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
         ])
         .setup(|app| {
             log::info!("Setting up app");
-            app.handle().plugin(
-                tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
-                    .target(tauri_plugin_log::Target::new(
-                        tauri_plugin_log::TargetKind::Stdout,
-                    ))
-                    .target(tauri_plugin_log::Target::new(
-                        tauri_plugin_log::TargetKind::LogDir {
-                            file_name: Some("logs".to_string()),
-                        },
-                    ))
-                    .max_file_size(5 * 1024 * 1024) // 5MB
-                    .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3))
-                    .build(),
-            )?;
+
+            #[cfg(not(debug_assertions))]
+            {
+                log_plugin = log_plugin;
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .max_file_size(5 * 1024 * 1024) // 5MB
+                        .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(3))
+                        .target(tauri_plugin_log::Target::new(
+                            tauri_plugin_log::TargetKind::LogDir {
+                                file_name: Some("logs".to_string()),
+                            },
+                        ))
+                        .build(),
+                )?;
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
 
             let mut state = CoreStateManager::new(app.handle().clone());
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
-                // Can be used to debug, but does not work with e2e testing
-                //state.context.database_conn.init(InitMode::InFolder).await;
-                let _ = state.context.database_conn.init(InitMode::InMemory).await;
+                let cache_dir = app.path().cache_dir().unwrap();
+                let _ = state
+                    .context
+                    .database_conn
+                    .init(InitMode::InFolder(cache_dir))
+                    .await;
             });
 
             app.manage(state);

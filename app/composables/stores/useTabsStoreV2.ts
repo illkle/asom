@@ -559,19 +559,27 @@ export const useScrollRestorationOnMount = (
     mounted.value = true;
   });
 
-  watch([condition, mounted], ([iscCondition, isMounted]) => {
-    if (!isMounted || !element.value || !iscCondition) return;
-
-    if (!element.value) return;
-
-    nextTick(() => {
-      if (!element.value) return;
-      element.value.scrollTo(
-        store.openedItem?.scrollPositionX ?? 0,
-        store.openedItem?.scrollPositionY ?? 0,
-      );
-    });
+  onUnmounted(() => {
+    mounted.value = false;
   });
+
+  watch(
+    [condition, mounted, element],
+    async ([isCondition, isMounted]) => {
+      if (!isMounted || !element.value || !isCondition) return;
+
+      // No idea why but sometimes it required 3 nextTick calls to work
+      await nextTick();
+      await nextTick();
+      await nextTick();
+
+      const x = store.openedItem?.scrollPositionX ?? 0;
+      const y = store.openedItem?.scrollPositionY ?? 0;
+
+      element.value.scrollTo(x, y);
+    },
+    { immediate: true },
+  );
 };
 
 /** Hook for watching scroll position and saving it to tabs store. */
@@ -687,11 +695,11 @@ export const useUpdateCurrentTabTitleFrom = ({
 }) => {
   const store = useTabsStoreV2();
   watch(
-    refToUpdate,
-    (v) => {
-      console.log('useUpdateCurrentTabTitleFrom', v);
-      if (!v && !setEmptyTitle) return;
-      store.setCurrentTabTitle(v ?? '');
+    [refToUpdate, computed(() => store.openedTab?.id)],
+    () => {
+      console.log('tab watch');
+      if (!refToUpdate.value && !setEmptyTitle) return;
+      store.setCurrentTabTitle(refToUpdate.value ?? '');
     },
     { immediate: true },
   );

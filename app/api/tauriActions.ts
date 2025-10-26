@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { handleMaybeOurError } from '~/components/Core/Errors/errors';
+import { handleMaybeOurError, type CodeBindsForError } from '~/components/Core/Errors/errors';
 import type { ExtractIpcResponseType, RecordFromDb, Schema } from '~/types';
 
 export const c_init = async () => {
@@ -23,17 +23,19 @@ export const c_save_file = async ({
   record,
   forced = false,
   createNew = false,
+  errorBinds,
 }: {
   record: RecordFromDb;
   /** Will write file event if modified from passed record is lower that on disk  */
   forced?: boolean;
   /** Ensures unique filename for file and skips modified check */
   createNew?: boolean;
+  errorBinds?: CodeBindsForError;
 }) => {
   return invoke('c_save_file', { record, forced, createNew })
     .then((v) => v as ExtractIpcResponseType<'c_save_file'>)
     .catch((e) => {
-      handleMaybeOurError({ e });
+      handleMaybeOurError({ e, codeBinds: errorBinds });
       throw e;
     });
 };

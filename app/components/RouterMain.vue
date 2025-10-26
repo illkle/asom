@@ -11,56 +11,48 @@
       <template #error="{ error }">
         <PageError :message="String(error)" />
       </template>
-      <template #default>
+      <template #default :key="tabKey">
         <RecordEditor
           v-if="tabsStore.openedItem._type === 'file'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'file'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
         <ListViewWrapper
           v-else-if="tabsStore.openedItem._type === 'folder'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'table'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
         <SchemaEditor
           v-else-if="tabsStore.openedItem._type === 'settings'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'schema'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
         <LayoutEditor
           v-else-if="tabsStore.openedItem._type === 'settings/layout'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'layout'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
 
         <ApiConnection
           v-else-if="tabsStore.openedItem._type === 'settings/api'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'api'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
 
         <SchemaFieldsEditor
           v-else-if="tabsStore.openedItem._type === 'settings/schema'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'schemaFields'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
         <ApiCredentials
           v-else-if="tabsStore.openedItem._type === 'settings/apiCredentials'"
           :opened="tabsStore.openedItem"
-          :key="tabsStore.openedTabActiveId + tabsStore.openedItem._path + 'apiCredentials'"
           :class="{ 'rounded-tl': !isFirstTab }"
         />
 
         <GoodreadsImporter
           v-else-if="tabsStore.openedItem._type === 'innerPage/goodreadsImporter'"
         />
-
         <TestPage v-else-if="tabsStore.openedItem._type === 'innerPage/test'" />
       </template>
     </NuxtErrorBoundary>
@@ -90,6 +82,16 @@ const tabsStore = useTabsStoreV2();
 
 const isFirstTab = computed(() => {
   return tabsStore.openedTabActiveIndex === 0;
+});
+
+const tabKey = computed(() => {
+  if (!tabsStore.openedTabActiveId) return null;
+
+  return [
+    tabsStore.openedTabActiveId,
+    tabsStore.openedItem?._path,
+    tabsStore.openedItem?._type,
+  ].join('-');
 });
 </script>
 

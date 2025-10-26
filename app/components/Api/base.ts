@@ -184,6 +184,10 @@ export const getCoversionModes = (
     return null;
   }
 
+  if (sourceType === targetType) {
+    return 'default';
+  }
+
   if (typeof apiValueConverters[sourceType].conversions[targetType] === 'function') {
     return 'default';
   }

@@ -1,11 +1,11 @@
 <template>
-  <Dialog v-model:open="modalOpened" @update:open="mainInputValue = ''">
+  <Dialog v-model:open="modalOpened">
     <DialogTrigger class="w-full" as-child>
       <slot name="default" />
     </DialogTrigger>
 
     <DialogContent class="p-2 gap-0 top-[20vh] translate-y-0" hide-close>
-      <DialogTitle></DialogTitle>
+      <DialogTitle> </DialogTitle>
       <div ref="wrapperRef">
         <KeyboardListItem
           is-default
@@ -62,6 +62,7 @@ import type { Schema } from '~/types';
 const props = defineProps<{
   selectedSchema: Schema;
   selectedSchemaPath: string;
+  initialValue?: string;
 }>();
 
 const emit = defineEmits<{
@@ -70,6 +71,12 @@ const emit = defineEmits<{
 }>();
 
 const modalOpened = defineModel<boolean>('opened');
+
+watch(modalOpened, (v) => {
+  if (v) {
+    mainInputValue.value = props.initialValue ?? '';
+  }
+});
 
 const apiConnection = useApiConnection(computed(() => props.selectedSchemaPath));
 
@@ -80,8 +87,6 @@ const wrapperRef = useTemplateRef('wrapperRef');
 const kb = useKeyboardListManager(wrapperRef);
 
 provideResultGenericWrapper(KeyboardListItem);
-
-const isMac = useIsMac();
 
 const hasApi = computed(() => {
   return apiConnection.q.data.value && apiConnection.q.data.value.type !== 'none';

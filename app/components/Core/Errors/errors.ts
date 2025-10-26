@@ -8,13 +8,15 @@ export function isOurError(v: unknown): v is ErrFR {
   return Boolean(v && typeof v === 'object' && 'isError' in v && v.isError === true);
 }
 
+export type CodeBindsForError = Partial<Record<ErrFRActionCode, () => void>>;
+
 /** Used to handle error when it might come from us or from unknown source */
 export const handleMaybeOurError = ({
   e,
   codeBinds,
 }: {
   e: unknown;
-  codeBinds?: Partial<Record<ErrFRActionCode, () => void>>;
+  codeBinds?: CodeBindsForError;
 }) => {
   console.error(e);
   if (!isOurError(e)) {

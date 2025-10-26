@@ -1,4 +1,12 @@
-use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
+
+use sqlx::{
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    Pool, Sqlite,
+};
 
 #[derive(Debug)]
 pub struct DatabaseConnection {
@@ -6,10 +14,11 @@ pub struct DatabaseConnection {
 }
 
 pub enum InitMode {
+    /* I used in-memory originally, but it seems to randomly drop whole db after some time of using the app. Unsure why, so for now InMemory is just for running tests. */
     #[allow(dead_code)]
     InMemory,
     #[allow(dead_code)]
-    InFolder,
+    InFolder(PathBuf),
 }
 
 impl DatabaseConnection {
@@ -20,7 +29,7 @@ impl DatabaseConnection {
     pub async fn init(&mut self, mode: InitMode) -> Result<(), sqlx::Error> {
         match mode {
             InitMode::InMemory => self.init_in_memory().await,
-            InitMode::InFolder => self.init_in_folder().await,
+            InitMode::InFolder(folder_path) => self.init_in_folder(&folder_path).await,
         }
 
         self.create_tables().await
@@ -38,11 +47,20 @@ impl DatabaseConnection {
     }
 
     #[allow(dead_code)]
-    pub async fn init_in_folder(&mut self) {
+    pub async fn init_in_folder(&mut self, folder_path: &Path) {
+        let path = folder_path.join("asom_files_folders_cache.db");
+
+        log::info!("database_conn: in folder {}", path.to_string_lossy());
+
+        let conn_options =
+            SqliteConnectOptions::from_str(&format!("sqlite:///{}", path.to_string_lossy()))
+                .unwrap()
+                .create_if_missing(true);
+
         let conn = SqlitePoolOptions::new()
             .max_connections(20)
             .min_connections(1)
-            .connect("sqlite://files.db")
+            .connect_with(conn_options)
             .await
             .unwrap();
         self.conn = Some(conn);
@@ -77,6 +95,7 @@ impl DatabaseConnection {
 
     pub async fn wipe_db(&self) -> Result<(), sqlx::Error> {
         let conn = self.get_conn().await;
+        log::info!("database_conn: wiping db");
         sqlx::query("DELETE FROM files;").execute(&conn).await?;
         sqlx::query("DELETE FROM folders;").execute(&conn).await?;
         Ok(())

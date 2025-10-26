@@ -1,11 +1,12 @@
 <template>
   <div
     ref="scrollElementRef"
+    data-scroll-element
     class="w-full overflow-y-auto overflow-x-hidden bg-background overscroll-none h-full scrollbarMod gutter-stable px-4"
   >
     <div class="max-w-3xl mx-auto w-full pb-4 box-border pt-4">
       <div
-        class="sticky -top-10 z-10 empty:hidden pb-4 bg-gradient-to-b from-background to-transparent from-[calc(100%-8px)]"
+        class="sticky -top-10 z-10 empty:hidden pb-4 bg-linear-to-b from-background to-transparent from-[calc(100%-8px)]"
         :class="[$slots.header ? '-top-10' : '-top-13']"
       >
         <div class="flex items-baseline gap-2 not-last:pb-2">

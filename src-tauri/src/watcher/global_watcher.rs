@@ -20,8 +20,6 @@ pub struct GlobalWatcher {
 impl GlobalWatcher {
     pub fn new<T: tauri::Runtime>(app: AppHandle<T>) -> notify::Result<Self> {
         let (wc_sender, mut wc_receiver) = tokio::sync::mpsc::channel(10000);
-        //let dropped_events = Arc::new(AtomicU64::new(0));
-        //let dropped_events_clone = dropped_events.clone();
 
         // FS watch process
         let watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {

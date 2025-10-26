@@ -13,7 +13,7 @@ import { useTipTap } from '~/composables/useTipTap';
  * 1) timestamp from remoteValue\editableProxy will become wrong after we start sending updates. Real timestamp is max(lastSyncedTimestamp, editableProxy['timestampLocation']).
  * 2) this assumes that timestamp on editableProxy is never mutated, we are comparing it on changes to editableProxy to determine if update was made by user or by remote.
  */
-export const useSyncedValue = <T>({
+export const useSyncedValue = <T, UpdaterConfig>({
   remoteValue,
   getTimestamp,
   setTimestamp,
@@ -26,7 +26,7 @@ export const useSyncedValue = <T>({
   getKey: (v: T) => string;
   getTimestamp: (v: T | undefined) => Date;
   setTimestamp: (v: T, ts: Date) => void;
-  updater: (v: T) => Promise<Date>;
+  updater: (v: T, args?: UpdaterConfig) => Promise<Date>;
   onExternalUpdate: (v: T) => void;
   changesTracker: Ref<number>;
 }) => {
@@ -59,14 +59,14 @@ export const useSyncedValue = <T>({
     { immediate: true },
   );
 
-  const performUpdate = async () => {
+  const performUpdate = async (args?: UpdaterConfig) => {
     try {
       const stateToSave = cloneDeep(editableProxy.value);
       if (lastSyncedTimestamp.value) {
         setTimestamp(stateToSave, lastSyncedTimestamp.value);
       }
       const changesCopy = changesTracker.value;
-      const newTimestamp = await updater(stateToSave);
+      const newTimestamp = await updater(stateToSave, args);
       lastSyncedTimestamp.value = newTimestamp;
       changesTracker.value -= changesCopy;
     } catch (e) {
@@ -137,13 +137,23 @@ export const useFileEditorV2 = (
       createOrUpdateEditor(v?.record.record.markdown ?? '');
     },
     getKey: (v) => v.record.record.path ?? '',
-    updater: async (v) => {
-      console.log('updater', v);
+    updater: async (v, args?: { forced?: boolean }) => {
       if (!v) throw new Error('No value to save');
 
       const data = v.record;
       data.record.markdown = getEditorState() ?? '';
-      const res = await c_save_file({ record: data.record });
+      const res = await c_save_file({
+        record: data.record,
+        forced: args?.forced,
+        errorBinds: {
+          FileSaveRetry: () => {
+            performUpdate();
+          },
+          FileSaveRetryForced: () => {
+            performUpdate({ forced: true });
+          },
+        },
+      });
       return new Date(Number(res.modified));
     },
   });

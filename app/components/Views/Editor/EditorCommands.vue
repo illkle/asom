@@ -119,6 +119,7 @@
       <Button
         variant="toggle"
         size="sm"
+        :class="{ 'bg-accent': tiptap.isActive('horizontalRule') }"
         @click="runCommand(insertHorizontalRule)"
         title="Horizontal Rule"
       >

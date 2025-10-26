@@ -59,6 +59,7 @@
   <AddAndSearch
     v-if="schema"
     v-model:opened="fillFromApiDialog"
+    :initial-value="fillFromApiInitialValue"
     :selected-schema="schema.schema"
     :selected-schema-path="schema.location.schema_owner_folder"
     @handle-add-from-api="handleFillFromApiMutation.mutate"
@@ -117,6 +118,7 @@ import {
   PencilIcon,
   Trash2Icon,
 } from 'lucide-vue-next';
+import type { useFileEditorV2 } from '~/composables';
 
 const props = defineProps({
   opened: {
@@ -139,6 +141,18 @@ const deleteDialog = ref(false);
 const fillFromApiDialog = ref(false);
 const renameDialog = ref(false);
 const newName = ref('');
+
+const fillFromApiInitialValue = computed(() => {
+  const fieldName = schema.value?.schema.fill_api_search_from;
+
+  if (!fieldName) {
+    return '';
+  }
+
+  const fieldValue = props.fileEditor.fileQ.data.value?.record.record.attrs[fieldName]?.value;
+
+  return typeof fieldValue === 'string' ? fieldValue : '';
+});
 
 const startRename = async () => {
   renameDialog.value = true;

@@ -1,8 +1,7 @@
 <template>
-  <div class="grid grid-cols-3 gap-y-2 gap-x-4 w-full odd:bg-accent/20 p-2 items-center">
+  <div class="grid grid-cols-2 gap-y-2 gap-x-4 w-full p-3 items-center">
     <div class="text-xs text-muted-foreground">API</div>
     <div class="text-xs text-muted-foreground">Schema</div>
-    <div class="text-xs text-muted-foreground">Conversion mode</div>
 
     <template v-for="(apiFieldType, apiFieldName) in apiSchema" :key="apiFieldName" class="">
       <div>
@@ -58,40 +57,6 @@
           <SelectItem :value="null" class="opacity-50"> None </SelectItem>
         </SelectContent>
       </Select>
-
-      <div v-if="getAssignedSchemaItemByApiName(apiFieldName)">
-        <template
-          v-for="value in [
-            getCoversionModes(
-              apiSchema[apiFieldName] ?? null,
-              getTypeForSchemaItemByApiName(apiFieldName),
-            ),
-          ]"
-        >
-          <template v-if="Array.isArray(value)">
-            <!-- Conversion mode select -->
-            <Select
-              :model-value="mapping[apiFieldName as string]?.mode ?? null"
-              @update:model-value="
-                (v) => {
-                  emit('updateModeByKey', apiFieldName as string, v as string);
-                }
-              "
-              :options="value"
-            >
-              <SelectTrigger class="w-full">
-                {{ mapping[apiFieldName as string]?.mode || 'Default' }}
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem v-for="item in value" :key="item" :value="item">
-                  {{ item }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </template>
-        </template>
-      </div>
-      <div v-else></div>
     </template>
   </div>
 </template>

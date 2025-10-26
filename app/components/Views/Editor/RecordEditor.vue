@@ -51,6 +51,7 @@ import MetaEditor from './Meta/MetaEditor.vue';
 import FileControls from './FileControls.vue';
 import LayoutWarning from './LayoutWarning.vue';
 import EditorCommands from '~/components/Views/Editor/EditorCommands.vue';
+import { useFileEditorV2 } from '~/composables';
 
 const props = defineProps({
   opened: {

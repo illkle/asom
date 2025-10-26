@@ -190,6 +190,7 @@ impl CoreStateManager {
         &self,
         app: &AppHandle<T>,
     ) -> Result<(), Box<ErrFR>> {
+        log::info!("initializing cache");
         let rp = self.context.root_path_safe().await?;
 
         self.context.schemas_cache.clear_cache().await;

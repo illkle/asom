@@ -1,9 +1,26 @@
 import type { ShallowRef } from 'vue';
 
+import { ListKit } from '@tiptap/extension-list';
+import { TableKit } from '@tiptap/extension-table';
+
 import { Markdown } from '@tiptap/markdown';
 import StarterKit from '@tiptap/starter-kit';
+
 import { Editor } from '@tiptap/vue-3';
-export const tiptapExtensions = [StarterKit, Markdown];
+
+export const tiptapExtensions = [
+  StarterKit.configure({
+    listItem: false,
+    listKeymap: false,
+    bulletList: false,
+    orderedList: false,
+  }),
+  Markdown,
+  ListKit,
+  TableKit.configure({
+    table: { resizable: true },
+  }),
+];
 
 export const useTipTap = ({
   editorTemplateRef,
