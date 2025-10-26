@@ -20,7 +20,15 @@ async fn test_init_basic() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
 
-    let init_result = core.init(&app).await;
+    let init_result = core.initialize_on_root_path(&app).await;
+
+    if init_result.is_err() {
+        println!(
+            "Error initializing on root path: {:?}",
+            init_result.clone().unwrap_err()
+        );
+    }
+
     assert!(init_result.is_ok());
 }
 
@@ -49,18 +57,9 @@ async fn test_basic_file_ops() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
 
-    let init_result = core.init(&app).await;
-    assert!(init_result.is_ok());
-
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
 
     let empty_path_buf = PathBuf::from("");
-
-    let prepare_cache_result = core.prepare_cache(&app).await;
-    assert!(prepare_cache_result.is_ok());
-
-    let watch_path_result = core.watch_path().await;
-    assert!(watch_path_result.is_ok());
 
     {
         let files = get_files_abstract(&core.context, "".to_string()).await;

@@ -28,6 +28,7 @@ use tokio::runtime::Runtime;
 use ts_rs::TS;
 use utils::errorhandling::ErrFR;
 
+use crate::cache::dbconn::InitMode;
 use crate::files::utils::get_unique_path;
 use crate::utils::helpers::{get_breadcrumb_items, normalize_path_to_os, FileBreadCrumbs};
 
@@ -84,8 +85,7 @@ struct IPCResponces {
 async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
     log::info!("c_init invoked");
     let core = app.state::<CoreStateManager>();
-    core.init(&app).await?;
-    core.init_cache_on_root(&app).await?;
+    core.initiazize_on_root_path_from_disk(&app).await?;
     Ok(core.context.cached_root_path().await)
 }
 
@@ -93,7 +93,7 @@ async fn c_init<T: tauri::Runtime>(app: AppHandle<T>) -> IPCInit {
 async fn c_get_root_path<T: tauri::Runtime>(app: AppHandle<T>) -> IPCGetRootPath {
     log::info!("c_get_root_path invoked");
     let core = app.state::<CoreStateManager>();
-    core.load_root_path_from_store(&app).await
+    Ok(core.context.root_path_option().await)
 }
 
 #[tauri::command]
@@ -306,6 +306,7 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
             c_create_folder_for_default_schema
         ])
         .setup(|app| {
+            log::info!("Setting up app");
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()
                     .level(log::LevelFilter::Info)
@@ -322,12 +323,12 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
                     .build(),
             )?;
 
-            let mut state = CoreStateManager::new();
+            let mut state = CoreStateManager::new(app.handle().clone());
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
                 // Can be used to debug, but does not work with e2e testing
-                //state.context.database_conn.init_in_folder().await;
-                state.context.database_conn.init_in_memory().await;
+                //state.context.database_conn.init(InitMode::InFolder).await;
+                let _ = state.context.database_conn.init(InitMode::InMemory).await;
             });
 
             app.manage(state);

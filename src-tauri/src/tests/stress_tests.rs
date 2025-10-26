@@ -20,16 +20,7 @@ async fn test_quick_file_creation() {
     let app = app_creator().await;
     let core = app.state::<CoreStateManager>();
 
-    let init_result = core.init(&app).await;
-    assert!(init_result.is_ok());
-
     let (test_dir, _) = prepare_test_case(&app, TestCaseName::Basic).await;
-
-    let prepare_cache_result = core.prepare_cache(&app).await;
-    assert!(prepare_cache_result.is_ok());
-
-    let watch_path_result = core.watch_path().await;
-    assert!(watch_path_result.is_ok());
 
     {
         let files = get_files_abstract(&core.context, "".to_string()).await;

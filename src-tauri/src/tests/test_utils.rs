@@ -1,8 +1,8 @@
-use std::{thread::sleep, time::Duration};
+use std::time::Duration;
 
 use tauri::{test::MockRuntime, AppHandle, Manager};
 
-use crate::{core::core_state::CoreStateManager, create_mock_app};
+use crate::{cache::dbconn::InitMode, core::core_state::CoreStateManager, create_mock_app};
 
 use std::{
     env::current_dir,
@@ -16,8 +16,13 @@ use fs_extra::dir::{self, CopyOptions};
 pub async fn app_creator() -> AppHandle<MockRuntime> {
     let app = create_mock_app();
 
-    let mut state = CoreStateManager::new();
-    state.context.database_conn.init_in_memory().await;
+    let mut state = CoreStateManager::new(app.handle().clone());
+    state
+        .context
+        .database_conn
+        .init(InitMode::InMemory)
+        .await
+        .unwrap();
 
     app.manage(state);
     app.handle().to_owned()
@@ -101,20 +106,20 @@ pub async fn prepare_test_case(
     .unwrap();
 
     let core = app.state::<CoreStateManager>();
-    let init_result = core.init(app).await;
-    assert!(init_result.is_ok());
-
-    // Wait init to start monitor process
-    sleep(Duration::from_millis(100));
 
     core.test_only_set_root_path(test_dir.to_string_lossy().to_string())
         .await;
 
-    let prepare_cache_result = core.prepare_cache(app).await;
-    assert!(prepare_cache_result.is_ok());
+    let init_result = core.initialize_on_root_path(app).await;
 
-    let watch_path_result = core.watch_path().await;
-    assert!(watch_path_result.is_ok());
+    if init_result.is_err() {
+        println!(
+            "Error initializing on root path: {:?}",
+            init_result.clone().unwrap_err()
+        );
+    }
+
+    assert!(init_result.is_ok());
 
     (test_dir, test_case_uuid)
 }

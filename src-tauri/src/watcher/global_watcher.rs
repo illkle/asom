@@ -1,52 +1,75 @@
-use log::{error, warn};
+use log::error;
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
-use tokio::sync::{broadcast, Mutex};
+use tauri::{AppHandle, Manager};
+
+use tokio::time::{sleep, Duration};
+use tokio::{select, sync::Mutex};
+
+use crate::{
+    core::core_state::CoreStateManager, emitter::emit_event_to_frontend,
+    utils::errorhandling::send_err_to_frontend, watcher::event_handlers::handle_event,
+};
 
 #[derive(Debug)]
 pub struct GlobalWatcher {
     watcher: RecommendedWatcher,
-    sender: broadcast::Sender<Event>,
     current_path: Mutex<Option<String>>,
-    #[allow(dead_code)]
-    dropped_events: Arc<AtomicU64>,
 }
 
 impl GlobalWatcher {
-    pub fn new() -> notify::Result<Self> {
-        let (sender, _) = broadcast::channel(10000);
-        let sender_clone = sender.clone();
-        let dropped_events = Arc::new(AtomicU64::new(0));
-        let dropped_events_clone = dropped_events.clone();
+    pub fn new<T: tauri::Runtime>(app: AppHandle<T>) -> notify::Result<Self> {
+        let (wc_sender, mut wc_receiver) = tokio::sync::mpsc::channel(10000);
+        //let dropped_events = Arc::new(AtomicU64::new(0));
+        //let dropped_events_clone = dropped_events.clone();
 
+        // FS watch process
         let watcher = notify::recommended_watcher(move |res: notify::Result<Event>| match res {
-            Ok(event) => match sender_clone.send(event) {
-                Ok(_) => (),
-                Err(err) => {
-                    error!("watcher error sending event: {:?}", err);
-                    dropped_events_clone.fetch_add(1, Ordering::SeqCst);
-                    warn!(
-                        "watcher dropped event due to full channel. Total dropped: {}",
-                        dropped_events_clone.load(Ordering::SeqCst)
-                    );
+            Ok(event) => {
+                if let Err(e) = wc_sender.blocking_send(event) {
+                    error!("watcher error sending event: {:?}", e);
                 }
-            },
+            }
             Err(err) => {
                 error!("watcher error receiving event: {:?}", err);
             }
         })?;
 
+        // Handle events from FS watch process and send to cache\frontend
+        tauri::async_runtime::spawn({
+            async move {
+                loop {
+                    select! {
+                        Some(event) = wc_receiver.recv() => {
+                            log::trace!("received event {:?}", event);
+                            let app_clone = app.clone();
+                            let st = app_clone.try_state::<CoreStateManager>();
+                            if st.is_none() {
+                                log::error!("Trying to handle event but CoreStateManager not found in app");
+                                return;
+                            }
+
+                            let res = handle_event(&st.unwrap().context, event).await;
+                            for event in res.events {
+                                emit_event_to_frontend(&app, event).await;
+                            }
+                            for error in res.errors {
+                                send_err_to_frontend(&app, &error);
+                            }
+                        }
+                        _ = sleep(Duration::from_millis(50)) => (),
+                    }
+                }
+            }
+        });
+
         Ok(GlobalWatcher {
             watcher,
-            sender,
             current_path: Mutex::new(None),
-            dropped_events,
         })
     }
 
-    pub async fn watch_path(&mut self, path: &str) -> notify::Result<()> {
+    pub async fn set_watch_path(&mut self, path: &str) -> notify::Result<()> {
         if let Some(current_path) = self.current_path.lock().await.take() {
             self.watcher.unwatch(Path::new(&current_path))?;
         }
@@ -57,9 +80,5 @@ impl GlobalWatcher {
         *self.current_path.lock().await = Some(path.to_string());
 
         Ok(())
-    }
-
-    pub async fn subscribe_to_events(&self) -> broadcast::Receiver<Event> {
-        self.sender.subscribe()
     }
 }
