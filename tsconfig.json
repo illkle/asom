@@ -15,17 +15,6 @@
     }
   ],
   "compilerOptions": {
-    /* Temporary fix for shadcn-nuxt not properly supporting nuxt4 */
-    "baseUrl": ".",
-    "paths": {
-      "@app/*": ["./app/*"],
-      "~/*": ["./app/*"],
-      "@app/components": ["./app/components"],
-      "@app/composables": ["./app/composables"],
-      "@app/lib/utils": ["./app/lib/utils"],
-      "@app/components/ui": ["./app/components/ui"],
-      "@app/lib": ["./app/lib"]
-    },
     "types": ["@wdio/globals/types", "@wdio/mocha-framework", "expect-webdriverio"]
   }
 }

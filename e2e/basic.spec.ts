@@ -3,6 +3,12 @@ import { expect } from 'expect-webdriverio';
 import fs from 'fs/promises';
 import path from 'path';
 import ShortUniqueId from 'short-unique-id';
+import {
+  setDateFieldValue,
+  setNumberFieldValue,
+  setTextCollectionFieldValue,
+  setTextFieldValue,
+} from './inputSetters';
 
 const uid = new ShortUniqueId({ length: 10 });
 
@@ -274,6 +280,10 @@ describe('Essential flow', () => {
     }
 
     await expect(main).toHaveText(expect.stringContaining('Unused items: 0'));
+  });
+
+  it('Update file using editor', async () => {
+    const main = await $('main');
 
     const backButton = await $('[data-button-back]');
     await expect(backButton).toBeExisting();
@@ -298,5 +308,13 @@ describe('Essential flow', () => {
     await expect(dateCollectionField).toBeExisting();
     await expect(datesPairCollectionField).toBeExisting();
     await expect(imageField).toBeExisting();
+
+    await setTextFieldValue(textField, 'testValue');
+    await setNumberFieldValue(numberField, 123);
+
+    await setTextCollectionFieldValue(textCollectionField, ['testValue', 'testValue2']);
+
+    await setDateFieldValue(dateField, 2024, 2, 14);
+    await expect(dateField).toHaveText(expect.stringContaining('14 Mar 2024'));
   });
 });

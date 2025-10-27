@@ -79,7 +79,7 @@ const formatter = useDateFormatter('en');
             }
           "
         >
-          <SelectTrigger aria-label="Select month" class="w-21">
+          <SelectTrigger data-calendar-month-select-trigger aria-label="Select month" class="w-21">
             <SelectValue placeholder="Select month" />
           </SelectTrigger>
           <SelectContent class="max-h-[200px]">
@@ -94,6 +94,7 @@ const formatter = useDateFormatter('en');
         </Select>
         <NumberField
           v-if="date"
+          data-calendar-year-input
           :model-value="date.year"
           :format-options="{
             useGrouping: false,

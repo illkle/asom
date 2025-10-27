@@ -1,7 +1,7 @@
 <template>
   <ContextMenu v-if="imagePath">
-    <ContextMenuTrigger>
-      <div class="w-full rounded-md overflow-hidden" :style="ar">
+    <ContextMenuTrigger :as-child="true">
+      <div v-bind="$attrs" class="w-full rounded-md overflow-hidden" :style="ar">
         <img :src="imagePath" class="w-full h-full object-cover object-center" draggable="false" />
       </div>
     </ContextMenuTrigger>
@@ -16,8 +16,9 @@
   </ContextMenu>
   <div
     v-else-if="imageName"
-    class="flex flex-col shrink-1 items-center justify-center border p-1.5 rounded-md text-xs text-muted-foreground text-center"
+    class="flex flex-col shrink items-center justify-center border p-1.5 rounded-md text-xs text-muted-foreground text-center"
     :style="ar"
+    v-bind="$attrs"
     @click="changeImageHandler"
   >
     File not found
@@ -26,6 +27,7 @@
     class="relative w-full rounded-md border flex items-center flex-col justify-center"
     :style="ar"
     v-else
+    v-bind="$attrs"
     @click="changeImageHandler"
   >
     <CommonLabel v-if="!hideLabel">{{ name }}</CommonLabel>
