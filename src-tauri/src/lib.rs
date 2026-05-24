@@ -310,7 +310,6 @@ pub fn create_app<T: tauri::Runtime>(builder: tauri::Builder<T>) -> tauri::App<T
 
             #[cfg(not(debug_assertions))]
             {
-                log_plugin = log_plugin;
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
                         .level(log::LevelFilter::Info)
