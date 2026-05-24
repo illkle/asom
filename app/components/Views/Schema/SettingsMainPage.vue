@@ -94,7 +94,7 @@ import { c_save_schema } from '~/api/tauriActions';
 import { path } from '@tauri-apps/api';
 import { mkdir } from '@tauri-apps/plugin-fs';
 import { computedAsync } from '@vueuse/core';
-import { FolderIcon, PlusIcon } from 'lucide-vue-next';
+import { FolderIcon, PlusIcon } from '@lucide/vue';
 import { selectAndSetRootPath } from '~/api/rootPath';
 import FolderNodeSchema from '~/components/Views/Schema/FolderNodeSchema.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';

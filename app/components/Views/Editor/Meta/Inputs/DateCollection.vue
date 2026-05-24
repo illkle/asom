@@ -34,7 +34,7 @@
 
 <script lang="ts" setup>
 import { format, parse } from 'date-fns';
-import { PlusIcon, XIcon } from 'lucide-vue-next';
+import { PlusIcon, XIcon } from '@lucide/vue';
 import CommonLabel from './CommonLabel.vue';
 import DateInput from './Date.vue';
 

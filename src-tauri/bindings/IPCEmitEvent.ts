@@ -12,5 +12,5 @@ export type IPCEmitEvent =
   | { type: 'FolderRemove'; data: FolderEventData }
   | { type: 'FolderAdd'; data: FolderEventData }
   | { type: 'ErrorHappened'; data: ErrFR }
-  | { type: 'SchemasUpdated'; data: { [key in string]?: Schema } }
+  | { type: 'SchemasUpdated'; data: { [key in string]: Schema } }
   | { type: 'EventOverflow'; data: number };

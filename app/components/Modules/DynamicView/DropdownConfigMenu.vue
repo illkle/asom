@@ -63,7 +63,7 @@
     <DropdownMenuSubContent>
       <DropdownMenuRadioGroup
         :model-value="style.gap"
-        @update:model-value="(v) => emit('update:style', { ...style, gap: v })"
+        @update:model-value="(v) => emit('update:style', { ...style, gap: String(v) })"
       >
         <DropdownMenuRadioItem value="0"> 0 </DropdownMenuRadioItem>
         <DropdownMenuRadioItem value="4"> 4 </DropdownMenuRadioItem>
@@ -79,7 +79,7 @@
     <DropdownMenuSubContent>
       <DropdownMenuRadioGroup
         :model-value="style.sizeUnits"
-        @update:model-value="(v) => emit('update:style', { ...style, sizeUnits: v })"
+        @update:model-value="(v) => emit('update:style', { ...style, sizeUnits: String(v) })"
       >
         <DropdownMenuRadioItem value="1"> 1 </DropdownMenuRadioItem>
         <DropdownMenuRadioItem value="2"> 2 </DropdownMenuRadioItem>

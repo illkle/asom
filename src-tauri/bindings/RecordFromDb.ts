@@ -5,5 +5,5 @@ export type RecordFromDb = {
   path: string | null;
   modified: number;
   markdown: string | null;
-  attrs: { [key in string]?: AttrValue };
+  attrs: { [key in string]: AttrValue };
 };

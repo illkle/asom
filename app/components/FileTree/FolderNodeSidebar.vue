@@ -79,6 +79,11 @@
       v-if="isCreating"
       :style="`padding-left: ${item.level + 1 - 1}rem`"
       class="flex items-center w-full gap-2"
+      @blur="
+        () => {
+          isCreating = false;
+        }
+      "
     >
       <Input
         ref="inputRefCreate"
@@ -86,19 +91,14 @@
         @keydown.stop
         @keyup.stop
         @keyup.enter="createFolder"
-        @blur="
-          () => {
-            isCreating = false;
-          }
-        "
       />
-      <Button variant="ghost" size="sm" @click="createFolder"> <PlusIcon /> </Button>
+      <Button variant="ghost" size="sm" @click.prevent="createFolder"> <PlusIcon /> </Button>
     </div>
   </TreeItem>
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, FolderIcon, PlusIcon } from 'lucide-vue-next';
+import { ChevronDown, FolderIcon, PlusIcon } from '@lucide/vue';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
 import { Button } from '~/components/ui/button';
@@ -124,7 +124,6 @@ const props = defineProps<{
 const rootPath = useRootPathInjectSafe();
 
 const isCreatingFolder = ref(false);
-const newFolderName = ref('');
 
 const inputRef = useTemplateRef<{ inputRef?: HTMLInputElement }>('inputRef');
 
@@ -140,8 +139,6 @@ const hasChildren = computed(() => props.item.value.children.length > 0);
 
 const isRenaming = ref(false);
 const isCreating = ref(false);
-
-const focusLock = ref(false);
 
 const startRenaming = async () => {
   if (isRenaming.value) return;
@@ -172,7 +169,10 @@ const renameFolder = async () => {
     const oldPath = props.item.value.rawPath;
     const onlyDir = await path.dirname(oldPath);
     const newPath = await path.join(onlyDir, newName);
-    await rename(oldPath, newPath);
+    await rename(
+      await path.join(rootPath.value, oldPath),
+      await path.join(rootPath.value, newPath),
+    );
 
     ts._handlePathRename(oldPath, newPath);
   }
@@ -182,7 +182,7 @@ const renameFolder = async () => {
 
 const createFolder = async () => {
   if (!isCreating.value) return;
-  const newPath = await path.join(props.item.value.rawPath, nameValue.value);
+  const newPath = await path.join(rootPath.value, props.item.value.rawPath, nameValue.value);
   await mkdir(newPath);
 
   isCreating.value = false;

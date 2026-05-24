@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
+use sqlx::{sqlite::SqliteRow, AssertSqlSafe, Row};
 use std::collections::HashMap;
 use std::path::Path;
 use ts_rs::TS;
@@ -21,6 +21,7 @@ pub struct RecordFromDb {
     pub attrs: HashMap<String, AttrValue>,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub async fn get_files_abstract(
     ctx: &AppContext,
     where_clause: String,
@@ -30,30 +31,34 @@ pub async fn get_files_abstract(
         where_clause
     );
 
-    let res = sqlx::query(&q)
+    let res = sqlx::query(AssertSqlSafe(q.clone()))
         .fetch_all(&ctx.database_conn.get_conn().await)
         .await
         .map_err(|e| ErrFR::new("Error when getting files").raw(format!("{}\n\n{}", e, q)))?;
 
-    let result_iter = res.iter().filter_map(|r| {
-        let attrs_raw = r.get("attributes");
+    Ok(records_from_rows(&res))
+}
 
-        let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
-            .map_err(|e| ErrFR::new("Error when parsing attributes").raw(e));
+fn records_from_rows(rows: &[SqliteRow]) -> Vec<RecordFromDb> {
+    rows.iter()
+        .filter_map(|r| {
+            let attrs_raw = r.get("attributes");
 
-        let path: Option<String> = r.get("path");
+            let attrs = serde_json::from_str::<HashMap<String, AttrValue>>(attrs_raw)
+                .map_err(|e| ErrFR::new("Error when parsing attributes").raw(e));
 
-        path.as_ref()?;
+            let path: Option<String> = r.get("path");
 
-        Some(RecordFromDb {
-            path,
-            modified: r.get("modified"),
-            attrs: attrs.unwrap(),
-            markdown: None,
+            path.as_ref()?;
+
+            Some(RecordFromDb {
+                path,
+                modified: r.get("modified"),
+                attrs: attrs.unwrap(),
+                markdown: None,
+            })
         })
-    });
-
-    Ok(result_iter.collect())
+        .collect()
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, TS)]
@@ -68,14 +73,16 @@ pub async fn get_files_by_path(
     path: &Path,
 ) -> Result<RecordListGetResult, Box<ErrFR>> {
     let schema = ctx.schemas_cache.get_schema_safe(path).await?;
-    let records = get_files_abstract(
-        ctx,
-        format!(
-            "WHERE files.path LIKE concat('{}', '%') ORDER BY path",
-            path.to_string_lossy()
-        ),
+    let path = path.to_string_lossy().to_string();
+    let records = sqlx::query(
+        "SELECT path, modified, attributes FROM files WHERE files.path LIKE concat(?1, '%') ORDER BY path",
     )
-    .await?;
+    .bind(path)
+    .fetch_all(&ctx.database_conn.get_conn().await)
+    .await
+    .map_err(|e| ErrFR::new("Error when getting files").raw(e))
+    .map(|rows| records_from_rows(&rows))?;
+
     Ok(RecordListGetResult { schema, records })
 }
 
@@ -148,13 +155,11 @@ pub async fn get_all_folders_by_schema(
         false => schema_path_relative,
     };
 
-    let res = sqlx::query(&format!(
-        "SELECT * FROM folders WHERE path LIKE concat('{}', '%')",
-        schema_folder.to_string_lossy()
-    ))
-    .fetch_all(&ctx.database_conn.get_conn().await)
-    .await
-    .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
+    let res = sqlx::query("SELECT * FROM folders WHERE path LIKE concat(?1, '%')")
+        .bind(schema_folder.to_string_lossy().to_string())
+        .fetch_all(&ctx.database_conn.get_conn().await)
+        .await
+        .map_err(|e| ErrFR::new("Error getting folder list").raw(e))?;
 
     let lock = ctx.schemas_cache.get_read_lock().await;
 

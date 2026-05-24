@@ -1,6 +1,6 @@
 [package]
 name = "asom"
-version = "0.2.11"
+version = "0.2.12"
 description = "Anti Social Opinion Manager"
 authors = ["Kirill Kleimenov"]
 license = ""
@@ -27,7 +27,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_with = "3"
 serde_yml = "0"
-sqlx = { version = "0.8", features = [ "runtime-tokio", "sqlite", "macros", ] }
+sqlx = { version = "0.9", features = [ "runtime-tokio", "sqlite", "macros", ] }
 tauri = { version = "2", features = ["protocol-asset", "test"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = { version = "2", features = ["watch"] }
@@ -40,7 +40,7 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-store = "2"
 tokio = { version = "1", features = ["sync"] }
 trash = "5"
-ts-rs = { version = "11", features = ["serde-compat", "serde-json-impl"] }
+ts-rs = { version = "12", features = ["serde-compat", "serde-json-impl"] }
 uuid = { version = "1", features = ["v4"] }
 walkdir = "2"
 
@@ -48,7 +48,7 @@ walkdir = "2"
 tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]
-tempfile = "3.23"
+tempfile = "3.27"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

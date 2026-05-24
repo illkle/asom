@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts" setup>
-import { FileIcon, FolderIcon, SettingsIcon, XIcon } from 'lucide-vue-next';
+import { FileIcon, FolderIcon, SettingsIcon, XIcon } from '@lucide/vue';
 
 import { computed, type PropType } from 'vue';
 import type { ITabEntry } from '~/composables/stores/useTabsStoreV2';

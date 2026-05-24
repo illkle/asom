@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { c_load_schema, c_save_schema } from '~/api/tauriActions';
 
-import { TriangleAlert } from 'lucide-vue-next';
+import { TriangleAlert } from '@lucide/vue';
 import PageTemplate from '~/components/Views/Schema/common/PageTemplate.vue';
 import SchemaItem from '~/components/Views/Schema/EditSchema/SchemaItem.vue';
 import { useRootPathInjectSafe } from '~/composables/data/providers';

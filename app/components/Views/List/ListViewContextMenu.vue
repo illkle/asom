@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { CornerUpRight, SquareDashedMousePointer, TrashIcon } from 'lucide-vue-next';
+import { CornerUpRight, SquareDashedMousePointer, TrashIcon } from '@lucide/vue';
 
 const props = defineProps<{
   selectionMode: boolean;
