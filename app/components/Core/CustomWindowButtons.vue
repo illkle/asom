@@ -28,7 +28,7 @@
 
 <script setup lang="ts">
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { MinusIcon, SquareIcon, XIcon } from 'lucide-vue-next';
+import { MinusIcon, SquareIcon, XIcon } from '@lucide/vue';
 
 const appWindow = getCurrentWindow();
 

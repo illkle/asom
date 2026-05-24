@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Minus } from 'lucide-vue-next';
+import { Minus } from '@lucide/vue';
 import type { NumberFieldDecrementProps } from 'reka-ui';
 import { NumberFieldDecrement, useForwardProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';

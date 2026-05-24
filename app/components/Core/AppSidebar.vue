@@ -106,7 +106,7 @@ import {
   KeyIcon,
   PlusIcon,
   WrenchIcon,
-} from 'lucide-vue-next';
+} from '@lucide/vue';
 import RecordAdder from '~/components/Views/Add/RecordAdder.vue';
 import { useNavigationBlock, useTabsStoreV2 } from '~/composables/stores/useTabsStoreV2';
 import { useIsMac } from '~/composables/useTools';

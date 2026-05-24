@@ -129,7 +129,7 @@
 
 <script setup lang="ts">
 import { path } from '@tauri-apps/api';
-import { ChevronDown, FileIcon, FolderIcon } from 'lucide-vue-next';
+import { ChevronDown, FileIcon, FolderIcon } from '@lucide/vue';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
 import { c_delete_to_trash } from '~/api/tauriActions';

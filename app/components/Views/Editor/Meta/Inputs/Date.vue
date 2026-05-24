@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { format } from 'date-fns';
-import { CalendarIcon, XIcon } from 'lucide-vue-next';
+import { CalendarIcon, XIcon } from '@lucide/vue';
 import { computed } from 'vue';
 import CommonLabel from './CommonLabel.vue';
 

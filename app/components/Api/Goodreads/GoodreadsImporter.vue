@@ -123,7 +123,7 @@
 import { path } from '@tauri-apps/api';
 import { mkdir } from '@tauri-apps/plugin-fs';
 import { format } from 'date-fns';
-import { Check, ChevronDown, XIcon } from 'lucide-vue-next';
+import { Check, ChevronDown, XIcon } from '@lucide/vue';
 import { c_save_file } from '~/api/tauriActions';
 import {
   extractDataFromGoodreadsHTML,

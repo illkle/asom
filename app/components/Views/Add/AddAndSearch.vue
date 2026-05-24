@@ -50,7 +50,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ArrowRight } from 'lucide-vue-next';
+import { ArrowRight } from '@lucide/vue';
 import type { ApiSettings } from '~/components/Api/apis';
 import ApiSearchRouter from '~/components/Api/ApiSearchRouter.vue';
 import { provideResultGenericWrapper } from '~/components/Api/common/resultGeneric';

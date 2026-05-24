@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, FolderIcon, PlusIcon } from 'lucide-vue-next';
+import { ChevronDown, FolderIcon, PlusIcon } from '@lucide/vue';
 import { TreeItem, type FlattenedItem } from 'reka-ui';
 
 import { Button } from '~/components/ui/button';

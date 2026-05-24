@@ -117,7 +117,7 @@ import {
   FolderIcon,
   PencilIcon,
   Trash2Icon,
-} from 'lucide-vue-next';
+} from '@lucide/vue';
 import type { useFileEditorV2 } from '~/composables';
 
 const props = defineProps({

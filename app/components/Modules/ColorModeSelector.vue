@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { MoonIcon, SunIcon, SunMoonIcon } from 'lucide-vue-next';
+import { MoonIcon, SunIcon, SunMoonIcon } from '@lucide/vue';
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui';
 
 const colorMode = useColorMode();

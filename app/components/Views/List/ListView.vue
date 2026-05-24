@@ -168,7 +168,7 @@ import {
 } from '@tanstack/vue-table';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import { onKeyStroke } from '@vueuse/core';
-import { ArrowDown, ArrowUp, TrashIcon, XIcon } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, TrashIcon, XIcon } from '@lucide/vue';
 import type { AttrValue, RecordFromDb, SchemaResult } from 'types/index';
 import { type ShallowRef } from 'vue';
 import { c_delete_to_trash } from '~/api/tauriActions';

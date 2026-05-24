@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import type { Column } from '@tanstack/vue-table';
-import { ChevronDown, ListOrdered } from 'lucide-vue-next';
+import { ChevronDown, ListOrdered } from '@lucide/vue';
 import SimpleDNDList from '~/components/Views/List/SimpleDNDList.vue';
 import type { RecordFromDb } from '~/types';
 

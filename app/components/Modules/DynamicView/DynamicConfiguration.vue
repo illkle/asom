@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { cloneDeep } from 'lodash-es';
-import { Trash2Icon } from 'lucide-vue-next';
+import { Trash2Icon } from '@lucide/vue';
 import { useProvideDNDContext, type ItemInfoCore } from '~/components/Modules/NestedDrag/common';
 import type { Schema } from '~/types';
 import { Draggable, DropTarget } from '../NestedDrag';

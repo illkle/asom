@@ -16,8 +16,8 @@ export type IPCResponces = {
   c_get_all_folders: { Ok: FolderListGetResult } | { Err: ErrFR };
   c_get_all_folders_by_schema: { Ok: FolderListGetResult } | { Err: ErrFR };
   c_read_file_by_path: { Ok: IPCReadFileByPathResult } | { Err: ErrFR };
-  c_get_schemas_usable: { Ok: { [key in string]?: Schema } } | { Err: ErrFR };
-  c_get_schemas_all: { Ok: { [key in string]?: Schema } } | { Err: ErrFR };
+  c_get_schemas_usable: { Ok: { [key in string]: Schema } } | { Err: ErrFR };
+  c_get_schemas_all: { Ok: { [key in string]: Schema } } | { Err: ErrFR };
   c_load_schema: { Ok: Schema } | { Err: ErrFR };
   c_save_schema: { Ok: Schema } | { Err: ErrFR };
   c_save_file: { Ok: RecordSaveResult } | { Err: ErrFR };

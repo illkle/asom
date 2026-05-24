@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronUp } from 'lucide-vue-next';
+import { ChevronUp } from '@lucide/vue';
 import { SelectScrollUpButton, type SelectScrollUpButtonProps, useForwardProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
 import { cn } from '~/lib/utils';

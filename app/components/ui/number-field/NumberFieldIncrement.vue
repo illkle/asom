@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
+import { Plus } from '@lucide/vue';
 import type { NumberFieldIncrementProps } from 'reka-ui';
 import { NumberFieldIncrement, useForwardProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';

@@ -28,7 +28,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check } from '@tauri-apps/plugin-updater';
-import { CircleX, MoveRightIcon, TriangleAlert } from 'lucide-vue-next';
+import { CircleX, MoveRightIcon, TriangleAlert } from '@lucide/vue';
 import { Button } from '~/components/ui/button';
 import { useMainStore } from '~/composables/stores/useMainStore';
 

@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { CogIcon, SquarePlus } from 'lucide-vue-next';
+import { CogIcon, SquarePlus } from '@lucide/vue';
 import { motion } from 'motion-v';
 
 const emit = defineEmits<{

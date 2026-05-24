@@ -167,7 +167,7 @@ import {
   Redo,
   StrikethroughIcon,
   Undo,
-} from 'lucide-vue-next';
+} from '@lucide/vue';
 
 const props = defineProps<{
   fileEditor: ReturnType<typeof useFileEditorV2>;
