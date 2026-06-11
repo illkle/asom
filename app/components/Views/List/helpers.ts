@@ -1,4 +1,4 @@
-import type { SortingFn, SortingFnOption } from '@tanstack/vue-table';
+import type { SortingFn } from '@tanstack/vue-table';
 import { parse } from 'date-fns';
 import type { AttrValue, RecordFromDb, SchemaItem } from '~/types';
 
@@ -23,94 +23,98 @@ export const baseSizeByType = (type: SchemaItem['value']['type']) => {
   }
 };
 
-export const getSortFunction = (
+export const compareRecordsByType = (
   type: SchemaItem['value']['type'],
-): SortingFn<RecordFromDb> | SortingFnOption<RecordFromDb> => {
+  a: RecordFromDb,
+  b: RecordFromDb,
+  columnId: string,
+) => {
   switch (type) {
-    case 'Text':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (aValue.type !== 'String' || bValue.type !== 'String') {
-          return 0;
-        }
-        return (aValue.value ?? '').localeCompare(bValue.value ?? '');
-      };
-    case 'Date':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (aValue.type !== 'String' || bValue.type !== 'String') {
-          return 0;
-        }
+    case 'Text': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (aValue.type !== 'String' || bValue.type !== 'String') {
+        return 0;
+      }
+      return (aValue.value ?? '').localeCompare(bValue.value ?? '');
+    }
+    case 'Date': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (aValue.type !== 'String' || bValue.type !== 'String') {
+        return 0;
+      }
 
-        const [d1, d2] = [
-          aValue.value ? parse(aValue.value ?? '', DATE_FORMAT, new Date()).getTime() : 0,
-          bValue.value ? parse(bValue.value ?? '', DATE_FORMAT, new Date()).getTime() : 0,
-        ];
+      const [d1, d2] = [
+        aValue.value ? parse(aValue.value ?? '', DATE_FORMAT, new Date()).getTime() : 0,
+        bValue.value ? parse(bValue.value ?? '', DATE_FORMAT, new Date()).getTime() : 0,
+      ];
 
-        return d1 - d2;
-      };
-    case 'Number':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (
-          (aValue.type !== 'Float' && aValue.type !== 'Integer') ||
-          (bValue.type !== 'Float' && bValue.type !== 'Integer')
-        ) {
-          return 0;
-        }
+      return d1 - d2;
+    }
+    case 'Number': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (
+        (aValue.type !== 'Float' && aValue.type !== 'Integer') ||
+        (bValue.type !== 'Float' && bValue.type !== 'Integer')
+      ) {
+        return 0;
+      }
 
-        return (aValue.value ?? 0) - (bValue.value ?? 0);
-      };
-    case 'TextCollection':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
-          return 0;
-        }
+      return (aValue.value ?? 0) - (bValue.value ?? 0);
+    }
+    case 'TextCollection': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
+        return 0;
+      }
 
-        return (aValue.value?.[0] ?? '').localeCompare(bValue.value?.[0] ?? '');
-      };
-    case 'DateCollection':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
-          return 0;
-        }
+      return (aValue.value?.[0] ?? '').localeCompare(bValue.value?.[0] ?? '');
+    }
+    case 'DateCollection': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (aValue.type !== 'StringVec' || bValue.type !== 'StringVec') {
+        return 0;
+      }
 
-        const [av, bv] = [aValue.value?.[0], bValue.value?.[0]];
+      const [av, bv] = [aValue.value?.[0], bValue.value?.[0]];
 
-        const [d1, d2] = [
-          av ? parse(av, DATE_FORMAT, new Date()).getTime() : 0,
-          bv ? parse(bv, DATE_FORMAT, new Date()).getTime() : 0,
-        ];
+      const [d1, d2] = [
+        av ? parse(av, DATE_FORMAT, new Date()).getTime() : 0,
+        bv ? parse(bv, DATE_FORMAT, new Date()).getTime() : 0,
+      ];
 
-        return d1 - d2;
-      };
-    case 'DatesPairCollection':
-      return (a, b, columnId) => {
-        const [aValue, bValue] = [a.original.attrs[columnId], b.original.attrs[columnId]];
-        if (!aValue || !bValue) return 0;
-        if (aValue.type !== 'DatePairVec' || bValue.type !== 'DatePairVec') {
-          return 0;
-        }
+      return d1 - d2;
+    }
+    case 'DatesPairCollection': {
+      const [aValue, bValue] = [a.attrs[columnId], b.attrs[columnId]];
+      if (!aValue || !bValue) return 0;
+      if (aValue.type !== 'DatePairVec' || bValue.type !== 'DatePairVec') {
+        return 0;
+      }
 
-        const [av, bv] = [aValue.value?.[0]?.started, bValue.value?.[0]?.started];
+      const [av, bv] = [
+        aValue.value?.[0]?.finished ?? aValue.value?.[0]?.started,
+        bValue.value?.[0]?.finished ?? bValue.value?.[0]?.started,
+      ];
 
-        const [d1, d2] = [
-          av ? parse(av, DATE_FORMAT, new Date()).getTime() : 0,
-          bv ? parse(bv, DATE_FORMAT, new Date()).getTime() : 0,
-        ];
+      const [d1, d2] = [
+        av ? parse(av, DATE_FORMAT, new Date()).getTime() : 0,
+        bv ? parse(bv, DATE_FORMAT, new Date()).getTime() : 0,
+      ];
 
-        return d1 - d2;
-      };
+      return d1 - d2;
+    }
   }
 
-  return () => 0;
+  return 0;
+};
+
+export const getSortFunction = (type: SchemaItem['value']['type']): SortingFn<RecordFromDb> => {
+  return (a, b, columnId) => compareRecordsByType(type, a.original, b.original, columnId);
 };
 
 export const attrValueToStringForFuzzyFiltering = (value?: AttrValue) => {

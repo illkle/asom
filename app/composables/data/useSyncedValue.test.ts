@@ -7,6 +7,12 @@ type MockUseQueryReturn<T> = {
   data: Ref<T | undefined>;
 };
 
+type SyncedValueResult<T> = {
+  editableProxy: Ref<T | null>;
+  performUpdate: (args?: unknown) => Promise<void>;
+  lastSyncedTimestamp: Ref<Date | null>;
+};
+
 // Import after mocks
 import { cloneDeep } from 'lodash-es';
 import type { IPCReadFileByPathResult } from '~~/src-tauri/bindings/IPCReadFileByPathResult';
@@ -79,7 +85,7 @@ const makeMockComponent = ({
 
   const { remote, syncedValue } = c.vm as unknown as {
     remote: ReturnType<typeof useMockQuery>;
-    syncedValue: ReturnType<typeof useSyncedValue<IPCReadFileByPathResult>>;
+    syncedValue: SyncedValueResult<IPCReadFileByPathResult>;
   };
 
   return { c, remote, syncedValue };

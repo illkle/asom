@@ -1,6 +1,6 @@
 [package]
 name = "asom"
-version = "0.2.12"
+version = "0.2.13"
 description = "Anti Social Opinion Manager"
 authors = ["Kirill Kleimenov"]
 license = ""

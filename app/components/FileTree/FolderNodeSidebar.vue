@@ -55,7 +55,7 @@
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem @click="startRenaming"> Remame </ContextMenuItem>
+        <ContextMenuItem @click="startRenaming"> Rename </ContextMenuItem>
         <ContextMenuItem @click="startCreating"> Create Folder </ContextMenuItem>
 
         <ContextMenuItem
