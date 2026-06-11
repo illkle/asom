@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ClassValue } from 'clsx';
 import type { SelectRootEmits, SelectRootProps } from 'reka-ui';
 import { SelectRoot, useForwardPropsEmits } from 'reka-ui';
 
-const props = defineProps<SelectRootProps>();
+const props = defineProps<SelectRootProps & { class?: ClassValue }>();
 const emits = defineEmits<SelectRootEmits>();
 
 const forwarded = useForwardPropsEmits(props, emits);
