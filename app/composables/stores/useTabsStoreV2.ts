@@ -342,7 +342,9 @@ export const useTabsStoreV2 = defineStore('tabs', {
 
       if (index === -1) return;
 
+      const wasActiveTab = this.openedTabActiveId === id;
       this.openedTabs.splice(index, 1);
+      const nextTabId = this.openedTabs[index]?.id ?? this.openedTabs[index - 1]?.id;
 
       const deleteFromFocusHistoryIndexes: number[] = [];
 
@@ -356,6 +358,11 @@ export const useTabsStoreV2 = defineStore('tabs', {
         this.focusHistoryPointer,
         deleteFromFocusHistoryIndexes,
       );
+
+      if (wasActiveTab && this.openedTabs.length > 0 && !this.openedTab && nextTabId) {
+        this.focusHistory.push(nextTabId);
+        this.focusHistoryPointer = this.focusHistory.length - 1;
+      }
     },
 
     setOpenedIndexRelative(relative: number) {

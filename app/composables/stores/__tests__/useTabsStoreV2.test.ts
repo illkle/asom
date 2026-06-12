@@ -463,6 +463,47 @@ describe('useTabsStore', () => {
     expect(store.openedTabActiveId).toBe(undefined);
   });
 
+  it('should focus next tab when closing the active tab after opening unfocused tabs', () => {
+    const store = useTabsStoreV2();
+
+    const tab1Id = store.openNewTab(mockFileID('1'));
+    const tab2Id = store.openNewTab(mockFileID('2'), { place: 'last', focus: false });
+    store.openNewTab(mockFileID('3'), { place: 'last', focus: false });
+    store.openNewTab(mockFileID('4'), { place: 'last', focus: false });
+
+    expect(store.openedTabActiveId).toBe(tab1Id);
+
+    store.closeTab(tab1Id);
+
+    expect(store.openedTabs.length).toBe(3);
+    expect(store.openedTabActiveId).toBe(tab2Id);
+    expect(store.openedTab).toBeDefined();
+  });
+
+  it('should focus previous tab when closing the active tab after moving it to the last position', () => {
+    const store = useTabsStoreV2();
+
+    const tab1Id = store.openNewTab(mockFileID('1'));
+    const tab2Id = store.openNewTab(mockFileID('2'));
+    const tab3Id = store.openNewTab(mockFileID('3'));
+    const tab4Id = store.openNewTab(mockFileID('4'));
+
+    store.focusTab(tab2Id);
+
+    const tab2 = store.openedTabs.find((tab) => tab.id === tab2Id);
+    expectToBeDefined(tab2);
+    store.openedTabs = store.openedTabs.filter((tab) => tab.id !== tab2Id).concat(tab2);
+
+    expect(store.openedTabs.map((tab) => tab.id)).toEqual([tab1Id, tab3Id, tab4Id, tab2Id]);
+    expect(store.openedTabActiveId).toBe(tab2Id);
+
+    store.closeTab(tab2Id);
+
+    expect(store.openedTabs.length).toBe(3);
+    expect(store.openedTabActiveId).toBe(tab4Id);
+    expect(store.openedTab).toBeDefined();
+  });
+
   it('should behave correctly when other tabs that exist in history', () => {
     const store = useTabsStoreV2();
 
