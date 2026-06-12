@@ -380,13 +380,14 @@ export const useTabsStoreV2 = defineStore('tabs', {
      * Helpers
      */
 
-    openNewThingFast(
+    async openNewThingFast(
       { _type, _path }: ICoreBase,
       mode: 'here' | 'last' | 'lastUnfocused' = 'here',
     ) {
       const data: IOpened = {
         _type: _type,
         _path: _path,
+        _tabTitle: await path.basename(_path),
         scrollPositionX: 0,
         scrollPositionY: 0,
         details: {},

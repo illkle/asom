@@ -420,7 +420,7 @@ const handlePointerDownOnRow = (index: number, e: PointerEvent) => {
   const targetRow = rows.value[index];
   if (!targetRow) return;
 
-  const wantSelection = (isMacOS && e.metaKey) || (!isMacOS && e.ctrlKey);
+  const wantSelection = (isMacOS && e.altKey) || (!isMacOS && e.ctrlKey);
 
   /* Opening cases */
   if (!selectionMode.value && !wantSelection) {
