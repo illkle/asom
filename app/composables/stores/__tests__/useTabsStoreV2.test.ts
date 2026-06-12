@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vitest } from 'vitest';
 import {
   removeIndexesKeepingPointer,
   spliceKeepingPointer,
@@ -7,6 +7,12 @@ import {
   zOpened,
   type IOpened,
 } from '../useTabsStoreV2';
+
+vitest.mock('@tauri-apps/api', () => {
+  return {
+    path: { basename: (v: unknown) => v },
+  };
+});
 
 export function expectToBeDefined<T>(value: T | undefined): asserts value is T {
   expect(value).toBeDefined();
@@ -571,7 +577,7 @@ describe('useTabsStore', () => {
     expect(store.openedTabActiveId).toBe(bareId);
 
     // Known bug that we have [bareId, bareId] in history, I have not implemented squashing logic yet
-    expect(store.openedTab?.history.length).toBe(2);
+    expect(store.openedTab?.history.length).toBe(1);
   });
 
   it('should handle renames events correctly', () => {
