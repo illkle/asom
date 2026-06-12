@@ -394,7 +394,7 @@ export const useTabsStoreV2 = defineStore('tabs', {
       const data: IOpened = {
         _type: _type,
         _path: _path,
-        _tabTitle: await path.basename(_path),
+        _tabTitle: _type === 'file' || _type === 'folder' ? await path.basename(_path) : _path,
         scrollPositionX: 0,
         scrollPositionY: 0,
         details: {},

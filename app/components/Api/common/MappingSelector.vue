@@ -42,16 +42,17 @@
             :key="field"
             :value="field"
           >
-            <span
-              class="flex gap-2 items-baseline"
-              :class="{
-                'opacity-50': apiFieldType !== getTypeForSchemaItemBySchemaItemName(field),
-              }"
-            >
+            <span class="flex gap-2 items-baseline">
               {{ field }}
               <span class="text-xs text-muted-foreground">
                 {{ getTypeForSchemaItemBySchemaItemName(field) }}
               </span>
+
+              <span
+                v-if="apiFieldType !== getTypeForSchemaItemBySchemaItemName(field)"
+                class="text-xs text-muted-foreground"
+                >(with conversion)</span
+              >
             </span>
           </SelectItem>
           <SelectItem :value="null" class="opacity-50"> None </SelectItem>
